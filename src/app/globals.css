@@ -1,0 +1,22 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lime: #AADC00;
+  --lime-dark: #88B200;
+  --ink: #0D0D0B;
+  --cream: #F0EDE4;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  background: #ffffff;
+  color: #0D0D0B;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #d1d0c9; border-radius: 2px; }
