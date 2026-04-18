@@ -14,41 +14,114 @@ export default function LoginPage() {
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError("");
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) { setError(error.message); setLoading(false); return; }
-    router.push("/");
+
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) {
+      if (error.message.toLowerCase().includes("email not confirmed")) {
+        setError("Please confirm your email before logging in. Check your inbox for the confirmation link.");
+      } else {
+        setError(error.message);
+      }
+      setLoading(false);
+      return;
+    }
+
+    // Get org — if multiple memberships, prefer L1 (root org)
+    const { data: members } = await supabase
+      .from("org_members")
+      .select("org_id")
+      .eq("user_id", data.user.id);
+
+    if (!members?.length) { setError("No se encontró la organización."); setLoading(false); return; }
+
+    // Get all orgs and prefer L1
+    const { data: orgs } = await supabase
+      .from("organizations")
+      .select("slug, onboarding_complete, cascade_level")
+      .in("id", members.map(m => m.org_id))
+      .order("cascade_level", { ascending: true });
+
+    const org = orgs?.[0];
+    if (!org) { setError("No se encontró la organización."); setLoading(false); return; }
+
+    if (!org.onboarding_complete) {
+      router.push(`/${org.slug}/onboarding`);
+    } else {
+      router.push(`/${org.slug}/dashboard`);
+    }
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-white">
-      <div className="w-full max-w-sm px-6">
-        <div className="mb-10">
-          <div className="font-mono text-2xl font-semibold tracking-wide text-ink mb-1">Sprintal</div>
-          <div className="text-sm text-gray-400 font-mono uppercase tracking-widest">Strategic Portfolio Management</div>
+    <div className="min-h-screen flex" style={{background:"var(--bg)"}}>
+      {/* Left — form */}
+      <div className="flex-1 flex items-center justify-center px-8 py-12">
+        <div className="w-full max-w-sm">
+          <div className="mb-10">
+            <div className="font-extrabold text-3xl tracking-tight mb-1"
+              style={{color:"var(--brand)",letterSpacing:"-0.03em"}}>
+              Sprintal
+            </div>
+            <div className="t-label">Strategic Portfolio Management</div>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div>
+              <label className="t-label block mb-2">Email</label>
+              <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
+                className="input" placeholder="you@company.com" required />
+            </div>
+            <div>
+              <label className="t-label block mb-2">Password</label>
+              <input type="password" value={password} onChange={e=>setPassword(e.target.value)}
+                className="input" placeholder="••••••••" required />
+            </div>
+            {error && (
+              <div className="t-mono text-sm p-3 rounded"
+                style={{background:"rgba(220,38,38,0.06)",color:"#DC2626",border:"1px solid rgba(220,38,38,0.12)"}}>
+                {error}
+              </div>
+            )}
+            <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 mt-2">
+              {loading ? "Signing in..." : "Sign in →"}
+            </button>
+          </form>
+          <p className="mt-8 t-mono text-center" style={{color:"var(--t3)"}}>
+            No account?{" "}
+            <Link href="/auth/signup" className="underline underline-offset-2 font-medium"
+              style={{color:"var(--brand)"}}>
+              Start free trial
+            </Link>
+          </p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Email</label>
-            <input type="email" value={email} onChange={e => setEmail(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-lime-500 bg-white"
-              placeholder="you@company.com" required />
+      </div>
+
+      {/* Right — brand panel */}
+      <div className="hidden lg:flex w-96 flex-col justify-between p-12"
+        style={{background:"var(--sidebar)",borderLeft:"1px solid var(--border)"}}>
+        <div>
+          <div className="t-label mb-6" style={{color:"var(--brand)"}}>
+            The operating system for strategic leadership
           </div>
-          <div>
-            <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Password</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-lime-500 bg-white"
-              placeholder="••••••••" required />
+          <div className="font-extrabold text-4xl leading-tight mb-6"
+            style={{color:"var(--text)",letterSpacing:"-0.03em"}}>
+            Test.<br/>Scale.<br/>Win.
           </div>
-          {error && <p className="text-red-500 text-sm">{error}</p>}
-          <button type="submit" disabled={loading}
-            className="w-full py-2.5 bg-[#AADC00] text-ink font-mono font-semibold text-sm rounded-lg hover:bg-[#88B200] transition-colors disabled:opacity-50">
-            {loading ? "Signing in..." : "Sign In"}
-          </button>
-        </form>
-        <p className="mt-6 text-center text-sm text-gray-400">
-          No account?{" "}
-          <Link href="/auth/signup" className="text-ink font-medium hover:underline">Start free trial</Link>
-        </p>
+          <p className="text-base leading-relaxed" style={{color:"var(--t2)"}}>
+            90-day strategic sprints for leadership teams who make decisions with conviction.
+          </p>
+        </div>
+        <div className="space-y-0">
+          {[
+            {num:"01", label:"Place bets"},
+            {num:"02", label:"Track signal, not noise"},
+            {num:"03", label:"Scale what works. Kill what doesn't."},
+          ].map(item => (
+            <div key={item.num} className="flex items-center gap-4 py-4"
+              style={{borderTop:"1px solid var(--border)"}}>
+              <div className="font-bold text-xl" style={{color:"var(--brand)",letterSpacing:"-0.02em"}}>{item.num}</div>
+              <div className="text-sm" style={{color:"var(--t2)"}}>{item.label}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );

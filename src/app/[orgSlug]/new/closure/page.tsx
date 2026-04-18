@@ -3,147 +3,173 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+import Modal, { Field, FieldRow, ModalFooter } from "@/components/ui/Modal";
 import type { BetStatus } from "@/types";
 
 const OUTCOMES: BetStatus[] = ["Scaled","Pivoted","Done","Killed"];
+const OUTCOME_COLORS: Record<string,string> = {
+  Scaled:"var(--scaled)", Pivoted:"var(--pivoted)", Done:"var(--done)", Killed:"var(--killed)"
+};
+
+
+const SIDEBAR = (
+  <div>
+    <div className="font-mono text-xs font-semibold tracking-wide mb-1" style={{ color:"var(--brand)" }}>Sprint Closure</div>
+    <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>Close the Sprint</div>
+    <p className="text-sm mb-6" style={{ color:"var(--t2)", lineHeight:1.6 }}>
+      Closure is not reporting — it is reconfiguration. Decide what to carry forward, what to stop, and what the next cycle needs.
+    </p>
+    <div className="mb-5">
+      <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>Bet Outcomes</div>
+      {[
+        { c:"var(--scaled)",  t:"Scale",        d:"Generates a draft bet for expansion into the next sprint." },
+        { c:"var(--pivoted)", t:"Pivot",         d:"Generates a draft with updated hypothesis for the next sprint." },
+        { c:"var(--done)",    t:"Mark as Done",  d:"Reached its conclusion. No continuation." },
+        { c:"var(--killed)",  t:"Kill",          d:"No signal. Stop completely." },
+      ].map(o => (
+        <div key={o.t} className="mb-3 pl-3" style={{ borderLeft:`2px solid ${o.c}` }}>
+          <div className="font-semibold text-sm mb-0.5" style={{ color:o.c }}>{o.t}</div>
+          <div style={{ fontSize:"0.8125rem", color:"var(--t2)" }}>{o.d}</div>
+        </div>
+      ))}
+    </div>
+    <div className="pt-4" style={{ borderTop:"1px solid var(--border)" }}>
+      <div className="font-semibold text-sm mb-2" style={{ color:"var(--text)" }}>Capability Decisions</div>
+      <p style={{ fontSize:"0.8125rem", color:"var(--t2)", lineHeight:1.6 }}>
+        For each function, define what needs to change to support the next sprint. These are structural actions, not tasks.
+      </p>
+    </div>
+  </div>
+);
 
 export default function SprintClosurePage() {
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, updateSprint, updateBet, addBet } = useStore();
-  const active = sprints.find(s => s.status === "Active");
-  const sprintBets = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
-  const nextSprint = sprints.find(s => s.status === "Planned");
+  const active = sprints.find(s=>s.status==="Active");
+  const sprintBets = bets.filter(b=>b.sprint_id===active?.id && b.status==="Active");
+  const nextSprint = sprints.find(s=>s.status==="Planned");
   const [outcomes, setOutcomes] = useState<Record<string,BetStatus>>({});
   const [learnings, setLearnings] = useState<Record<string,string>>({});
   const [newHyps, setNewHyps] = useState<Record<string,string>>({});
-  const [closure, setClosure] = useState({ worked:"", didnt:"", surprised:"", hr:"", tag:"", ld:"", mkt:"" });
+  const [closure, setClosure] = useState({worked:"",didnt:"",surprised:"",hr:"",tag:"",ld:"",mkt:""});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   if (!active) return (
-    <div className="p-10"><p className="font-mono text-gray-400">No active sprint to close.</p></div>
+    <Modal title="Close Sprint" subtitle="No active sprint to close.">
+      <p className="t-mono" style={{color:"var(--t3)"}}>No active sprint found.</p>
+    </Modal>
   );
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
-    const missing = sprintBets.filter(b => !outcomes[b.id]);
-    if (missing.length) { setError(`Please select an outcome for: ${missing.map(b=>b.name).join(", ")}`); return; }
+    const missing = sprintBets.filter(b=>!outcomes[b.id]);
+    if (missing.length) { setError(`Select an outcome for: ${missing.map(b=>b.name).join(", ")}`); return; }
     setSaving(true);
     const date = new Date().toISOString().split("T")[0];
     for (const b of sprintBets) {
       const outcome = outcomes[b.id];
-      const learning = learnings[b.id] || "";
-      const newHyp = newHyps[b.id] || "";
+      const learning = learnings[b.id]||"";
+      const newHyp = newHyps[b.id]||"";
       await supabase.from("bets").update({
-        status: outcome, last_reviewed: date,
-        last_note: learning, closure_learning: learning,
-        ...(outcome === "Pivoted" && newHyp ? { hypothesis: newHyp } : {}),
+        status:outcome, last_reviewed:date, last_note:learning, closure_learning:learning,
+        ...(outcome==="Pivoted"&&newHyp ? {hypothesis:newHyp} : {}),
       }).eq("id", b.id);
-      updateBet({ ...b, status: outcome, last_reviewed: date, last_note: learning });
-      if (outcome === "Scaled" || outcome === "Pivoted") {
+      updateBet({...b,status:outcome,last_reviewed:date,last_note:learning});
+      if (outcome==="Scaled"||outcome==="Pivoted") {
         const { data: draft } = await supabase.from("bets").insert({
-          org_id: org!.id, sprint_id: nextSprint?.id || b.sprint_id,
-          name: `${b.name} — ${outcome === "Scaled" ? "Scale" : "Pivot"}`,
-          owner_area: b.owner_area, owner_contact: b.owner_contact,
-          status: "Active", signal: "Unclear",
-          outcome: b.outcome, hypothesis: outcome === "Pivoted" && newHyp ? newHyp : b.hypothesis,
-          indicators: b.indicators, kill_criteria: b.kill_criteria, scale_trigger: b.scale_trigger,
-          alignment: b.alignment, revenue: b.revenue, margin: b.margin, importance: b.importance,
-          is_draft: true, source_bet_id: b.id,
-          last_note: `Draft from ${outcome} of ${b.name}`,
+          org_id:org!.id, sprint_id:nextSprint?.id||b.sprint_id,
+          name:`${b.name} — ${outcome==="Scaled"?"Scale":"Pivot"}`,
+          owner_area:b.owner_area, owner_contact:b.owner_contact,
+          status:"Active", signal:"Unclear", outcome:b.outcome,
+          hypothesis:outcome==="Pivoted"&&newHyp ? newHyp : b.hypothesis,
+          indicators:b.indicators, kill_criteria:b.kill_criteria,
+          scale_trigger:b.scale_trigger, alignment:b.alignment,
+          revenue:b.revenue, margin:b.margin, importance:b.importance,
+          is_draft:true, source_bet_id:b.id,
+          last_note:`Draft from ${outcome} of ${b.name}`,
         }).select().single();
         if (draft) addBet(draft);
       }
     }
-    const closureData = { ...closure, date };
-    await supabase.from("sprints").update({ status: "Closed", closure: closureData }).eq("id", active.id);
-    updateSprint({ ...active, status: "Closed", closure: closureData });
+    const closureData = {...closure, date};
+    await supabase.from("sprints").update({status:"Closed",closure:closureData}).eq("id",active.id);
+    updateSprint({...active,status:"Closed",closure:closureData});
     setSaving(false);
     router.push(`/${params.orgSlug}/sprints`);
   }
 
   return (
-    <div className="p-10 max-w-3xl pb-20">
-      <div className="mb-8 pb-5 border-b border-gray-100">
-        <h1 className="font-mono text-2xl font-semibold text-ink">Close Sprint</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Closing: {active.name} · Closure is not reporting — it's reconfiguration.</p>
-      </div>
+    <Modal title="Close Sprint" subtitle={`Closing: ${active.name}, Closure is reconfiguration, not reporting.`} wide>
       <form onSubmit={save}>
-        {/* Bet outcomes */}
-        <div className="font-mono text-xs font-semibold uppercase tracking-widest text-gray-300 mb-4">Bet Outcomes</div>
-        <div className="space-y-4 mb-8">
-          {sprintBets.map(b => (
-            <div key={b.id} className="bg-white border border-gray-100 rounded-xl p-4">
+        <div className="t-label mb-3">Bet Outcomes</div>
+        <div className="space-y-3 mb-6">
+          {sprintBets.map(b=>(
+            <div key={b.id} className="rounded p-4"
+              style={{background:"var(--raised)",border:"1px solid var(--border)"}}>
               <div className="flex items-center justify-between mb-3">
                 <div>
-                  <div className="font-mono font-semibold text-ink">{b.name}</div>
-                  <div className="text-xs text-gray-400">{b.owner_area} · {b.owner_contact}</div>
+                  <div className="font-semibold text-sm" style={{color:"var(--text)"}}>{b.name}</div>
+                  <div className="t-mono">{b.owner_area}, {b.owner_contact}</div>
                 </div>
-                <div className="text-sm font-medium" style={{color: b.signal === "Strong" ? "#00C864" : b.signal === "Weak" ? "#E63232" : "#EAA012"}}>
-                  ● {b.signal}
-                </div>
+                <span className="t-mono font-medium" style={{color:`var(--${b.signal.toLowerCase()})`}}>● {b.signal}</span>
               </div>
-              <div className="grid grid-cols-2 gap-3 mb-3">
-                <div>
-                  <label className="block font-mono text-[10px] uppercase tracking-widest text-gray-300 mb-1">Outcome</label>
-                  <select value={outcomes[b.id] || ""} onChange={e => setOutcomes(o => ({...o, [b.id]: e.target.value as BetStatus}))}
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] bg-white">
+              <FieldRow>
+                <Field label="Outcome">
+                  <select className="input"
+                    value={outcomes[b.id]||""}
+                    onChange={e=>setOutcomes(o=>({...o,[b.id]:e.target.value as BetStatus}))}>
                     <option value="">— Select outcome —</option>
-                    {OUTCOMES.map(o => <option key={o} value={o}>{o}</option>)}
+                    {OUTCOMES.map(o=>(
+                      <option key={o} value={o}>{o}</option>
+                    ))}
                   </select>
-                </div>
-                <div>
-                  <label className="block font-mono text-[10px] uppercase tracking-widest text-gray-300 mb-1">Key Learning</label>
-                  <input value={learnings[b.id]||""} onChange={e => setLearnings(l=>({...l,[b.id]:e.target.value}))}
-                    placeholder="What did this bet teach us?"
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00]" />
-                </div>
-              </div>
-              {outcomes[b.id] === "Pivoted" && (
-                <div>
-                  <label className="block font-mono text-[10px] uppercase tracking-widest text-gray-300 mb-1">Updated Hypothesis</label>
-                  <input value={newHyps[b.id]||""} onChange={e => setNewHyps(h=>({...h,[b.id]:e.target.value}))}
-                    placeholder="New direction for the next sprint..."
-                    className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00]" />
-                </div>
+                </Field>
+                <Field label="Key Learning">
+                  <input className="input" value={learnings[b.id]||""}
+                    onChange={e=>setLearnings(l=>({...l,[b.id]:e.target.value}))}
+                    placeholder="What did this bet teach us?" />
+                </Field>
+              </FieldRow>
+              {outcomes[b.id]==="Pivoted" && (
+                <Field label="Updated Hypothesis">
+                  <input className="input" value={newHyps[b.id]||""}
+                    onChange={e=>setNewHyps(h=>({...h,[b.id]:e.target.value}))}
+                    placeholder="New direction for the next sprint..." />
+                </Field>
               )}
             </div>
           ))}
         </div>
-        {/* Sprint learnings */}
-        <div className="font-mono text-xs font-semibold uppercase tracking-widest text-gray-300 mb-4">Sprint Learnings</div>
-        <div className="grid grid-cols-3 gap-4 mb-8">
-          {[["What worked?","worked"],["What didn't?","didnt"],["What surprised us?","surprised"]].map(([label,key]) => (
-            <div key={key}>
-              <label className="block font-mono text-[10px] uppercase tracking-widest text-gray-300 mb-1.5">{label}</label>
-              <textarea value={closure[key as keyof typeof closure]} onChange={e => setClosure(c=>({...c,[key]:e.target.value}))}
-                rows={4} className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] resize-none" />
-            </div>
+        <div className="t-label mb-3">Sprint Learnings</div>
+        <div className="grid grid-cols-3 gap-4 mb-6">
+          {[["What worked?","worked"],["What didn't?","didnt"],["Surprises?","surprised"]].map(([label,key])=>(
+            <Field key={key} label={label}>
+              <textarea className="input" rows={3}
+                value={closure[key as keyof typeof closure]}
+                onChange={e=>setClosure(c=>({...c,[key]:e.target.value}))} />
+            </Field>
           ))}
         </div>
-        {/* Capability decisions */}
-        <div className="font-mono text-xs font-semibold uppercase tracking-widest text-gray-300 mb-4">Capability Decisions</div>
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          {[["HR","hr"],["TAG — Recruiting","tag"],["L&D","ld"],["Marketing","mkt"]].map(([label,key]) => (
-            <div key={key}>
-              <label className="block font-mono text-[10px] uppercase tracking-widest text-gray-300 mb-1.5">{label}</label>
-              <input value={closure[key as keyof typeof closure]} onChange={e => setClosure(c=>({...c,[key]:e.target.value}))}
-                placeholder={`Actions for ${label}`}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00]" />
-            </div>
+        <div className="t-label mb-3">Capability Decisions</div>
+        <div className="grid grid-cols-2 gap-4 mb-2">
+          {[["HR","hr"],["TAG","tag"],["L&D","ld"],["Marketing","mkt"]].map(([label,key])=>(
+            <Field key={key} label={label}>
+              <input className="input" value={closure[key as keyof typeof closure]}
+                onChange={e=>setClosure(c=>({...c,[key]:e.target.value}))}
+                placeholder={`Actions for ${label}`} />
+            </Field>
           ))}
         </div>
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
-        <div className="flex gap-3">
-          <button type="button" onClick={() => router.back()}
-            className="flex-1 py-2.5 border border-gray-200 text-gray-500 font-mono text-sm rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-          <button type="submit" disabled={saving}
-            className="flex-1 py-2.5 bg-[#AADC00] text-ink font-mono font-semibold text-sm rounded-lg hover:bg-[#88B200] transition-colors disabled:opacity-50">
-            {saving ? "Closing..." : "Close Sprint"}
+        {error && <p className="t-mono mb-4" style={{color:"var(--killed)"}}>{error}</p>}
+        <ModalFooter>
+          <button type="button" onClick={()=>router.back()} className="btn-ghost flex-1">Cancel</button>
+          <button type="submit" disabled={saving} className="btn-primary flex-1">
+            {saving ? "Closing..." : "Close Sprint →"}
           </button>
-        </div>
+        </ModalFooter>
       </form>
-    </div>
+    </Modal>
   );
 }

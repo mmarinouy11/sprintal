@@ -1,68 +1,287 @@
 "use client";
-import { useStore } from "@/lib/store";
+import { useState, useEffect } from "react";
+import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { useState } from "react";
+import { useStore } from "@/lib/store";
+
+type Member = {
+  user_id: string;
+  role: string;
+  full_name: string | null;
+  email?: string;
+};
+
+const ROLES = ["owner", "admin", "editor", "viewer"];
+
+function Section({ title, subtitle, children }: {
+  title: string; subtitle?: string; children: React.ReactNode;
+}) {
+  return (
+    <div style={{ marginBottom: 40 }}>
+      <div style={{ marginBottom: 20, paddingBottom: 16,
+        borderBottom: "1px solid var(--border)" }}>
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700,
+          fontSize: "1.125rem", color: "var(--text)", letterSpacing: "-0.01em" }}>
+          {title}
+        </div>
+        {subtitle && (
+          <div style={{ fontFamily: "var(--font-body)", fontSize: "0.875rem",
+            color: "var(--t3)", marginTop: 4 }}>
+            {subtitle}
+          </div>
+        )}
+      </div>
+      {children}
+    </div>
+  );
+}
 
 export default function SettingsPage() {
-  const { org, setOrg } = useStore();
-  const [name, setName] = useState(org?.name || "");
-  const [color, setColor] = useState(org?.primary_color || "#AADC00");
+  const params = useParams();
+  const router = useRouter();
+  const { org, setOrg, currentRole } = useStore();
+  const [members, setMembers] = useState<Member[]>([]);
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
+  const [name, setName] = useState("");
+  const [color, setColor] = useState("");
+  const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  async function save() {
+  const isOwner = currentRole === "owner";
+  const isAdmin = currentRole === "admin" || isOwner;
+
+  useEffect(() => {
     if (!org) return;
-    setSaving(true);
+    setName(org.name);
+    setColor(org.primary_color || "#5C6AC4");
+    loadMembers();
+  }, [org?.id]);
+
+  async function loadMembers() {
+    if (!org) return;
+    setLoading(true);
     const { data } = await supabase
+      .from("org_members").select("user_id, role, full_name")
+      .eq("org_id", org.id);
+    setMembers(data || []);
+    setLoading(false);
+  }
+
+  function showMessage(text: string, type: "success" | "error") {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 3000);
+  }
+
+  async function saveOrgInfo(e: React.FormEvent) {
+    e.preventDefault();
+    if (!org || !isAdmin) return;
+    setSaving(true);
+    const { data, error } = await supabase
       .from("organizations")
       .update({ name, primary_color: color })
-      .eq("id", org.id)
-      .select()
-      .single();
-    if (data) setOrg(data);
-    setSaving(false); setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+      .eq("id", org.id).select().single();
+    if (error) {
+      showMessage("Error al guardar.", "error");
+    } else {
+      setOrg(data);
+      showMessage("Cambios guardados.", "success");
+    }
+    setSaving(false);
+  }
+
+  async function updateRole(userId: string, newRole: string) {
+    if (!org || !isOwner) return;
+    const { error } = await supabase.from("org_members")
+      .update({ role: newRole })
+      .eq("org_id", org.id).eq("user_id", userId);
+    if (!error) {
+      setMembers(prev => prev.map(m => m.user_id === userId ? { ...m, role: newRole } : m));
+      showMessage("Rol actualizado.", "success");
+    }
+  }
+
+  async function removeMember(userId: string) {
+    if (!org || !isOwner) return;
+    if (!confirm("¿Eliminar este miembro?")) return;
+    const { error } = await supabase.from("org_members")
+      .delete().eq("org_id", org.id).eq("user_id", userId);
+    if (!error) {
+      setMembers(prev => prev.filter(m => m.user_id !== userId));
+      showMessage("Miembro eliminado.", "success");
+    }
   }
 
   return (
-    <div className="p-10 max-w-lg">
-      <div className="mb-8 pb-5 border-b border-gray-100">
-        <h1 className="font-mono text-2xl font-semibold text-ink">Settings</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Organization & branding</p>
+    <div style={{ maxWidth: 640, margin: "0 auto", padding: "40px 24px" }}>
+      <div style={{ marginBottom: 32 }}>
+        <div style={{ fontFamily: "var(--font-display)", fontWeight: 700,
+          fontSize: "1.75rem", color: "var(--text)", letterSpacing: "-0.02em" }}>
+          Settings
+        </div>
+        <div style={{ fontFamily: "var(--font-body)", fontSize: "0.875rem",
+          color: "var(--t3)", marginTop: 4 }}>
+          {org?.name}
+        </div>
       </div>
-      <div className="space-y-5">
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Organization Name</label>
-          <input value={name} onChange={e => setName(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00]" />
+
+      {message && (
+        <div style={{ padding: "10px 16px", borderRadius: "var(--rs)", marginBottom: 24,
+          background: message.type === "success" ? "rgba(34,197,94,0.08)" : "rgba(220,38,38,0.08)",
+          border: `1px solid ${message.type === "success" ? "rgba(34,197,94,0.2)" : "rgba(220,38,38,0.2)"}`,
+          fontFamily: "var(--font-body)", fontSize: "0.875rem",
+          color: message.type === "success" ? "var(--scaled)" : "var(--killed)" }}>
+          {message.text}
         </div>
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Brand Color</label>
-          <div className="flex items-center gap-3">
-            <input type="color" value={color} onChange={e => setColor(e.target.value)}
-              className="w-12 h-10 rounded cursor-pointer border border-gray-200" />
-            <input value={color} onChange={e => setColor(e.target.value)}
-              className="flex-1 px-3 py-2.5 border border-gray-200 rounded-lg text-sm font-mono focus:outline-none focus:border-[#AADC00]" />
+      )}
+
+      {/* Org Info */}
+      <Section title="Organization" subtitle="Basic information about this area.">
+        <form onSubmit={saveOrgInfo}>
+          <div style={{ marginBottom: 16 }}>
+            <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.8125rem",
+              fontWeight: 600, color: "var(--t2)", marginBottom: 6,
+              letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Name
+            </label>
+            <input className="input" value={name} onChange={e => setName(e.target.value)}
+              disabled={!isAdmin} required />
           </div>
-        </div>
-        <div className="pt-2">
-          <div className="font-mono text-xs uppercase tracking-widest text-gray-400 mb-2">Current Plan</div>
-          <div className="flex items-center gap-3">
-            <span className="bg-[#AADC00]/10 text-[#88B200] font-mono text-xs font-semibold px-3 py-1 rounded border border-[#AADC00]/20">
-              {org?.plan?.toUpperCase() || "TRIAL"}
-            </span>
-            {org?.plan === "trial" && (
-              <span className="text-xs text-gray-400">
+          <div style={{ marginBottom: 20 }}>
+            <label style={{ display: "block", fontFamily: "var(--font-body)", fontSize: "0.8125rem",
+              fontWeight: 600, color: "var(--t2)", marginBottom: 6,
+              letterSpacing: "0.04em", textTransform: "uppercase" }}>
+              Brand Color
+            </label>
+            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+              <div style={{ position: "relative" }}>
+                <div style={{ width: 40, height: 40, borderRadius: "var(--rs)",
+                  background: color, border: "1px solid var(--border-mid)",
+                  cursor: isAdmin ? "pointer" : "default" }}
+                  onClick={() => isAdmin && document.getElementById("colorPicker")?.click()} />
+                <input id="colorPicker" type="color" value={color}
+                  onChange={e => setColor(e.target.value)}
+                  disabled={!isAdmin}
+                  style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
+              </div>
+              <input className="input" value={color} onChange={e => setColor(e.target.value)}
+                disabled={!isAdmin} style={{ width: 120, fontFamily: "var(--font-mono)" }} />
+            </div>
+          </div>
+          {isAdmin && (
+            <button type="submit" disabled={saving} className="btn-primary">
+              {saving ? "Saving..." : "Save Changes"}
+            </button>
+          )}
+        </form>
+      </Section>
+
+      {/* Members */}
+      <Section title="Members" subtitle="People with access to this area.">
+        {loading ? (
+          <div style={{ fontFamily: "var(--font-body)", fontSize: "0.875rem", color: "var(--t3)" }}>
+            Loading...
+          </div>
+        ) : (
+          <div style={{ borderRadius: "var(--r)", border: "1px solid var(--border)",
+            overflow: "hidden", marginBottom: 20 }}>
+            {members.map((m, i) => (
+              <div key={m.user_id} style={{
+                display: "flex", alignItems: "center", gap: 12, padding: "12px 16px",
+                borderBottom: i < members.length - 1 ? "1px solid var(--border)" : "none",
+                background: "var(--surface)",
+              }}>
+                <div style={{ width: 32, height: 32, borderRadius: "50%", flexShrink: 0,
+                  background: "var(--brand)", color: "#fff",
+                  display: "flex", alignItems: "center", justifyContent: "center",
+                  fontFamily: "var(--font-display)", fontWeight: 700, fontSize: "0.875rem" }}>
+                  {(m.full_name || m.user_id).charAt(0).toUpperCase()}
+                </div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontFamily: "var(--font-body)", fontWeight: 500,
+                    fontSize: "0.875rem", color: "var(--text)" }}>
+                    {m.full_name || "—"}
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--t3)" }}>
+                    {m.user_id.slice(0, 8)}...
+                  </div>
+                </div>
+                {isOwner ? (
+                  <select value={m.role} onChange={e => updateRole(m.user_id, e.target.value)}
+                    style={{ fontFamily: "var(--font-body)", fontSize: "0.8125rem",
+                      padding: "4px 8px", borderRadius: "var(--rs)",
+                      border: "1px solid var(--border-mid)", background: "var(--raised)",
+                      color: "var(--text)", cursor: "pointer" }}>
+                    {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                  </select>
+                ) : (
+                  <span style={{ fontFamily: "var(--font-body)", fontSize: "0.8125rem",
+                    padding: "3px 10px", borderRadius: "var(--rs)",
+                    background: "var(--raised)", border: "1px solid var(--border)",
+                    color: "var(--t2)" }}>
+                    {m.role}
+                  </span>
+                )}
+                {isOwner && (
+                  <button onClick={() => removeMember(m.user_id)}
+                    style={{ background: "none", border: "none", cursor: "pointer",
+                      color: "var(--t3)", fontSize: "1rem", padding: "4px",
+                      borderRadius: "var(--rs)" }}
+                    title="Remove member">
+                    ×
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Invite — coming in Sprint 9 with OAuth */}
+        {isAdmin && (
+          <div style={{ padding: "14px 16px", borderRadius: "var(--r)",
+            background: "var(--raised)", border: "1px solid var(--border)",
+            display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ fontSize: "1.25rem" }}>🔜</div>
+            <div>
+              <div style={{ fontFamily: "var(--font-body)", fontWeight: 600,
+                fontSize: "0.875rem", color: "var(--text)" }}>
+                Member invitations coming soon
+              </div>
+              <div style={{ fontFamily: "var(--font-body)", fontSize: "0.8125rem",
+                color: "var(--t3)", marginTop: 2 }}>
+                To add members now, ask them to sign up at sprintal.com with their work email.
+                Then contact us at hello@sprintal.com to link them to your organization.
+              </div>
+            </div>
+          </div>
+        )}
+      </Section>
+
+      {/* Plan */}
+      <Section title="Plan" subtitle="Your current subscription.">
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
+          padding: "16px 20px", borderRadius: "var(--r)",
+          background: "var(--raised)", border: "1px solid var(--border)" }}>
+          <div>
+            <div style={{ fontFamily: "var(--font-body)", fontWeight: 600,
+              fontSize: "1rem", color: "var(--text)", textTransform: "capitalize" }}>
+              {org?.plan || "trial"} Plan
+            </div>
+            {org?.plan === "trial" && org?.trial_ends_at && (
+              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--t3)", marginTop: 4 }}>
                 Trial ends {new Date(org.trial_ends_at).toLocaleDateString()}
-              </span>
+              </div>
             )}
           </div>
+          {org?.plan === "trial" && (
+            <a href="mailto:hello@sprintal.com?subject=Activar plan Pro"
+              style={{ padding: "8px 16px", background: "var(--brand)", color: "#fff",
+                borderRadius: "var(--rs)", textDecoration: "none",
+                fontFamily: "var(--font-body)", fontWeight: 600, fontSize: "0.875rem" }}>
+              Upgrade to Pro →
+            </a>
+          )}
         </div>
-        <button onClick={save} disabled={saving}
-          className="w-full py-2.5 bg-[#AADC00] text-ink font-mono font-semibold text-sm rounded-lg hover:bg-[#88B200] transition-colors disabled:opacity-50">
-          {saved ? "Saved ✓" : saving ? "Saving..." : "Save Settings"}
-        </button>
-      </div>
+      </Section>
     </div>
   );
 }

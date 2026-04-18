@@ -1,15 +1,20 @@
 "use client";
 import { useStore } from "@/lib/store";
 import { differenceInDays, parseISO } from "date-fns";
-import { StatusBadge, AreaTag, SignalBadge } from "@/components/ui/Badge";
+import { AreaTag, SignalBadge, StatusBadge } from "@/components/ui/Badge";
+import { getCadenceConfig, getSprintDuration } from "@/lib/utils";
 
 export default function PendingUpdates({ type }: { type: "review" | "signal" }) {
   const { bets, sprints, evidence, signalChecks } = useStore();
   const active = sprints.find(s => s.status === "Active");
   const activeBets = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
   const now = new Date();
-  const threshold = type === "review" ? 30 : 14;
-  const overdueThreshold = type === "review" ? 60 : 21;
+
+  // Parametric cadence based on sprint duration
+  const duration = active ? getSprintDuration(active.start_date, active.end_date) : 90;
+  const cadence = getCadenceConfig(duration);
+  const threshold = type === "review" ? cadence.reviewInterval : cadence.signalInterval;
+  const overdueThreshold = type === "review" ? cadence.reviewOverdueAt : cadence.signalOverdueAt;
 
   const items = activeBets.map(b => {
     const entries = type === "review"
@@ -23,8 +28,12 @@ export default function PendingUpdates({ type }: { type: "review" | "signal" }) 
   }).filter(({ days }) => days === null || days > threshold)
     .sort((a, z) => (z.days || 999) - (a.days || 999));
 
+  const label = type === "review" ? "strategic reviews" : "signal checks";
+
   if (!items.length) return (
-    <p className="font-mono text-xs text-[#88B200]">All {type === "review" ? "reviews" : "signals"} up to date.</p>
+    <p className="t-mono" style={{ color: "var(--scaled)" }}>
+      ✓ All {label} up to date.
+    </p>
   );
 
   return (
@@ -32,18 +41,23 @@ export default function PendingUpdates({ type }: { type: "review" | "signal" }) 
       {items.map(({ b, lastDate, days }) => {
         const isNever = days === null;
         const isOverdue = isNever || (days !== null && days > overdueThreshold);
+        const borderColor = isOverdue ? "var(--killed)" : "var(--unclear)";
         return (
-          <div key={b.id} className={`bg-white border rounded-xl p-4 cursor-pointer hover:bg-gray-50 transition-colors ${
-            isOverdue ? "border-l-2 border-l-red-400 border-gray-100" : "border-l-2 border-l-amber-400 border-gray-100"
-          }`}>
-            <div className="font-medium text-sm text-ink mb-1">{b.name}</div>
-            <div className="flex items-center gap-2 mb-2">
+          <div key={b.id} className="rounded p-4 cursor-pointer transition-colors"
+            style={{ background: "var(--surface)", border: `1px solid var(--border)`, borderLeft: `2px solid ${borderColor}` }}>
+            <div className="font-medium text-sm mb-2" style={{ color: "var(--text)" }}>{b.name}</div>
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <AreaTag area={b.owner_area} />
-              <span className="text-xs text-gray-400">{b.owner_contact}</span>
+              <span className="t-mono" style={{ color: "var(--t2)" }}>{b.owner_contact}</span>
             </div>
-            {type === "review" ? <StatusBadge status={b.status} /> : <SignalBadge signal={b.signal} />}
-            <div className={`font-mono text-xs mt-2 font-semibold ${isOverdue ? "text-red-400" : "text-amber-500"}`}>
-              {isNever ? "Never reviewed" : `Last: ${lastDate} · ${days}d ago`}
+            {type === "review"
+              ? <StatusBadge status={b.status} />
+              : <SignalBadge signal={b.signal} />}
+            <div className="t-mono mt-2 font-medium"
+              style={{ color: isOverdue ? "var(--killed)" : "var(--unclear)" }}>
+              {isNever
+                ? `Never reviewed, due every ${threshold}d`
+                : `${lastDate}, ${days}d ago, due every ${threshold}d`}
             </div>
           </div>
         );

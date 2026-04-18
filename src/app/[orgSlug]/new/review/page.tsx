@@ -1,25 +1,67 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 import type { BetStatus } from "@/types";
 
 const OUTCOMES: { value: BetStatus; label: string; color: string; hint: string }[] = [
-  { value:"Active", label:"Keep Active", color:"#38BDF8", hint:"Keep testing, no change." },
-  { value:"Scaled", label:"Scale", color:"#00C864", hint:"Confirmed. Generates a draft for next sprint." },
-  { value:"Pivoted", label:"Pivot", color:"#A090FF", hint:"New direction. Generates a draft with updated hypothesis." },
-  { value:"Done", label:"Mark as Done", color:"#34D399", hint:"Reached its conclusion." },
-  { value:"Killed", label:"Kill", color:"#E63232", hint:"No signal. Stop now." },
+  { value:"Active",  label:"Keep Active",  color:"var(--active)",  hint:"Keep testing, no change." },
+  { value:"Scaled",  label:"Scale",        color:"var(--scaled)",  hint:"Confirmed. Generates a draft for next sprint." },
+  { value:"Pivoted", label:"Pivot",        color:"var(--pivoted)", hint:"New direction. Generates a draft with updated hypothesis." },
+  { value:"Done",    label:"Mark as Done", color:"var(--done)",    hint:"Reached its conclusion." },
+  { value:"Killed",  label:"Kill",         color:"var(--killed)",  hint:"No signal. Stop now." },
 ];
 
-export default function MonthlyReviewPage() {
+function Rule({ color, title, children }: { color: string; title: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-4 pl-3" style={{ borderLeft:`2px solid ${color}` }}>
+      <div className="font-semibold text-sm mb-1" style={{ color }}>{title}</div>
+      <div style={{ fontSize:"0.8125rem", color:"var(--t2)", lineHeight:1.6 }}>{children}</div>
+    </div>
+  );
+}
+
+const SIDEBAR = (
+  <div>
+    <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.6875rem", fontWeight:700,
+      letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>
+      Strategic Review
+    </div>
+    <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem",
+      color:"var(--text)", letterSpacing:"-0.02em", marginBottom:8 }}>
+      Evaluate Evidence
+    </div>
+    <p style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t2)",
+      lineHeight:1.6, marginBottom:20 }}>
+      Not a status update — a structured decision moment. What happened, what does it tell us, and what do we do next?
+    </p>
+    <div style={{ marginBottom:16 }}>
+      <div style={{ fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.875rem",
+        color:"var(--text)", marginBottom:12 }}>Bet Outcomes</div>
+      <Rule color="var(--active)"  title="Keep Active">Not enough signal yet. Continue testing.</Rule>
+      <Rule color="var(--scaled)"  title="Scale">Hypothesis confirmed. Generates a draft bet for the next sprint.</Rule>
+      <Rule color="var(--pivoted)" title="Pivot">Direction changes. Generates a draft with updated hypothesis.</Rule>
+      <Rule color="var(--done)"    title="Mark as Done">Reached its natural conclusion.</Rule>
+      <Rule color="var(--killed)"  title="Kill">No signal after sufficient time. Stop now, free the capacity.</Rule>
+    </div>
+    <div style={{ paddingTop:16, borderTop:"1px solid var(--border)" }}>
+      <div style={{ fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.875rem",
+        color:"var(--text)", marginBottom:6 }}>Cadence</div>
+      <p style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--t2)", lineHeight:1.6 }}>
+        3× per sprint. Signal Checks happen at the midpoint — they update signal strength but do not change bet status.
+      </p>
+    </div>
+  </div>
+);
+
+export default function StrategicReviewPage() {
   const router = useRouter();
   const params = useParams();
-  const { org, sprints, bets, evidence, addEvidence, updateBet, addBet } = useStore();
+  const { org, sprints, bets, addEvidence, updateBet, addBet } = useStore();
   const active = sprints.find(s => s.status === "Active");
   const activeBets = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
-
   const [betId, setBetId] = useState(activeBets[0]?.id || "");
   const [outcome, setOutcome] = useState<BetStatus>("Active");
   const [actual, setActual] = useState("");
@@ -27,141 +69,137 @@ export default function MonthlyReviewPage() {
   const [action, setAction] = useState("");
   const [newHyp, setNewHyp] = useState("");
   const [saving, setSaving] = useState(false);
-
+  const [error, setError] = useState("");
   const bet = bets.find(b => b.id === betId);
-  const lastEv = evidence.filter(e => e.bet_id === betId).sort((a,z) => new Date(z.created_at).getTime() - new Date(a.created_at).getTime())[0];
 
   async function save(e: React.FormEvent) {
-    e.preventDefault(); if (!org || !bet) return;
+    e.preventDefault();
+    if (!org || !bet) return;
     setSaving(true);
-    const date = new Date().toISOString().split("T")[0];
-    // Insert evidence
-    const { data: ev } = await supabase.from("evidence").insert({
-      org_id: org.id, bet_id: betId, date, actual, insight, new_status: outcome, action
-    }).select().single();
-    if (ev) addEvidence(ev);
-    // Update bet
-    const updatedBet = {
-      ...bet, status: outcome,
-      last_reviewed: date,
-      last_note: insight.slice(0, 80),
-      ...(outcome === "Pivoted" && newHyp ? { hypothesis: newHyp } : {}),
-    };
-    await supabase.from("bets").update({
-      status: outcome, last_reviewed: date,
-      last_note: insight.slice(0, 80),
-      ...(outcome === "Pivoted" && newHyp ? { hypothesis: newHyp } : {}),
-    }).eq("id", betId);
-    updateBet(updatedBet);
-    // Generate draft if scaled/pivoted
-    if (outcome === "Scaled" || outcome === "Pivoted") {
-      const nextSprint = sprints.find(s => s.status === "Planned");
-      const draftHyp = outcome === "Pivoted" && newHyp ? newHyp : bet.hypothesis;
-      const { data: draft } = await supabase.from("bets").insert({
-        org_id: org.id,
-        sprint_id: nextSprint?.id || bet.sprint_id,
-        name: `${bet.name} — ${outcome === "Scaled" ? "Scale" : "Pivot"}`,
-        owner_area: bet.owner_area, owner_contact: bet.owner_contact,
-        status: "Active", signal: "Unclear",
-        outcome: bet.outcome, hypothesis: draftHyp,
-        indicators: bet.indicators, kill_criteria: bet.kill_criteria,
-        scale_trigger: bet.scale_trigger, alignment: bet.alignment,
-        revenue: bet.revenue, margin: bet.margin, importance: bet.importance,
-        is_draft: true, source_bet_id: bet.id,
-        last_note: `Draft generated from ${outcome} of ${bet.name}`,
+    setError("");
+    try {
+      const date = new Date().toISOString().split("T")[0];
+      const { data: ev } = await supabase.from("evidence").insert({
+        org_id: org.id, bet_id: betId, date, actual, insight, new_status: outcome, action
       }).select().single();
-      if (draft) addBet(draft);
+      if (ev) addEvidence(ev);
+
+      const updatedBet = {
+        ...bet, status: outcome, last_reviewed: date, last_note: insight.slice(0, 80),
+        ...(outcome === "Pivoted" && newHyp ? { hypothesis: newHyp } : {}),
+      };
+      await supabase.from("bets").update({
+        status: outcome, last_reviewed: date, last_note: insight.slice(0, 80),
+        ...(outcome === "Pivoted" && newHyp ? { hypothesis: newHyp } : {}),
+      }).eq("id", betId);
+      updateBet(updatedBet);
+
+      if (outcome === "Scaled" || outcome === "Pivoted") {
+        const nextSprint = sprints.find(s => s.status === "Planned");
+        const { data: draft } = await supabase.from("bets").insert({
+          org_id: org.id, sprint_id: nextSprint?.id || bet.sprint_id,
+          name: `${bet.name} — ${outcome === "Scaled" ? "Scale" : "Pivot"}`,
+          owner_area: bet.owner_area, owner_contact: bet.owner_contact,
+          status: "Active", signal: "Unclear", outcome: bet.outcome,
+          hypothesis: outcome === "Pivoted" && newHyp ? newHyp : bet.hypothesis,
+          indicators: bet.indicators, kill_criteria: bet.kill_criteria,
+          scale_trigger: bet.scale_trigger, alignment: bet.alignment,
+          revenue: bet.revenue, margin: bet.margin, importance: bet.importance,
+          is_draft: true, source_bet_id: bet.id,
+          last_note: `Draft from ${outcome} of ${bet.name}`,
+        }).select().single();
+        if (draft) addBet(draft);
+      }
+
+      setSaving(false);
+      router.push(`/${params.orgSlug}/dashboard`);
+    } catch {
+      setError("Error al guardar. Intentá de nuevo.");
+      setSaving(false);
     }
-    setSaving(false);
-    router.push(`/${params.orgSlug}/dashboard`);
   }
 
   return (
-    <div className="p-10 max-w-2xl">
-      <div className="mb-8 pb-5 border-b border-gray-100">
-        <h1 className="font-mono text-2xl font-semibold text-ink">Monthly Review</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Evaluate evidence. Make a decision.</p>
-      </div>
-      <form onSubmit={save} className="space-y-5">
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Bet</label>
-          <select value={betId} onChange={e => setBetId(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] bg-white">
+    <Modal title="Strategic Review" subtitle="Evidence-based decision. 3× per sprint cycle." sidebar={SIDEBAR}>
+      <form onSubmit={save}>
+        <Field label="Bet">
+          <select className="input" value={betId} onChange={e => setBetId(e.target.value)}>
             {activeBets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
-        </div>
+        </Field>
+
         {bet && (
-          <div className="bg-gray-50 rounded-xl p-4 space-y-3 border border-gray-100">
-            <div>
-              <div className="font-mono text-[10px] uppercase tracking-widest text-gray-300 mb-1">Hypothesis</div>
-              <div className="text-sm text-gray-600">{bet.hypothesis}</div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="rounded p-4 mb-4" style={{ background:"var(--raised)", border:"1px solid var(--border)" }}>
+            <div className="t-label mb-1">Hypothesis</div>
+            <div className="text-sm mb-3" style={{ color:"var(--t2)" }}>{bet.hypothesis || "—"}</div>
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-red-300 mb-1">Kill if</div>
-                <div className="text-sm text-gray-500">{bet.kill_criteria || "—"}</div>
+                <div className="t-label mb-1" style={{ color:"var(--killed)" }}>Kill if</div>
+                <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.kill_criteria || "—"}</div>
               </div>
               <div>
-                <div className="font-mono text-[10px] uppercase tracking-widest text-green-400 mb-1">Scale when</div>
-                <div className="text-sm text-gray-500">{bet.scale_trigger || "—"}</div>
+                <div className="t-label mb-1" style={{ color:"var(--scaled)" }}>Scale when</div>
+                <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.scale_trigger || "—"}</div>
               </div>
             </div>
           </div>
         )}
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">What actually happened?</label>
-          <textarea value={actual} onChange={e => setActual(e.target.value)} rows={3} required
-            placeholder="e.g. AI usage at 52% in squads A and B, Squad C at 18%"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] resize-none" />
-        </div>
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Insight — what does this tell us?</label>
-          <textarea value={insight} onChange={e => setInsight(e.target.value)} rows={3} required
-            placeholder="What did we learn?"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] resize-none" />
-        </div>
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-2">Decision</label>
+
+        <Field label="What actually happened?">
+          <textarea className="input" rows={3} value={actual} onChange={e => setActual(e.target.value)} required
+            placeholder="e.g. AI usage at 52% in squads A and B" />
+        </Field>
+
+        <Field label="Insight — what does this tell us?">
+          <textarea className="input" rows={3} value={insight} onChange={e => setInsight(e.target.value)} required
+            placeholder="What did we learn?" />
+        </Field>
+
+        <Field label="Decision">
           <div className="space-y-2">
             {OUTCOMES.map(o => (
               <button key={o.value} type="button" onClick={() => setOutcome(o.value)}
-                className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl border text-left transition-colors ${
-                  outcome === o.value ? "border-2" : "border border-gray-100 hover:bg-gray-50"
-                }`}
-                style={outcome === o.value ? {borderColor: o.color, background: `${o.color}08`} : {}}>
-                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{background: o.color}} />
+                className="w-full flex items-center gap-3 px-4 py-3 rounded text-left transition-colors"
+                style={{
+                  border: outcome === o.value ? `1.5px solid ${o.color}` : "1px solid var(--border-mid)",
+                  background: outcome === o.value ? `color-mix(in srgb, ${o.color} 8%, var(--bg))` : "var(--bg)",
+                }}>
+                <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: o.color }} />
                 <div>
-                  <div className="font-mono text-sm font-semibold text-ink">{o.label}</div>
-                  <div className="text-xs text-gray-400">{o.hint}</div>
+                  <div className="font-semibold text-sm" style={{ color:"var(--text)" }}>{o.label}</div>
+                  <div className="text-xs" style={{ color:"var(--t3)", fontFamily:"var(--font-mono)" }}>{o.hint}</div>
                 </div>
               </button>
             ))}
           </div>
-        </div>
+        </Field>
+
         {outcome === "Pivoted" && (
-          <div>
-            <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Updated Hypothesis</label>
-            <textarea value={newHyp} onChange={e => setNewHyp(e.target.value)} rows={3}
-              placeholder="New direction for the next sprint..."
-              className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] resize-none" />
+          <Field label="Updated Hypothesis">
+            <textarea className="input" rows={3} value={newHyp} onChange={e => setNewHyp(e.target.value)}
+              placeholder="New direction for the next sprint..." />
+          </Field>
+        )}
+
+        <Field label="Next Action">
+          <input className="input" value={action} onChange={e => setAction(e.target.value)}
+            placeholder="One concrete step" />
+        </Field>
+
+        {error && (
+          <div className="rounded px-4 py-3 text-sm mb-2"
+            style={{ background:"rgba(220,38,38,0.06)", border:"1px solid rgba(220,38,38,0.15)", color:"var(--killed)" }}>
+            {error}
           </div>
         )}
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Next Action</label>
-          <input value={action} onChange={e => setAction(e.target.value)} placeholder="One concrete step"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00]" />
-        </div>
-        <div className="flex gap-3 pt-2">
-          <button type="button" onClick={() => router.back()}
-            className="flex-1 py-2.5 border border-gray-200 text-gray-500 font-mono text-sm rounded-lg hover:bg-gray-50 transition-colors">
-            Cancel
+
+        <ModalFooter>
+          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
+          <button type="submit" disabled={saving} className="btn-primary flex-1">
+            {saving ? "Saving..." : "Log Review →"}
           </button>
-          <button type="submit" disabled={saving}
-            className="flex-1 py-2.5 bg-[#AADC00] text-ink font-mono font-semibold text-sm rounded-lg hover:bg-[#88B200] transition-colors disabled:opacity-50">
-            {saving ? "Saving..." : "Log Review"}
-          </button>
-        </div>
+        </ModalFooter>
       </form>
-    </div>
+    </Modal>
   );
 }

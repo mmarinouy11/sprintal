@@ -7,41 +7,53 @@ import DecisionFocus from "@/components/dashboard/DecisionFocus";
 import PendingUpdates from "@/components/dashboard/PendingUpdates";
 import SprintCard from "@/components/sprints/SprintCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import RollupDashboard from "@/components/dashboard/RollupDashboard";
+import OwnedBetsSection from "@/components/dashboard/OwnedBetsSection";
+
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="mt-8">
+      <div className="section-label">{label}</div>
+      {children}
+    </div>
+  );
+}
 
 export default function DashboardPage() {
   const { loading } = useStore();
   if (loading) return <LoadingScreen />;
   return (
-    <div className="p-10 max-w-[1400px]">
-      <div className="mb-8 pb-5 border-b border-gray-100">
-        <h1 className="font-mono text-2xl font-semibold text-ink">Executive Dashboard</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Strategic overview · Current sprint</p>
+    <div className="w-full px-10 py-8 fade-up">
+      <div className="ph">
+        <div className="ph-title">Executive Dashboard</div>
+        <div className="ph-sub">Strategic overview · Current sprint only</div>
       </div>
-      {/* Top band */}
-      <div className="grid grid-cols-[1fr_420px] gap-4 mb-0">
-        <div className="flex flex-col gap-3">
+
+      {/* Top section — left grows, right is fixed 420px, both stretch to same height */}
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 420px",
+        gap: 12,
+        alignItems: "stretch",
+      }}>
+        {/* Left col — metrics on top, sprint card below */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           <MetricsBar />
-          <SprintCard compact />
+          <div style={{ flex: 1 }}>
+            <SprintCard fullHeight />
+          </div>
         </div>
+
+        {/* Right col — donut fills 100% of the row height */}
         <PortfolioDonut />
       </div>
-      {/* Flow */}
-      <div className="mt-8">
-        <div className="font-mono text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Active Bets in Current Sprint</div>
-        <ActiveBetsTable />
-      </div>
-      <div className="mt-8">
-        <div className="font-mono text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Decision Focus</div>
-        <DecisionFocus />
-      </div>
-      <div className="mt-8">
-        <div className="font-mono text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Pending — Monthly Review</div>
-        <PendingUpdates type="review" />
-      </div>
-      <div className="mt-8 pb-16">
-        <div className="font-mono text-xs font-semibold uppercase tracking-widest text-gray-400 mb-3">Pending — Signal Check</div>
-        <PendingUpdates type="signal" />
-      </div>
+
+      <OwnedBetsSection />
+      <Section label="Active Bets in Current Sprint"><ActiveBetsTable /></Section>
+      <Section label="Decision Focus"><DecisionFocus /></Section>
+      <Section label="Overdue — Strategic Review"><PendingUpdates type="review" /></Section>
+      <Section label="Overdue — Signal Check"><PendingUpdates type="signal" /></Section>
+      <RollupDashboard />
     </div>
   );
 }

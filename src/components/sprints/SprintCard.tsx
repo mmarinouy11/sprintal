@@ -1,46 +1,84 @@
 "use client";
 import { useStore } from "@/lib/store";
 import { sprintProgress, daysRemaining } from "@/lib/utils";
-import { StatusBadge } from "@/components/ui/Badge";
 
-export default function SprintCard({ compact = false }: { compact?: boolean }) {
+export default function SprintCard({ fullHeight = false }: { fullHeight?: boolean }) {
   const { sprints } = useStore();
   const active = sprints.find(s => s.status === "Active");
 
+  const wrap: React.CSSProperties = {
+    background: "var(--surface)",
+    border: "1px solid var(--border)",
+    borderLeft: "3px solid var(--brand)",
+    borderRadius: "var(--r)",
+    padding: "20px 24px",
+    display: "flex",
+    flexDirection: "column",
+    gap: 14,
+    height: fullHeight ? "100%" : "auto",
+    boxSizing: "border-box",
+  };
+
   if (!active) return (
-    <div className="bg-white border border-gray-100 border-l-2 border-l-[#AADC00] rounded-xl p-4">
-      <p className="font-mono text-xs text-gray-300">No active sprint.</p>
+    <div style={wrap}>
+      <p style={{ fontFamily:"var(--font-body)", fontSize:"0.9375rem", color:"var(--t3)" }}>No active sprint.</p>
     </div>
   );
 
   const pct = sprintProgress(active.start_date, active.end_date);
   const days = daysRemaining(active.end_date);
-  const signals = active.signals?.split("·").map(s => s.trim()).filter(Boolean) || [];
+  const signals = active.signals?.split(",").map(s => s.trim()).filter(Boolean) || [];
 
   return (
-    <div className="bg-white border border-gray-100 border-l-2 border-l-[#AADC00] rounded-xl px-5 py-4 flex gap-6 items-start">
-      <div className="flex-1 min-w-0">
-        <div className="font-mono font-semibold text-ink">{active.name}</div>
-        <div className="text-xs text-gray-400 mt-0.5">{active.start_date} → {active.end_date} · {days} days remaining</div>
-        <div className="text-sm text-gray-500 mt-2 leading-relaxed">{active.focus}</div>
-        {signals.length > 0 && (
-          <div className="mt-3">
-            <div className="font-mono text-[10px] uppercase tracking-widest text-gray-300 mb-1.5">Success Signals</div>
-            {signals.map((s, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm text-gray-500 py-0.5">
-                <div className="w-1 h-1 rounded-full bg-[#AADC00] flex-shrink-0" />
-                {s}
-              </div>
-            ))}
+    <div style={wrap}>
+      {/* Top */}
+      <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+        <div>
+          <div style={{ fontFamily:"var(--font-display)", fontWeight:600, fontSize:"1.125rem", color:"var(--text)", letterSpacing:"-0.015em" }}>
+            {active.name}
           </div>
-        )}
-      </div>
-      <div className="flex flex-col items-end gap-2 flex-shrink-0 pt-0.5">
-        <StatusBadge status="Active Sprint" />
-        <div className="w-28 h-0.5 bg-gray-100 rounded overflow-hidden">
-          <div className="h-full bg-[#AADC00] transition-all" style={{width: `${pct}%`}} />
+          <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.8125rem", color:"var(--t3)", marginTop:3 }}>
+            {active.start_date} → {active.end_date} · {days}d remaining
+          </div>
         </div>
-        <div className="font-mono text-xs text-[#88B200] font-medium">{pct}% through sprint</div>
+        <span className="badge badge-sprint" style={{ flexShrink:0, marginTop:2 }}>Active Sprint</span>
+      </div>
+
+      {/* Focus */}
+      {active.focus && (
+        <div style={{ fontFamily:"var(--font-body)", fontSize:"0.9375rem", color:"var(--t2)", lineHeight:1.55 }}>
+          {active.focus}
+        </div>
+      )}
+
+      {/* Signals */}
+      {signals.length > 0 && (
+        <div>
+          <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--t3)", marginBottom:8 }}>
+            Success Signals
+          </div>
+          {signals.slice(0,3).map((s,i) => (
+            <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:"0.875rem", fontFamily:"var(--font-body)", color:"var(--t2)", marginBottom:4 }}>
+              <div style={{ width:4, height:4, borderRadius:"50%", background:"var(--brand)", flexShrink:0 }}/>
+              {s}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Progress */}
+      <div style={{ marginTop:"auto" }}>
+        <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
+          <span style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--t3)" }}>
+            Sprint Progress
+          </span>
+          <span style={{ fontFamily:"var(--font-mono)", fontSize:"0.875rem", fontWeight:600, color:"var(--brand)" }}>
+            {pct}%
+          </span>
+        </div>
+        <div style={{ height:4, background:"var(--raised)", borderRadius:3, overflow:"hidden" }}>
+          <div style={{ width:`${pct}%`, height:"100%", background:"var(--brand)", borderRadius:3, transition:"width 0.6s ease" }}/>
+        </div>
       </div>
     </div>
   );

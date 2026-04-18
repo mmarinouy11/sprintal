@@ -1,29 +1,43 @@
 "use client";
 import { Organization } from "@/types";
-import { isTrialExpiring, isTrialExpired, daysRemaining } from "@/lib/utils";
-import Link from "next/link";
 
 export default function TrialBanner({ org }: { org: Organization }) {
-  if (org.plan !== "trial") return null;
-  const expired = isTrialExpired(org.trial_ends_at);
-  const expiring = isTrialExpiring(org.trial_ends_at);
-  if (!expiring && !expired) return null;
+  if (org.plan !== "trial" || !org.trial_ends_at) return null;
 
-  const days = daysRemaining(org.trial_ends_at);
+  const trialEnd = new Date(org.trial_ends_at);
+  const now = new Date();
+  const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / 86400000);
+
+  if (daysLeft <= 0) return null; // Layout already redirects if expired
+  if (daysLeft > 14) return null; // Only show when 14 days or less remain
+
+  const isUrgent = daysLeft <= 3;
 
   return (
-    <div className={`px-6 py-2 text-xs font-mono flex items-center justify-between ${
-      expired ? "bg-red-50 text-red-600" : "bg-amber-50 text-amber-700"
-    }`}>
-      <span>
-        {expired
-          ? "Your trial has expired. Upgrade to continue."
-          : `${days} days left in your trial.`}
-      </span>
-      <Link href={`/settings/billing`}
-        className="font-semibold underline underline-offset-2 hover:no-underline">
-        Upgrade →
-      </Link>
+    <div style={{
+      padding: "8px 24px",
+      background: isUrgent ? "rgba(220,38,38,0.06)" : "rgba(234,160,18,0.06)",
+      borderBottom: `1px solid ${isUrgent ? "rgba(220,38,38,0.15)" : "rgba(234,160,18,0.15)"}`,
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      flexShrink: 0,
+    }}>
+      <div style={{
+        fontFamily: "var(--font-body)", fontSize: "0.8125rem",
+        color: isUrgent ? "var(--killed)" : "var(--unclear)",
+      }}>
+        {isUrgent
+          ? `⚠ Tu período de prueba vence en ${daysLeft} día${daysLeft === 1 ? "" : "s"}.`
+          : `Tu período de prueba vence en ${daysLeft} días.`
+        }
+      </div>
+      <a href="mailto:hello@sprintal.com?subject=Activar plan Pro"
+        style={{
+          fontFamily: "var(--font-body)", fontSize: "0.8125rem", fontWeight: 600,
+          color: isUrgent ? "var(--killed)" : "var(--unclear)",
+          textDecoration: "none", whiteSpace: "nowrap",
+        }}>
+        Activar Pro →
+      </a>
     </div>
   );
 }

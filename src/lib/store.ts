@@ -1,50 +1,88 @@
 import { create } from "zustand";
-import { Sprint, Bet, Evidence, SignalCheck, Organization } from "@/types";
+import {
+  Organization, Sprint, Bet, Evidence,
+  SignalCheck, OrgRole, OrgTreeNode, BetAlignment
+} from "@/types";
 
-interface SprintalStore {
-  org: Organization | null;
-  sprints: Sprint[];
-  bets: Bet[];
-  evidence: Evidence[];
+interface Store {
+  // ── Core state ───────────────────────────────────────
+  org:          Organization | null;
+  sprints:      Sprint[];
+  bets:         Bet[];
+  evidence:     Evidence[];
   signalChecks: SignalCheck[];
-  loading: boolean;
-  setOrg: (org: Organization) => void;
-  setSprints: (sprints: Sprint[]) => void;
-  setBets: (bets: Bet[]) => void;
-  setEvidence: (evidence: Evidence[]) => void;
+  loading:      boolean;
+
+  // ── Multinivel ───────────────────────────────────────
+  orgTree:      OrgTreeNode | null;   // árbol completo del L1 hacia abajo
+  currentRole:  OrgRole | null;       // rol del usuario en la org actual
+  childOrgs:    Organization[];       // sub-orgs directas del nivel actual
+  betAlignments: BetAlignment[];       // cascade alignment links
+
+  // ── Setters ──────────────────────────────────────────
+  setOrg:          (org: Organization) => void;
+  setSprints:      (sprints: Sprint[]) => void;
+  setBets:         (bets: Bet[]) => void;
+  setEvidence:     (evidence: Evidence[]) => void;
   setSignalChecks: (signalChecks: SignalCheck[]) => void;
-  setLoading: (loading: boolean) => void;
-  addSprint: (sprint: Sprint) => void;
-  updateSprint: (sprint: Sprint) => void;
-  addBet: (bet: Bet) => void;
-  updateBet: (bet: Bet) => void;
-  addEvidence: (ev: Evidence) => void;
+  setLoading:      (loading: boolean) => void;
+  setOrgTree:      (tree: OrgTreeNode | null) => void;
+  setCurrentRole:  (role: OrgRole | null) => void;
+  setChildOrgs:      (orgs: Organization[]) => void;
+  setBetAlignments:  (alignments: BetAlignment[]) => void;
+  addBetAlignment:   (alignment: BetAlignment) => void;
+  removeBetAlignment:(id: string) => void;
+
+  // ── Mutations ────────────────────────────────────────
+  addSprint:      (sprint: Sprint) => void;
+  updateSprint:   (sprint: Sprint) => void;
+  addBet:         (bet: Bet) => void;
+  updateBet:      (bet: Bet) => void;
+  addEvidence:    (evidence: Evidence) => void;
   addSignalCheck: (sc: SignalCheck) => void;
-  getActiveSprint: () => Sprint | undefined;
-  getSprintBets: (sprintId: string) => Bet[];
+
+  // ── Reset ────────────────────────────────────────────
+  reset: () => void;
 }
 
-export const useStore = create<SprintalStore>((set, get) => ({
-  org: null,
-  sprints: [],
-  bets: [],
-  evidence: [],
+const initialState = {
+  org:          null,
+  sprints:      [],
+  bets:         [],
+  evidence:     [],
   signalChecks: [],
-  loading: true,
-  setOrg: (org) => set({ org }),
-  setSprints: (sprints) => set({ sprints }),
-  setBets: (bets) => set({ bets }),
-  setEvidence: (evidence) => set({ evidence }),
+  loading:      false,
+  orgTree:      null,
+  currentRole:  null,
+  childOrgs:     [],
+  betAlignments: [],
+};
+
+export const useStore = create<Store>((set) => ({
+  ...initialState,
+
+  // Setters
+  setOrg:          (org)          => set({ org }),
+  setSprints:      (sprints)      => set({ sprints }),
+  setBets:         (bets)         => set({ bets }),
+  setEvidence:     (evidence)     => set({ evidence }),
   setSignalChecks: (signalChecks) => set({ signalChecks }),
-  setLoading: (loading) => set({ loading }),
-  addSprint: (sprint) => set((s) => ({ sprints: [sprint, ...s.sprints] })),
-  updateSprint: (sprint) =>
-    set((s) => ({ sprints: s.sprints.map((x) => (x.id === sprint.id ? sprint : x)) })),
-  addBet: (bet) => set((s) => ({ bets: [...s.bets, bet] })),
-  updateBet: (bet) =>
-    set((s) => ({ bets: s.bets.map((x) => (x.id === bet.id ? bet : x)) })),
-  addEvidence: (ev) => set((s) => ({ evidence: [ev, ...s.evidence] })),
-  addSignalCheck: (sc) => set((s) => ({ signalChecks: [sc, ...s.signalChecks] })),
-  getActiveSprint: () => get().sprints.find((s) => s.status === "Active"),
-  getSprintBets: (sprintId) => get().bets.filter((b) => b.sprint_id === sprintId),
+  setLoading:      (loading)      => set({ loading }),
+  setOrgTree:      (orgTree)      => set({ orgTree }),
+  setCurrentRole:  (currentRole)  => set({ currentRole }),
+  setChildOrgs:      (childOrgs)    => set({ childOrgs }),
+  setBetAlignments:  (betAlignments) => set({ betAlignments }),
+  addBetAlignment:   (a)  => set(s => ({ betAlignments: [...s.betAlignments, a] })),
+  removeBetAlignment:(id) => set(s => ({ betAlignments: s.betAlignments.filter(a => a.id !== id) })),
+
+  // Mutations
+  addSprint:      (sprint) => set(s => ({ sprints: [...s.sprints, sprint] })),
+  updateSprint:   (sprint) => set(s => ({ sprints: s.sprints.map(x => x.id === sprint.id ? sprint : x) })),
+  addBet:         (bet)    => set(s => ({ bets: [...s.bets, bet] })),
+  updateBet:      (bet)    => set(s => ({ bets: s.bets.map(x => x.id === bet.id ? bet : x) })),
+  addEvidence:    (ev)     => set(s => ({ evidence: [ev, ...s.evidence] })),
+  addSignalCheck: (sc)     => set(s => ({ signalChecks: [sc, ...s.signalChecks] })),
+
+  // Reset — usado al hacer logout o cambiar de org
+  reset: () => set(initialState),
 }));

@@ -3,104 +3,117 @@ import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 import type { SignalStrength } from "@/types";
 
-const SIGNALS: { value: SignalStrength; label: string; color: string }[] = [
-  { value:"Strong", label:"Strong", color:"#00C864" },
-  { value:"Unclear", label:"Unclear", color:"#EAA012" },
-  { value:"Weak", label:"Weak", color:"#E63232" },
+const SIGNALS: { value: SignalStrength; label: string; color: string; desc: string }[] = [
+  { value:"Strong",  label:"Strong",  color:"var(--strong)",  desc:"Evidence is accumulating. Hypothesis looks valid." },
+  { value:"Unclear", label:"Unclear", color:"var(--unclear)", desc:"Mixed signals. Not enough data to decide." },
+  { value:"Weak",    label:"Weak",    color:"var(--weak)",    desc:"Hypothesis is not holding. Consider killing." },
 ];
+
+const SIDEBAR = (
+  <div>
+    <div className="font-mono text-xs font-semibold tracking-wide mb-1" style={{ color:"var(--brand)" }}>Signal Check</div>
+    <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>Read the Signal</div>
+    <p className="text-sm mb-6" style={{ color:"var(--t2)", lineHeight:1.6 }}>
+      A lightweight awareness checkpoint — not a decision meeting. No status changes. Just signal strength.
+    </p>
+    <div className="mb-5">
+      <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>Signal Meanings</div>
+      {SIGNALS.map(s => (
+        <div key={s.value} className="mb-3 pl-3" style={{ borderLeft:`2px solid ${s.color}` }}>
+          <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{s.label}</div>
+          <div style={{ fontSize:"0.8125rem", color:"var(--t2)" }}>{s.desc}</div>
+        </div>
+      ))}
+    </div>
+    <div className="pt-4" style={{ borderTop:"1px solid var(--border)" }}>
+      <div className="font-semibold text-sm mb-2" style={{ color:"var(--text)" }}>Cadence</div>
+      <p style={{ fontSize:"0.8125rem", color:"var(--t2)", lineHeight:1.6 }}>
+        Signal Checks happen at the midpoint between Strategic Reviews — roughly twice per review interval. Keep it short: signal + one observation.
+      </p>
+    </div>
+  </div>
+);
 
 export default function SignalCheckPage() {
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, addSignalCheck, updateBet } = useStore();
-  const active = sprints.find(s => s.status === "Active");
-  const activeBets = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
-  const [betId, setBetId] = useState(activeBets[0]?.id || "");
+  const active = sprints.find(s=>s.status==="Active");
+  const activeBets = bets.filter(b=>b.sprint_id===active?.id && b.status==="Active");
+  const [betId, setBetId] = useState(activeBets[0]?.id||"");
   const [signal, setSignal] = useState<SignalStrength>("Unclear");
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
-  const bet = bets.find(b => b.id === betId);
+  const bet = bets.find(b=>b.id===betId);
 
   async function save(e: React.FormEvent) {
-    e.preventDefault(); if (!org || !bet) return;
+    e.preventDefault(); if (!org||!bet) return;
     setSaving(true);
     const date = new Date().toISOString().split("T")[0];
     const { data: sc } = await supabase.from("signal_checks").insert({
-      org_id: org.id, bet_id: betId, date,
-      prev_signal: bet.signal, signal, note,
+      org_id:org.id, bet_id:betId, date, prev_signal:bet.signal, signal, note,
     }).select().single();
     if (sc) addSignalCheck(sc);
-    await supabase.from("bets").update({ signal }).eq("id", betId);
-    updateBet({ ...bet, signal });
+    const { error: updateError } = await supabase.from("bets").update({ signal }).eq("id", betId);
+    if (!updateError) updateBet({ ...bet, signal });
     setSaving(false);
     router.push(`/${params.orgSlug}/dashboard`);
   }
 
   return (
-    <div className="p-10 max-w-xl">
-      <div className="mb-8 pb-5 border-b border-gray-100">
-        <h1 className="font-mono text-2xl font-semibold text-ink">Signal Check</h1>
-        <p className="text-sm text-gray-400 mt-0.5">Lightweight checkpoint. Not a decision meeting.</p>
-      </div>
-      <form onSubmit={save} className="space-y-5">
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Bet</label>
-          <select value={betId} onChange={e => setBetId(e.target.value)}
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] bg-white">
-            {activeBets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+    <Modal title="Signal Check" subtitle="Lightweight checkpoint. Not a decision meeting." sidebar={SIDEBAR}>
+      <form onSubmit={save}>
+        <Field label="Bet">
+          <select className="input" value={betId} onChange={e=>setBetId(e.target.value)}>
+            {activeBets.map(b=><option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
-        </div>
+        </Field>
         {bet && (
-          <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="font-mono text-[10px] uppercase tracking-widest text-gray-300">Current signal</span>
-              <span className="font-semibold text-sm" style={{color: SIGNALS.find(s=>s.value===bet.signal)?.color}}>
-                ● {bet.signal}
-              </span>
+          <div className="rounded p-4 mb-4" style={{ background:"var(--raised)", border:"1px solid var(--border)" }}>
+            <div className="flex items-center gap-3 mb-3">
+              <span className="t-label">Current signal</span>
+              <span className="font-medium text-sm" style={{ color:`var(--${bet.signal.toLowerCase()})` }}>● {bet.signal}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="font-mono text-[10px] text-red-300 uppercase tracking-widest mb-1">Kill if</div>
-                <div className="text-xs text-gray-500">{bet.kill_criteria || "—"}</div>
+                <div className="t-label mb-1" style={{ color:"var(--killed)" }}>Kill if</div>
+                <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.kill_criteria||"—"}</div>
               </div>
               <div>
-                <div className="font-mono text-[10px] text-green-400 uppercase tracking-widest mb-1">Scale when</div>
-                <div className="text-xs text-gray-500">{bet.scale_trigger || "—"}</div>
+                <div className="t-label mb-1" style={{ color:"var(--scaled)" }}>Scale when</div>
+                <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.scale_trigger||"—"}</div>
               </div>
             </div>
           </div>
         )}
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-2">Updated Signal</label>
-          <div className="flex gap-3">
+        <Field label="Updated Signal">
+          <div className="flex gap-2">
             {SIGNALS.map(s => (
-              <button key={s.value} type="button" onClick={() => setSignal(s.value)}
-                className={`flex-1 py-2.5 rounded-xl font-mono text-sm font-semibold border-2 transition-colors`}
-                style={signal === s.value
-                  ? {borderColor: s.color, background: `${s.color}12`, color: s.color}
-                  : {borderColor: "#e5e7eb", color: "#9ca3af"}}>
+              <button key={s.value} type="button" onClick={()=>setSignal(s.value)}
+                className="flex-1 py-2 rounded text-sm font-medium transition-colors"
+                style={{
+                  fontFamily:"var(--font-mono)", border:"1.5px solid",
+                  borderColor: signal===s.value ? s.color : "var(--border-mid)",
+                  background: signal===s.value ? `color-mix(in srgb, ${s.color} 10%, transparent)` : "transparent",
+                  color: signal===s.value ? s.color : "var(--t3)",
+                }}>
                 ● {s.label}
               </button>
             ))}
           </div>
-        </div>
-        <div>
-          <label className="block font-mono text-xs uppercase tracking-widest text-gray-400 mb-1.5">Note <span className="text-gray-300">(optional)</span></label>
-          <textarea value={note} onChange={e => setNote(e.target.value)} rows={3}
-            placeholder="What changed or caught your attention?"
-            className="w-full px-3 py-2.5 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-[#AADC00] resize-none" />
-        </div>
-        <div className="flex gap-3 pt-2">
-          <button type="button" onClick={() => router.back()}
-            className="flex-1 py-2.5 border border-gray-200 text-gray-500 font-mono text-sm rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
-          <button type="submit" disabled={saving}
-            className="flex-1 py-2.5 bg-[#AADC00] text-ink font-mono font-semibold text-sm rounded-lg hover:bg-[#88B200] transition-colors disabled:opacity-50">
-            {saving ? "Saving..." : "Save Signal Check"}
-          </button>
-        </div>
+        </Field>
+        <Field label="Note" hint="optional">
+          <textarea className="input" rows={3} value={note} onChange={e=>setNote(e.target.value)}
+            placeholder="What changed or caught your attention?" />
+        </Field>
+        <ModalFooter>
+          <button type="button" onClick={()=>router.back()} className="btn-ghost flex-1">Cancel</button>
+          <button type="submit" disabled={saving} className="btn-primary flex-1">{saving?"Saving...":"Save Signal Check →"}</button>
+        </ModalFooter>
       </form>
-    </div>
+    </Modal>
   );
 }
