@@ -1,1 +1,1 @@
-Fix supabaseAdmin cache in all API routes
+Fix login session timing in production

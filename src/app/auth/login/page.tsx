@@ -26,26 +26,21 @@ export default function LoginPage() {
       return;
     }
 
-    // Get org — if multiple memberships, prefer L1 (root org)
-    // Small delay to ensure session cookie is set before querying
-    await new Promise(resolve => setTimeout(resolve, 200));
+    // Get org via API Route — uses service_role, bypasses RLS
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: data.user.id }),
+    });
 
-    const { data: members } = await supabase
-      .from("org_members")
-      .select("org_id")
-      .eq("user_id", data.user.id);
+    if (!res.ok) {
+      const err = await res.json();
+      setError(err.error || "No se encontró la organización.");
+      setLoading(false);
+      return;
+    }
 
-    if (!members?.length) { setError("No se encontró la organización."); setLoading(false); return; }
-
-    // Get all orgs and prefer L1
-    const { data: orgs } = await supabase
-      .from("organizations")
-      .select("slug, onboarding_complete, cascade_level")
-      .in("id", members.map(m => m.org_id))
-      .order("cascade_level", { ascending: true });
-
-    const org = orgs?.[0];
-    if (!org) { setError("No se encontró la organización."); setLoading(false); return; }
+    const org = await res.json();
 
     if (!org.onboarding_complete) {
       router.push(`/${org.slug}/onboarding`);

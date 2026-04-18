@@ -9,3 +9,4 @@ e55431903f9cfe9da9aa72ff344488e126b9d792 7e292781dedb68b7b1214b733363fdb6970178f
 3011ac84b34e03e28b4d00d6060cce72dd630ffd 172534f350a86c1ec1b94f9ddde40a02bb46324f Marcelo <luismarcelomarino@gmail.com> 1776476548 -0300	commit: Fix TypeScript build errors
 172534f350a86c1ec1b94f9ddde40a02bb46324f c7cc901737b558405ee5b791e323808a1ddc3338 Marcelo <luismarcelomarino@gmail.com> 1776477398 -0300	commit: Fix TopBar to use store childOrgs — RLS compatible
 c7cc901737b558405ee5b791e323808a1ddc3338 6f1354a09d8dc0a2b5900622b0e010ecf47229e2 Marcelo <luismarcelomarino@gmail.com> 1776477744 -0300	commit: Fix supabaseAdmin cache in all API routes
+6f1354a09d8dc0a2b5900622b0e010ecf47229e2 a8731007921f7c4cef676a669382c550ce9b6350 Marcelo <luismarcelomarino@gmail.com> 1776479804 -0300	commit: Fix login session timing in production
