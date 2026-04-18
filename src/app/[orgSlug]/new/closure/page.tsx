@@ -64,6 +64,7 @@ export default function SprintClosurePage() {
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (!active) return;
     const missing = sprintBets.filter(b=>!outcomes[b.id]);
     if (missing.length) { setError(`Select an outcome for: ${missing.map(b=>b.name).join(", ")}`); return; }
     setSaving(true);

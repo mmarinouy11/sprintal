@@ -55,7 +55,7 @@ const SIDEBAR = (
 export default function NewBetPage() {
   const router = useRouter();
   const params = useParams();
-  const { org, sprints, childOrgs, addBet, addBetAlignment } = useStore();
+  const { org, sprints, childOrgs, addBet, addBetAlignment, bets } = useStore();
   const areas = childOrgs.map(a => a.name);
   const [saving, setSaving] = useState(false);
   // Pre-select first area
@@ -87,7 +87,7 @@ export default function NewBetPage() {
         .eq("org_id", org!.parent_org_id!)
         .eq("status", "Active")
         .in("sprint_id", parentSprints.map((s: { id: string }) => s.id));
-      setParentBets(data || []);
+      setParentBets((data || []) as Bet[]);
     }
     loadParentBets();
   }, [org?.parent_org_id]);
