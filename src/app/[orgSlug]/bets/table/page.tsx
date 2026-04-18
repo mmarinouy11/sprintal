@@ -37,7 +37,7 @@ export default function BetsTablePage() {
   // Areas for filter — use org areas if available, else derive from bets
   const filterAreas = childOrgs.length > 0
     ? childOrgs.map(a => a.name)
-    : [...new Set(bets.map(b => b.owner_area).filter(Boolean))];
+    : Array.from(new Set(bets.map(b => b.owner_area).filter(Boolean) as string[]));
 
   return (
     <div className="w-full px-10 py-8">
