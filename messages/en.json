@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "dashboard": "Executive Dashboard",
+    "sprints": "Enterprise Sprints",
+    "betsBoard": "Bets — Board",
+    "betsTable": "Bets — Table",
+    "evidence": "Evidence Log",
+    "settings": "Settings",
+    "signOut": "Sign out",
+    "core": "Core",
+    "actions": "Actions",
+    "byArea": "By Area"
+  },
+  "actions": {
+    "newSprint": "New Sprint",
+    "newBet": "New Bet",
+    "signalCheck": "Signal Check",
+    "strategicReview": "Strategic Review",
+    "closeSprint": "Close Sprint",
+    "newArea": "New Area"
+  },
+  "dashboard": {
+    "title": "Executive Dashboard",
+    "subtitle": "Strategic overview · Current sprint only",
+    "activeSprint": "Active Sprint",
+    "betsInSprint": "Bets in Sprint",
+    "strongSignal": "Strong Signal",
+    "atRisk": "At Risk",
+    "none": "None",
+    "currentlyTesting": "currently testing",
+    "candidatesToScale": "candidates to scale",
+    "needADecision": "need a decision",
+    "portfolioBalance": "Portfolio Balance",
+    "activeBets": "Active Bets in Current Sprint",
+    "decisionFocus": "Decision Focus",
+    "candidatesToKill": "Candidates to Kill",
+    "atRiskUnclear": "At Risk — Unclear",
+    "overdueReview": "Overdue — Strategic Review",
+    "overdueSignal": "Overdue — Signal Check",
+    "areasRollup": "Areas — Roll-up",
+    "noActiveSprint": "No active sprint.",
+    "neverReviewed": "Never reviewed, due every {days}d"
+  },
+  "auth": {
+    "signIn": "Sign in",
+    "signUp": "Create Account",
+    "email": "Email",
+    "password": "Password",
+    "orgName": "Organization Name",
+    "noAccount": "No account?",
+    "startFreeTrial": "Start free trial",
+    "alreadyAccount": "Already have an account?",
+    "emailPlaceholder": "you@company.com",
+    "passwordMin": "Min. 8 characters",
+    "orgPlaceholder": "e.g. Acme Corp",
+    "signingIn": "Signing in...",
+    "creating": "Creating account...",
+    "checkEmail": "Check your email",
+    "confirmationSent": "We sent a confirmation link to",
+    "clickToActivate": "Click the link to activate your account.",
+    "resend": "Resend email",
+    "backToLogin": "← Back to login"
+  },
+  "trial": {
+    "expired": "Your trial has ended",
+    "expiredDesc": "Your 90-day free trial has ended. Upgrade to Pro to continue.",
+    "upgradeBtn": "Contact us to upgrade →",
+    "daysLeft": "{days} days left on trial",
+    "upgradePro": "Upgrade to Pro →"
+  },
+  "bet": {
+    "hypothesis": "Hypothesis",
+    "killCriteria": "Kill Criteria",
+    "scaleTrigger": "Scale Trigger",
+    "outcome": "Strategic Outcome",
+    "ownerArea": "Owner Area",
+    "ownerContact": "Point of Contact",
+    "indicators": "Leading Indicators",
+    "revenue": "Revenue",
+    "margin": "Margin",
+    "importance": "Strategic Importance",
+    "notDefined": "Not defined",
+    "orphan": "orphan",
+    "enabler": "enabler",
+    "draft": "DRAFT"
+  },
+  "signal": {
+    "strong": "Strong",
+    "unclear": "Unclear",
+    "weak": "Weak"
+  },
+  "status": {
+    "active": "Active",
+    "scaled": "Scaled",
+    "pivoted": "Pivoted",
+    "done": "Done",
+    "killed": "Killed",
+    "planned": "Planned",
+    "closed": "Closed"
+  },
+  "common": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "close": "Close",
+    "back": "Back",
+    "continue": "Continue →",
+    "loading": "Loading...",
+    "noData": "—",
+    "optional": "optional",
+    "pro": "Pro"
+  }
+}

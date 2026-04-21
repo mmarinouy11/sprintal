@@ -1,0 +1,113 @@
+{
+  "nav": {
+    "dashboard": "Dashboard Executivo",
+    "sprints": "Enterprise Sprints",
+    "betsBoard": "Bets — Quadro",
+    "betsTable": "Bets — Tabela",
+    "evidence": "Log de Evidências",
+    "settings": "Configurações",
+    "signOut": "Sair",
+    "core": "Principal",
+    "actions": "Ações",
+    "byArea": "Por Área"
+  },
+  "actions": {
+    "newSprint": "Novo Sprint",
+    "newBet": "Nova Bet",
+    "signalCheck": "Signal Check",
+    "strategicReview": "Revisão Estratégica",
+    "closeSprint": "Fechar Sprint",
+    "newArea": "Nova Área"
+  },
+  "dashboard": {
+    "title": "Dashboard Executivo",
+    "subtitle": "Visão estratégica · Sprint atual",
+    "activeSprint": "Sprint Ativo",
+    "betsInSprint": "Bets no Sprint",
+    "strongSignal": "Sinal Forte",
+    "atRisk": "Em Risco",
+    "none": "Nenhum",
+    "currentlyTesting": "em teste",
+    "candidatesToScale": "candidatos a escalar",
+    "needADecision": "precisam de decisão",
+    "portfolioBalance": "Balanço do Portfolio",
+    "activeBets": "Bets Ativas no Sprint Atual",
+    "decisionFocus": "Foco de Decisão",
+    "candidatesToKill": "Candidatos a Encerrar",
+    "atRiskUnclear": "Em Risco — Incerto",
+    "overdueReview": "Atrasada — Revisão Estratégica",
+    "overdueSignal": "Atrasado — Signal Check",
+    "areasRollup": "Áreas — Resumo",
+    "noActiveSprint": "Sem sprint ativo.",
+    "neverReviewed": "Sem revisão, a cada {days}d"
+  },
+  "auth": {
+    "signIn": "Entrar",
+    "signUp": "Criar Conta",
+    "email": "Email",
+    "password": "Senha",
+    "orgName": "Nome da Organização",
+    "noAccount": "Não tem conta?",
+    "startFreeTrial": "Começar teste grátis",
+    "alreadyAccount": "Já tem uma conta?",
+    "emailPlaceholder": "voce@empresa.com",
+    "passwordMin": "Mín. 8 caracteres",
+    "orgPlaceholder": "ex. Acme Corp",
+    "signingIn": "Entrando...",
+    "creating": "Criando conta...",
+    "checkEmail": "Verifique seu email",
+    "confirmationSent": "Enviamos um link de confirmação para",
+    "clickToActivate": "Clique no link para ativar sua conta.",
+    "resend": "Reenviar email",
+    "backToLogin": "← Voltar ao login"
+  },
+  "trial": {
+    "expired": "Seu período de teste encerrou",
+    "expiredDesc": "Seus 90 dias de acesso gratuito terminaram. Ative o Pro para continuar.",
+    "upgradeBtn": "Contato para ativar Pro →",
+    "daysLeft": "{days} dias de teste restantes",
+    "upgradePro": "Ativar Pro →"
+  },
+  "bet": {
+    "hypothesis": "Hipótese",
+    "killCriteria": "Critério de Kill",
+    "scaleTrigger": "Gatilho de Scale",
+    "outcome": "Resultado Estratégico",
+    "ownerArea": "Área Responsável",
+    "ownerContact": "Ponto de Contato",
+    "indicators": "Indicadores Líderes",
+    "revenue": "Receita",
+    "margin": "Margem",
+    "importance": "Importância Estratégica",
+    "notDefined": "Não definido",
+    "orphan": "órfã",
+    "enabler": "habilitador",
+    "draft": "RASCUNHO"
+  },
+  "signal": {
+    "strong": "Forte",
+    "unclear": "Incerto",
+    "weak": "Fraco"
+  },
+  "status": {
+    "active": "Ativa",
+    "scaled": "Escalada",
+    "pivoted": "Pivotada",
+    "done": "Concluída",
+    "killed": "Encerrada",
+    "planned": "Planejado",
+    "closed": "Fechado"
+  },
+  "common": {
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "close": "Fechar",
+    "back": "Voltar",
+    "continue": "Continuar →",
+    "loading": "Carregando...",
+    "noData": "—",
+    "optional": "opcional",
+    "pro": "Pro"
+  }
+}
