@@ -25,7 +25,7 @@ function Rule({ color, title, children }: { color: string; title: string; childr
 
 const SIDEBAR = (
   <div>
-    <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.6875rem", fontWeight:700,
+    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
       letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>
       Strategic Review
     </div>
@@ -167,7 +167,7 @@ export default function StrategicReviewPage() {
                 <div className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: o.color }} />
                 <div>
                   <div className="font-semibold text-sm" style={{ color:"var(--text)" }}>{o.label}</div>
-                  <div className="text-xs" style={{ color:"var(--t3)", fontFamily:"var(--font-mono)" }}>{o.hint}</div>
+                  <div className="text-xs" style={{ color:"var(--t3)", fontFamily:"var(--font-body)" }}>{o.hint}</div>
                 </div>
               </button>
             ))}

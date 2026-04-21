@@ -83,7 +83,7 @@ export default function NewSubOrgPage() {
 
   const SIDEBAR = (
     <div>
-      <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.6875rem", fontWeight:700,
+      <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
         letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>
         Multinivel
       </div>
@@ -105,7 +105,7 @@ export default function NewSubOrgPage() {
             <div style={{ width: i * 14 }} />
             <div style={{ width:6, height:6, borderRadius:"50%",
               background: i === (org?.cascade_level||1)-1 ? "var(--brand)" : "var(--border-mid)" }} />
-            <span style={{ fontFamily:"var(--font-mono)", fontSize:"0.75rem",
+            <span style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem",
               color: i === (org?.cascade_level||1)-1 ? "var(--brand)" : "var(--t3)",
               fontWeight: i === (org?.cascade_level||1)-1 ? 600 : 400 }}>
               {i === (org?.cascade_level||1)-1 ? org?.name : `Level ${i+1}`}
@@ -115,7 +115,7 @@ export default function NewSubOrgPage() {
         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
           <div style={{ width: (org?.cascade_level||1) * 14 }} />
           <div style={{ width:6, height:6, borderRadius:"50%", background:"var(--scaled)" }} />
-          <span style={{ fontFamily:"var(--font-mono)", fontSize:"0.75rem",
+          <span style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem",
             color:"var(--scaled)", fontWeight:600 }}>
             {name || "Nueva área"} ← nuevo
           </span>

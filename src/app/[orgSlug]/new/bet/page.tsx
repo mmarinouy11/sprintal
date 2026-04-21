@@ -23,7 +23,7 @@ function Rule({ children }: { children: React.ReactNode }) {
 
 const SIDEBAR = (
   <div>
-    <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>Bet Creation</div>
+    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>Bet Creation</div>
     <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem", color:"var(--text)", letterSpacing:"-0.02em", marginBottom:8 }}>Create a Bet</div>
     <p style={{ fontSize:"0.875rem", color:"var(--t2)", lineHeight:1.6, marginBottom:20 }}>
       A Bet is a testable hypothesis — not a project. If it cannot produce evidence within the sprint, it is not a bet.

@@ -109,7 +109,7 @@ export default function NewSprintPage() {
 
   const SIDEBAR = (
     <div>
-      <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.6875rem", fontWeight:700,
+      <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
         letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>
         Sprint Definition
       </div>
@@ -149,7 +149,7 @@ export default function NewSprintPage() {
             color:"var(--text)", marginBottom:4 }}>
             {parentSprint.name}
           </div>
-          <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.75rem", color:"var(--t3)" }}>
+          <div style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem", color:"var(--t3)" }}>
             {parentSprint.start_date} → {parentSprint.end_date}
           </div>
           <button type="button"
@@ -204,7 +204,7 @@ export default function NewSprintPage() {
         {/* Duration display */}
         {duration > 0 && (
           <div style={{ marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontFamily:"var(--font-mono)", fontSize:"0.8125rem",
+            <span style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem",
               color:"var(--t3)" }}>Duration:</span>
             <span style={{ fontFamily:"var(--font-display)", fontWeight:700,
               fontSize:"1rem", color:"var(--text)" }}>{duration} days</span>

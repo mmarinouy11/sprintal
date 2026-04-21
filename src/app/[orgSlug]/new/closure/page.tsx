@@ -14,7 +14,7 @@ const OUTCOME_COLORS: Record<string,string> = {
 
 const SIDEBAR = (
   <div>
-    <div className="font-mono text-xs font-semibold tracking-wide mb-1" style={{ color:"var(--brand)" }}>Sprint Closure</div>
+    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:4 }} className="" style={{ color:"var(--brand)" }}>Sprint Closure</div>
     <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>Close the Sprint</div>
     <p className="text-sm mb-6" style={{ color:"var(--t2)", lineHeight:1.6 }}>
       Closure is not reporting — it is reconfiguration. Decide what to carry forward, what to stop, and what the next cycle needs.

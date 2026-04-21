@@ -164,7 +164,7 @@ export default function SettingsPage() {
                   style={{ position: "absolute", opacity: 0, width: 0, height: 0 }} />
               </div>
               <input className="input" value={color} onChange={e => setColor(e.target.value)}
-                disabled={!isAdmin} style={{ width: 120, fontFamily: "var(--font-mono)" }} />
+                disabled={!isAdmin} style={{ width: 120, fontFamily: "var(--font-body)" }} />
             </div>
           </div>
           {isAdmin && (
@@ -201,7 +201,7 @@ export default function SettingsPage() {
                     fontSize: "0.875rem", color: "var(--text)" }}>
                     {m.full_name || "—"}
                   </div>
-                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--t3)" }}>
+                  <div style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--t3)" }}>
                     {m.user_id.slice(0, 8)}...
                   </div>
                 </div>
@@ -267,7 +267,7 @@ export default function SettingsPage() {
               {org?.plan || "trial"} Plan
             </div>
             {org?.plan === "trial" && org?.trial_ends_at && (
-              <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.75rem", color: "var(--t3)", marginTop: 4 }}>
+              <div style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem", color: "var(--t3)", marginTop: 4 }}>
                 Trial ends {new Date(org.trial_ends_at).toLocaleDateString()}
               </div>
             )}

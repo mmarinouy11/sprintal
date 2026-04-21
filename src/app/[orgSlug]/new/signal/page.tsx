@@ -14,7 +14,7 @@ const SIGNALS: { value: SignalStrength; label: string; color: string; desc: stri
 
 const SIDEBAR = (
   <div>
-    <div className="font-mono text-xs font-semibold tracking-wide mb-1" style={{ color:"var(--brand)" }}>Signal Check</div>
+    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:4 }}>Signal Check</div>
     <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>Read the Signal</div>
     <p className="text-sm mb-6" style={{ color:"var(--t2)", lineHeight:1.6 }}>
       A lightweight awareness checkpoint — not a decision meeting. No status changes. Just signal strength.
@@ -95,7 +95,7 @@ export default function SignalCheckPage() {
               <button key={s.value} type="button" onClick={()=>setSignal(s.value)}
                 className="flex-1 py-2 rounded text-sm font-medium transition-colors"
                 style={{
-                  fontFamily:"var(--font-mono)", border:"1.5px solid",
+                  fontFamily:"var(--font-body)", border:"1.5px solid",
                   borderColor: signal===s.value ? s.color : "var(--border-mid)",
                   background: signal===s.value ? `color-mix(in srgb, ${s.color} 10%, transparent)` : "transparent",
                   color: signal===s.value ? s.color : "var(--t3)",

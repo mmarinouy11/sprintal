@@ -105,22 +105,21 @@ body {
   color: var(--text);
 }
 
-/* Labels — monospaced, small caps */
+/* Labels — field labels, section headers */
 .t-label {
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.10em;
-  text-transform: none;
-  letter-spacing: 0.04em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: #6B6560;
 }
 
 .t-mono {
   font-family: var(--font-mono);
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   font-weight: 400;
-  color: var(--t2);
+  color: var(--t3);
 }
 
 /* Big numbers on dashboard */
@@ -265,12 +264,11 @@ textarea.input { resize: none; }
 /* ── TABLE ────────────────────────────────────────────── */
 .tbl { width: 100%; border-collapse: collapse; }
 .tbl th {
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.10em;
-  text-transform: none;
-  letter-spacing: 0.01em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--t3);
   padding: 10px 16px;
   text-align: left;
@@ -315,10 +313,10 @@ textarea.input { resize: none; }
   border: 1px solid var(--border-mid);
   background: var(--surface);
   color: var(--t3);
-  font-family: var(--font-mono);
+  font-family: var(--font-body);
   font-size: 0.6875rem;
-  font-weight: 500;
-  letter-spacing: 0.06em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   cursor: pointer;
   transition: all 0.1s;
@@ -328,11 +326,11 @@ textarea.input { resize: none; }
 
 /* ── SECTION LABEL ────────────────────────────────────── */
 .section-label {
-  font-family: var(--font-mono);
-  font-size: 0.625rem;
+  font-family: var(--font-body);
+  font-size: 0.6875rem;
   font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: none;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
   color: #6B6560;
   margin-bottom: 10px;
   display: flex;
@@ -386,9 +384,16 @@ textarea.input { resize: none; }
   line-height: 1.5;
 }
 
-/* Metadata / dates / secondary info */
+/* Metadata / actual codes, IDs, technical values */
 .text-meta {
   font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--t3);
+}
+
+/* Dates and secondary labels — use Outfit */
+.text-date {
+  font-family: var(--font-body);
   font-size: 0.8125rem;
   color: var(--t3);
 }
