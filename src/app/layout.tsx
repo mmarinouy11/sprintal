@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
 import { Outfit, IBM_Plex_Mono } from "next/font/google";
-import { NextIntlClientProvider } from "next-intl";
-import { getLocale, getMessages } from "next-intl/server";
 import "./globals.css";
 
 const outfit = Outfit({
@@ -23,16 +21,11 @@ export const metadata: Metadata = {
   description: "Run strategic sprints. Test bets. Scale what works.",
 };
 
-export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const locale = await getLocale();
-  const messages = await getMessages();
-
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang={locale}>
+    <html lang="en">
       <body className={`${outfit.variable} ${ibmPlexMono.variable}`}>
-        <NextIntlClientProvider messages={messages} locale={locale}>
-          {children}
-        </NextIntlClientProvider>
+        {children}
       </body>
     </html>
   );
