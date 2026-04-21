@@ -22,7 +22,8 @@ export async function GET(req: NextRequest) {
     if (!token) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+    console.log("getUser result:", user?.id, "error:", authError?.message, "token prefix:", token?.slice(0, 20));
+    if (authError || !user) return NextResponse.json({ error: "No autorizado.", debug: authError?.message }, { status: 401 });
 
     const slug = req.nextUrl.searchParams.get("slug");
     if (!slug) return NextResponse.json({ error: "slug requerido." }, { status: 400 });
