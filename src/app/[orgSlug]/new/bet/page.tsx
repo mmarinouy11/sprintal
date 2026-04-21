@@ -57,6 +57,7 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
 
 export default function NewBetPage() {
   const t = useT("form");
+  const tg = useT();
   const router = useRouter();
   const params = useParams();
   const { org, sprints, childOrgs, addBet, addBetAlignment, bets } = useStore();
@@ -226,6 +227,7 @@ export default function NewBetPage() {
           </Field>
           <Field label={t("ownerArea")} hint={t("fromThisLevel")}>
             <select className="input" value={form.owner_area} onChange={set("owner_area")} required>
+              <option value="">{t("selectArea")}</option>
               <option value="">— Select —</option>
               {areas.map(a => <option key={a}>{a}</option>)}
             </select>
@@ -246,7 +248,7 @@ export default function NewBetPage() {
         </Field>
 
         {!isEnabler && (
-          <Field label={t("hypothesis")} hint="If X → Y → measured by Z">
+          <Field label={t("hypothesis")} hint={t("hypothesisPlaceholderShort")}>
             <textarea className="input" rows={3} value={form.hypothesis} onChange={set("hypothesis")} required
               placeholder={t("hypothesisPlaceholderShort")} />
           </Field>

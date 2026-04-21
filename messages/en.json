@@ -351,6 +351,8 @@
     "medium": "Medium",
     "low": "Low",
     "durationDays2": "{days}d",
-    "betLevelNoteShort": "L{level} bet — referenceable by lower levels."
+    "betLevelNoteShort": "L{level} bet — referenceable by lower levels.",
+    "selectArea": "— Select area —",
+    "closingLabel": "Closing"
   }
 }

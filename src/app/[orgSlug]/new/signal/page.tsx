@@ -13,7 +13,7 @@ const SIGNALS: { value: SignalStrength; color: string }[] = [
   { value:"Weak" as SignalStrength,    color:"var(--weak)"    },
 ];
 
-function SidebarContent({ t }: { t: (k: string) => string }) {
+function SidebarContent({ t, tg }: { t: (k: string) => string; tg: (k: string) => string }) {
   return (
   <div>
     <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:4 }}>{t("sidebar.signalTitle")}</div>
@@ -25,7 +25,7 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
       <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>{t("sidebar.signalMeanings")}</div>
       {SIGNALS.map(s => (
         <div key={s.value} className="mb-3 pl-3" style={{ borderLeft:`2px solid ${s.color}` }}>
-          <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{t(`signal.${s.value.toLowerCase()}`)}</div>
+          <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{tg(`signal.${s.value.toLowerCase()}`)}</div>
           <div style={{ fontSize:"0.8125rem", color:"var(--t2)" }}>{t(`sidebar.${s.value.toLowerCase()}Desc`)}</div>
         </div>
       ))}
@@ -42,6 +42,7 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
 
 export default function SignalCheckPage() {
   const t = useT("form");
+  const tg = useT();
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, addSignalCheck, updateBet } = useStore();
@@ -68,7 +69,7 @@ export default function SignalCheckPage() {
   }
 
   return (
-    <Modal title={t("signalCheck")} subtitle={t("signalSubtitle")} sidebar={<SidebarContent t={t} />}>
+    <Modal title={t("signalCheck")} subtitle={t("signalSubtitle")} sidebar={<SidebarContent t={t} tg={tg} />}>
       <form onSubmit={save}>
         <Field label="Bet">
           <select className="input" value={betId} onChange={e=>setBetId(e.target.value)}>
@@ -79,7 +80,7 @@ export default function SignalCheckPage() {
           <div className="rounded p-4 mb-4" style={{ background:"var(--raised)", border:"1px solid var(--border)" }}>
             <div className="flex items-center gap-3 mb-3">
               <span className="t-label">{t("currentSignal")}</span>
-              <span className="font-medium text-sm" style={{ color:`var(--${bet.signal.toLowerCase()})` }}>● {t(`signal.${bet.signal.toLowerCase()}`)}</span>
+              <span className="font-medium text-sm" style={{ color:`var(--${bet.signal.toLowerCase()})` }}>● {tg(`signal.${bet.signal.toLowerCase()}`)}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -104,7 +105,7 @@ export default function SignalCheckPage() {
                   background: signal===s.value ? `color-mix(in srgb, ${s.color} 10%, transparent)` : "transparent",
                   color: signal===s.value ? s.color : "var(--t3)",
                 }}>
-                ● {t(`signal.${s.value.toLowerCase()}`)}
+                ● {tg(`signal.${s.value.toLowerCase()}`)}
               </button>
             ))}
           </div>

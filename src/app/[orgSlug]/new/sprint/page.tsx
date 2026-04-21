@@ -8,10 +8,10 @@ import Modal, { Field, FieldRow, ModalFooter } from "@/components/ui/Modal";
 
 // Recommended sprint durations by level
 const LEVEL_CONFIG: Record<number, { default: number; min: number; max: number; label: string }> = {
-  1: { default: 90, min: 60, max: 90,  label: "60–90 days" },
-  2: { default: 30, min: 30, max: 60,  label: "30–60 days" },
-  3: { default: 15, min: 15, max: 30,  label: "15–30 days" },
-  4: { default: 7,  min: 7,  max: 15,  label: "7–15 days"  },
+  1: { default: 90, min: 60, max: 90,  label: "60–90" },
+  2: { default: 30, min: 30, max: 60,  label: "30–60" },
+  3: { default: 15, min: 15, max: 30,  label: "15–30" },
+  4: { default: 7,  min: 7,  max: 15,  label: "7–15" },
 };
 
 function getLevelConfig(level: number) {
@@ -39,6 +39,7 @@ function Helper({ title, children }: { title: string; children: React.ReactNode 
 
 export default function NewSprintPage() {
   const t = useT("form");
+  const tg = useT();
   const router = useRouter();
   const params = useParams();
   const { org, addSprint } = useStore();
@@ -185,7 +186,7 @@ export default function NewSprintPage() {
   );
 
   return (
-    <Modal title={t("newSprint")} subtitle={`L${level} · ${config.label}`} sidebar={SIDEBAR}>
+    <Modal title={t("newSprint")} subtitle={`L${level} · ${t('recommendedDuration', { level: String(level) })} ${config.label}`} sidebar={SIDEBAR}>
       <form onSubmit={save}>
         <Field label={t("sprintName")} hint={t("sprintNameHint")}>
           <input className="input" value={form.name} onChange={set("name")}

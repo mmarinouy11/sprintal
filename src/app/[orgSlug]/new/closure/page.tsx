@@ -47,6 +47,7 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
 
 export default function SprintClosurePage() {
   const t = useT("form");
+  const tg = useT();
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, updateSprint, updateBet, addBet } = useStore();
@@ -106,7 +107,7 @@ export default function SprintClosurePage() {
   }
 
   return (
-    <Modal title={t("closeSprint")} subtitle={`Closing: ${active.name}, Closure is reconfiguration, not reporting.`} wide>
+    <Modal title={t("closeSprint")} subtitle={`${t("closingLabel")}: ${active.name}, ${t("closeSubtitle")}`} wide>
       <form onSubmit={save}>
         <div className="t-label mb-3">{t("sidebar.closureBetOutcomes")}</div>
         <div className="space-y-3 mb-6">
@@ -125,9 +126,9 @@ export default function SprintClosurePage() {
                   <select className="input"
                     value={outcomes[b.id]||""}
                     onChange={e=>setOutcomes(o=>({...o,[b.id]:e.target.value as BetStatus}))}>
-                    <option value="">— Select outcome —</option>
+                    <option value="">{t("selectOutcome")}</option>
                     {OUTCOMES.map(o=>(
-                      <option key={o} value={o}>{o}</option>
+                      <option key={o} value={o}>{tg(`status.${o.toLowerCase()}`)}</option>
                     ))}
                   </select>
                 </Field>
