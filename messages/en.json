@@ -392,6 +392,14 @@
     "high": "High",
     "medium": "Medium",
     "low": "Low",
-    "parentAlert": "Parent bet was {status}"
+    "parentAlert": "Parent bet was {status}",
+    "importanceLabel": "Importance",
+    "outcomePlaceholder": "Measurable in 90 days",
+    "whyNowPlaceholder": "Why is this the right moment?",
+    "hypothesisPlaceholder": "If we do X, we believe Y will happen...",
+    "killPlaceholder": "When do we stop?",
+    "scalePlaceholder": "When do we double down?",
+    "indicatorsPlaceholder": "Metric 1, Metric 2, Metric 3",
+    "ownerContactPlaceholder": "Name or role"
   }
 }

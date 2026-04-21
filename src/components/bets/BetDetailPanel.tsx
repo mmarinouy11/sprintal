@@ -46,13 +46,14 @@ function Field({ label, value, color }: { label: string; value?: string; color?:
 }
 
 function ImpactPill({ label, value }: { label: string; value?: string }) {
+  const t = useT("betDetail");
   const colors: Record<string,string> = { High:"var(--scaled)", Medium:"var(--unclear)", Low:"var(--t3)" };
   return (
     <div className="rounded p-3 text-center"
       style={{ background:"var(--raised)", border:"1px solid var(--border)" }}>
       <div className="t-label mb-1">{label}</div>
       <div className="font-semibold text-sm" style={{ color: colors[value||""] || "var(--t3)", fontFamily:"var(--font-display)" }}>
-        {value || "—"}
+        {value ? t(value.toLowerCase() as string) : "—"}
       </div>
     </div>
   );
@@ -138,32 +139,32 @@ function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => voi
           </select>
         </F>
         <F label={t("pointOfContact")}>
-          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.owner_contact} onChange={set("owner_contact")} placeholder="Name or role" />
+          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.owner_contact} onChange={set("owner_contact")} placeholder={t("ownerContactPlaceholder")} />
         </F>
       </div>
       <F label={t("strategicOutcome")}>
-        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.outcome} onChange={set("outcome")} placeholder="Measurable in 90 days" />
+        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.outcome} onChange={set("outcome")} placeholder={t("outcomePlaceholder")} />
       </F>
       <F label={t("whyNow")}>
-        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.why_now} onChange={set("why_now")} placeholder="Why is this the right moment?" />
+        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.why_now} onChange={set("why_now")} placeholder={t("whyNowPlaceholder")} />
       </F>
       <F label={t("hypothesis")} hint={t("hypothesisHint")}>
         <textarea className={`${inputCls} ${focusStyle}`} style={{...inputStyle, resize:"none"}} rows={3}
-          value={form.hypothesis} onChange={set("hypothesis")} placeholder="If we do X, we believe Y will happen..." />
+          value={form.hypothesis} onChange={set("hypothesis")} placeholder={t("hypothesisPlaceholder")} />
       </F>
       <div className="grid grid-cols-2 gap-3">
         <F label={t("killCriteria")}>
-          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.kill_criteria} onChange={set("kill_criteria")} placeholder="When do we stop?" />
+          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.kill_criteria} onChange={set("kill_criteria")} placeholder={t("killPlaceholder")} />
         </F>
         <F label={t("scaleTrigger")}>
-          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.scale_trigger} onChange={set("scale_trigger")} placeholder="When do we double down?" />
+          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.scale_trigger} onChange={set("scale_trigger")} placeholder={t("scalePlaceholder")} />
         </F>
       </div>
       <F label={t("leadingIndicators")} hint={t("indicatorsHint")}>
-        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.indicators} onChange={set("indicators")} placeholder="Metric 1, Metric 2, Metric 3" />
+        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.indicators} onChange={set("indicators")} placeholder={t("indicatorsPlaceholder")} />
       </F>
       <div className="grid grid-cols-3 gap-3 mb-4">
-        {[["Revenue","revenue"],["Margin","margin"],["Importance","importance"]].map(([label,key]) => (
+        {[[t("revenue"),"revenue"],[t("margin"),"margin"],[t("importanceLabel"),"importance"]].map(([label,key]) => (
           <F key={key} label={label}>
             <select className={`${inputCls} ${focusStyle}`} style={{...inputStyle, appearance:"none", cursor:"pointer"}}
               value={form[key as keyof typeof form]} onChange={set(key)}>
@@ -362,7 +363,7 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
               </Section>
 
               <Section label={t("evidenceSignal")}>
-                <div className="t-label mb-2">Leading Indicators</div>
+                <div className="t-label mb-2">{t("leadingIndicators")}</div>
                 {(bet.indicators?.length||0)>0
                   ? <div className="flex flex-wrap gap-1.5">
                       {bet.indicators.map((ind,i)=>(

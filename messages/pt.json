@@ -392,6 +392,14 @@
     "high": "Alto",
     "medium": "Médio",
     "low": "Baixo",
-    "parentAlert": "A bet pai foi {status}"
+    "parentAlert": "A bet pai foi {status}",
+    "importanceLabel": "Importância",
+    "outcomePlaceholder": "Mensurável em 90 dias",
+    "whyNowPlaceholder": "Por que este é o momento certo?",
+    "hypothesisPlaceholder": "Se fizermos X, acreditamos que Y vai acontecer...",
+    "killPlaceholder": "Quando paramos?",
+    "scalePlaceholder": "Quando apostamos mais?",
+    "indicatorsPlaceholder": "Métrica 1, Métrica 2, Métrica 3",
+    "ownerContactPlaceholder": "Nome ou função"
   }
 }
