@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -17,6 +18,7 @@ interface ChildSummary {
 
 export default function RollupDashboard() {
   const { org, childOrgs } = useStore();
+  const t = useT("dashboard");
   const [summaries, setSummaries] = useState<ChildSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
@@ -87,7 +89,7 @@ export default function RollupDashboard() {
 
   return (
     <div className="mt-8">
-      <div className="section-label">Areas — Roll-up</div>
+      <div className="section-label">{t("areasRollup")}</div>
 
       {loading
         ? <div style={{ fontSize:"0.875rem", color:"var(--t3)", padding:"20px 0" }}>Loading...</div>
@@ -114,8 +116,8 @@ export default function RollupDashboard() {
                         fontSize:"1rem", color:"var(--text)", letterSpacing:"-0.01em" }}>
                         {s.org.name}
                       </div>
-                      <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.75rem", color:"var(--t3)", marginTop:2 }}>
-                        {s.activeSprint?.name || "No active sprint"}
+                      <div style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem", color:"var(--t3)", marginTop:2 }}>
+                        {s.activeSprint?.name || t("noActiveSprint")}
                       </div>
                     </div>
                     {s.hasChildren && (
@@ -148,7 +150,7 @@ export default function RollupDashboard() {
                     <div style={{ marginTop:10, paddingTop:10, borderTop:"1px solid var(--border)" }}>
                       <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
                         letterSpacing:"0.04em", textTransform:"uppercase", color:"var(--killed)", marginBottom:4 }}>
-                        At Risk
+                        {t("atRisk")}
                       </div>
                       {s.bets.filter(b => b.signal === "Weak").slice(0,2).map(b => (
                         <div key={b.id} style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem",
@@ -187,7 +189,7 @@ export default function RollupDashboard() {
                         fontSize:"0.875rem", color:"var(--text)" }}>
                         {d.name}
                       </div>
-                      <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.75rem", color:"var(--t3)" }}>
+                      <div style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem", color:"var(--t3)" }}>
                         {d.parentName}
                       </div>
                     </div>

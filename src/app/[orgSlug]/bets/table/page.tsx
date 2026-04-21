@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { StatusBadge, SignalBadge, AreaTag } from "@/components/ui/Badge";
 import type { BetStatus, Bet } from "@/types";
@@ -17,6 +18,7 @@ function Pill({ label, active, onClick }: { label: string; active: boolean; onCl
 
 export default function BetsTablePage() {
   const { bets, sprints, evidence, signalChecks, childOrgs } = useStore();
+  const t = useT();
   const searchParams = useSearchParams();
   const params = useParams();
   const [statusF, setStatusF] = useState<string | null>(searchParams.get("status"));
@@ -42,8 +44,8 @@ export default function BetsTablePage() {
   return (
     <div className="w-full px-10 py-8">
       <div className="ph">
-        <div className="ph-title">Bets — Table</div>
-        <div className="ph-sub">All bets · Click any row to expand</div>
+        <div className="ph-title">{t("nav.betsTable")}</div>
+        <div className="ph-sub">{t("nav.betsTableSub")}</div>
       </div>
 
       {/* Filters */}

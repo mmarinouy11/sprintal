@@ -16,7 +16,7 @@ export default function SprintsPage() {
       <div className="mb-8 pb-5 border-b border-[var(--border)] flex items-end justify-between">
         <div>
           <h1 className="ph-title">Enterprise Sprints</h1>
-          <p className="ph-sub">Time-boxed strategic cycles</p>
+          <p className="ph-sub">{t("nav.sprintsSub")}</p>
         </div>
         <Link href={`/${params.orgSlug}/new/sprint`} className="btn-primary">
           + New Sprint

@@ -9,7 +9,11 @@
     "signOut": "Sign out",
     "core": "Core",
     "actions": "Actions",
-    "byArea": "By Area"
+    "byArea": "By Area",
+    "betsTableSub": "All bets · Click any row to expand",
+    "betsBoardSub": "Grouped by status · Click any bet to expand",
+    "sprintsSub": "Time-boxed strategic cycles",
+    "dashboardSub": "Strategic overview · Current sprint only"
   },
   "actions": {
     "newSprint": "New Sprint",
@@ -28,7 +32,7 @@
     "atRisk": "At Risk",
     "none": "None",
     "currentlyTesting": "currently testing",
-    "candidatesToScale": "candidates to scale",
+    "candidatesToScale": "Candidates to Scale",
     "needADecision": "need a decision",
     "portfolioBalance": "Portfolio Balance",
     "activeBets": "Active Bets in Current Sprint",

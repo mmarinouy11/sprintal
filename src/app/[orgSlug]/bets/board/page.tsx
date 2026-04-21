@@ -25,7 +25,7 @@ export default function BetsBoardPage() {
     <div className="w-full px-10 py-8">
       <div className="ph">
         <div className="ph-title">Bets — Board</div>
-        <div className="ph-sub">Grouped by status · Click any bet to expand</div>
+        <div className="ph-sub">{t("nav.betsBoardSub")}</div>
       </div>
 
       {totalBets === 0 ? (

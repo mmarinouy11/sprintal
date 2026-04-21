@@ -1,15 +1,12 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { AreaTag } from "@/components/ui/Badge";
 import { useState } from "react";
 import type { Bet } from "@/types";
 import BetDetailPanel from "@/components/bets/BetDetailPanel";
 
-const COLS = [
-  { label:"Candidates to Scale", sig:"Strong",  color:"var(--scaled)",  border:"#22C55E" },
-  { label:"At Risk — Unclear",   sig:"Unclear", color:"var(--unclear)", border:"#EAA012" },
-  { label:"Candidates to Kill",  sig:"Weak",    color:"var(--killed)",  border:"#F87171" },
-];
+// Labels defined inside component using translations
 
 function EmptyState({ color }: { color: string }) {
   return (
@@ -23,6 +20,12 @@ function EmptyState({ color }: { color: string }) {
 }
 
 export default function DecisionFocus() {
+  const t = useT("dashboard");
+  const COLS = [
+    { label:t("candidatesToScale"), sig:"Strong",  color:"var(--scaled)",  border:"#22C55E" },
+    { label:t("atRiskUnclear"),     sig:"Unclear", color:"var(--unclear)", border:"#EAA012" },
+    { label:t("candidatesToKill"),  sig:"Weak",    color:"var(--killed)",  border:"#F87171" },
+  ];
   const { bets, sprints, evidence, signalChecks } = useStore();
   const active = sprints.find(s => s.status === "Active");
   const ab = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");

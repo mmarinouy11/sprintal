@@ -9,7 +9,11 @@
     "signOut": "Sair",
     "core": "Principal",
     "actions": "Ações",
-    "byArea": "Por Área"
+    "byArea": "Por Área",
+    "betsTableSub": "Todos os bets · Clique para expandir",
+    "betsBoardSub": "Agrupados por status · Clique para expandir",
+    "sprintsSub": "Ciclos estratégicos com tempo definido",
+    "dashboardSub": "Visão estratégica · Sprint atual"
   },
   "actions": {
     "newSprint": "Novo Sprint",
@@ -28,7 +32,7 @@
     "atRisk": "Em Risco",
     "none": "Nenhum",
     "currentlyTesting": "em teste",
-    "candidatesToScale": "candidatos a escalar",
+    "candidatesToScale": "Candidatos a Escalar",
     "needADecision": "precisam de decisão",
     "portfolioBalance": "Balanço do Portfolio",
     "activeBets": "Bets Ativas no Sprint Atual",

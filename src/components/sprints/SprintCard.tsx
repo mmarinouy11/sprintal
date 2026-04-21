@@ -1,9 +1,11 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { sprintProgress, daysRemaining } from "@/lib/utils";
 
 export default function SprintCard({ fullHeight = false }: { fullHeight?: boolean }) {
   const { sprints } = useStore();
+  const t = useT("dashboard");
   const active = sprints.find(s => s.status === "Active");
 
   const wrap: React.CSSProperties = {
@@ -21,7 +23,7 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
 
   if (!active) return (
     <div style={wrap}>
-      <p style={{ fontFamily:"var(--font-body)", fontSize:"0.9375rem", color:"var(--t3)" }}>No active sprint.</p>
+      <p style={{ fontFamily:"var(--font-body)", fontSize:"0.9375rem", color:"var(--t3)" }}>{t("noActiveSprint")}</p>
     </div>
   );
 
@@ -72,7 +74,7 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
           <span style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--t3)" }}>
             Sprint Progress
           </span>
-          <span style={{ fontFamily:"var(--font-mono)", fontSize:"0.875rem", fontWeight:600, color:"var(--brand)" }}>
+          <span style={{ fontFamily:"var(--font-display)", fontSize:"0.875rem", fontWeight:600, color:"var(--brand)" }}>
             {pct}%
           </span>
         </div>

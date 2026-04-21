@@ -27,8 +27,8 @@ export default function DashboardPage() {
   return (
     <div className="w-full px-10 py-8 fade-up">
       <div className="ph">
-        <div className="ph-title">Executive Dashboard</div>
-        <div className="ph-sub">Strategic overview · Current sprint only</div>
+        <div className="ph-title">{t("title")}</div>
+        <div className="ph-sub">{t("subtitle")}</div>
       </div>
 
       {/* Top section — left grows, right is fixed 420px, both stretch to same height */}
@@ -53,8 +53,8 @@ export default function DashboardPage() {
       <OwnedBetsSection />
       <Section label={t("activeBets")}><ActiveBetsTable /></Section>
       <Section label={t("decisionFocus")}><DecisionFocus /></Section>
-      <Section label="Overdue — Strategic Review"><PendingUpdates type="review" /></Section>
-      <Section label="Overdue — Signal Check"><PendingUpdates type="signal" /></Section>
+      <Section label={t("overdueReview")}><PendingUpdates type="review" /></Section>
+      <Section label={t("overdueSignal")}><PendingUpdates type="signal" /></Section>
       <RollupDashboard />
     </div>
   );
