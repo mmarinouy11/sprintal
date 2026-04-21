@@ -28,13 +28,11 @@ export async function GET(req: NextRequest) {
     const slug = req.nextUrl.searchParams.get("slug");
     if (!slug) return NextResponse.json({ error: "slug requerido." }, { status: 400 });
 
-    // Load org
-    const { data: allOrgs } = await supabaseAdmin
-      .from("organizations").select("id, slug, plan").eq("slug", slug);
-    console.log("ALL ORGS WITH SLUG:", JSON.stringify(allOrgs));
-    const { data: org, error: orgErr } = await supabaseAdmin
-      .from("organizations").select("*").eq("slug", slug).single();
-    console.log("ORG PLAN DEBUG:", org?.id, org?.plan, new Date().toISOString());
+    // Load org — avoid .single() which may cache
+    const { data: orgRows } = await supabaseAdmin
+      .from("organizations").select("*").eq("slug", slug).limit(1);
+    const org = orgRows?.[0] ?? null;
+    console.log("ORG PLAN DEBUG (no single):", org?.id, org?.plan, new Date().toISOString());
     if (!org) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
 
     // Verify membership
