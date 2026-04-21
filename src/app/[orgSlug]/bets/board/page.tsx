@@ -24,7 +24,7 @@ export default function BetsBoardPage() {
   return (
     <div className="w-full px-10 py-8">
       <div className="ph">
-        <div className="ph-title">Bets — Board</div>
+        <div className="ph-title">{t("nav.betsBoard")}</div>
         <div className="ph-sub">{t("nav.betsBoardSub")}</div>
       </div>
 

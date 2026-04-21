@@ -9,7 +9,7 @@ export default function EvidencePage() {
   return (
     <div className="w-full px-10 py-8">
       <div className="mb-8 pb-5 border-b border-[var(--border)]">
-        <h1 className="ph-title">Evidence Log</h1>
+        <h1 className="ph-title">{t("nav.evidence")}</h1>
         <p className="ph-sub">{t("nav.evidenceSub")}</p>
       </div>
 
@@ -23,12 +23,11 @@ export default function EvidencePage() {
           <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>📋</div>
           <div style={{ fontFamily: "var(--font-display)", fontWeight: 700,
             fontSize: "1.125rem", color: "var(--text)", marginBottom: 8 }}>
-            No evidence yet
+            {t("dashboard.noEvidenceTitle")}
           </div>
           <p style={{ fontFamily: "var(--font-body)", fontSize: "0.875rem",
             color: "var(--t3)", maxWidth: 360, lineHeight: 1.6 }}>
-            Evidence is captured when you run a Strategic Review. Start by selecting a bet
-            and logging what happened and what it means.
+            {t("dashboard.noEvidenceDesc")}
           </p>
         </div>
       ) : (

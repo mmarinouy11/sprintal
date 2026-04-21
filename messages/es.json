@@ -56,7 +56,11 @@
     "signalChecks": "signal checks",
     "subTeams": "Sub-equipos",
     "bet": "Bet",
-    "bets": "Bets"
+    "bets": "Bets",
+    "noEvidenceTitle": "Sin evidencia aún",
+    "noEvidenceDesc": "La evidencia se captura cuando ejecutás una Revisión Estratégica. Empezá seleccionando una bet y registrando qué pasó y qué significa.",
+    "sprint": "Sprint",
+    "name": "Nombre"
   },
   "auth": {
     "signIn": "Ingresar",

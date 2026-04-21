@@ -56,7 +56,11 @@
     "signalChecks": "signal checks",
     "subTeams": "Sub-teams",
     "bet": "Bet",
-    "bets": "Bets"
+    "bets": "Bets",
+    "noEvidenceTitle": "No evidence yet",
+    "noEvidenceDesc": "Evidence is captured when you run a Strategic Review. Start by selecting a bet and logging what happened and what it means.",
+    "sprint": "Sprint",
+    "name": "Name"
   },
   "auth": {
     "signIn": "Sign in",

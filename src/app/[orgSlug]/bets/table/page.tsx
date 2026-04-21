@@ -75,7 +75,7 @@ export default function BetsTablePage() {
         <table className="tbl">
           <thead>
             <tr>
-              {["Name","Sprint","Owner","Status","Signal","Impact","Last Reviewed"].map(h => (
+              {[t("dashboard.name"),t("dashboard.sprint"),t("table.owner"),t("table.status"),t("table.signal"),t("table.impact"),t("table.lastReviewed")].map(h => (
                 <th key={h}>{h}</th>
               ))}
             </tr>
