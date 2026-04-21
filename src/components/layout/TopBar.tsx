@@ -18,15 +18,18 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
   // We use a simple heuristic: children are navigable by default
   // (we'll load grandchildren lazily when dropdown opens)
   const [navigableIds, setNavigableIds] = useState<Set<string>>(new Set());
+  const [navigableLoaded, setNavigableLoaded] = useState(false);
 
   async function openDropdown() {
     // Load grandchildren to determine navigability
+    if (childOrgs.length === 0) { setNavigableLoaded(true); }
     if (childOrgs.length > 0) {
       const { data: grandchildren } = await supabase
         .from("organizations").select("parent_org_id")
         .in("parent_org_id", childOrgs.map(c => c.id));
       const ids = new Set((grandchildren || []).map((g: { parent_org_id: string }) => g.parent_org_id));
       setNavigableIds(ids);
+      setNavigableLoaded(true);
     }
 
     // Load parent and siblings if sub-org
@@ -160,7 +163,7 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                     textTransform: "uppercase", color: "var(--t3)" }}>Areas</div>
                   {childOrgs.map(c => (
                     <AreaItem key={c.id} org={c} current={false}
-                      navigable={navigableIds.has(c.id) || navigableIds.size === 0}
+                      navigable={navigableLoaded && navigableIds.has(c.id)}
                       onClick={() => navigateTo(c.slug)} />
                   ))}
                 </div>
