@@ -172,7 +172,8 @@ export default function OnboardingPage() {
       .update({ onboarding_complete: true } as any)
       .eq("id", org.id);
     setSaving(false);
-    router.push(`/${params.orgSlug}/dashboard`);
+    // Full reload so layout re-fetches org data including newly created sub-orgs
+    window.location.href = `/${params.orgSlug}/dashboard`;
   }
 
   const bc = brandColor;
