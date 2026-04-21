@@ -33,6 +33,23 @@ export async function GET(req: NextRequest) {
     const org = orgRows?.[0] ?? null;
     if (!org) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
 
+    // Get root org plan (L1) — plan applies to entire org tree
+    let rootPlan = org.plan;
+    if (org.parent_org_id) {
+      const { data: rootRows } = await supabaseAdmin
+        .from("organizations").select("plan")
+        .eq("cascade_level", 1)
+        .is("parent_org_id", null)
+        .limit(1);
+      // Walk up using org_path to find the root
+      const rootId = org.org_path?.split(".")?.[0]?.replace(/_/g, "-");
+      if (rootId) {
+        const { data: rootOrgRows } = await supabaseAdmin
+          .from("organizations").select("plan").eq("id", rootId).limit(1);
+        rootPlan = rootOrgRows?.[0]?.plan || org.plan;
+      }
+    }
+
     // Verify membership
     const { data: member } = await supabaseAdmin
       .from("org_members").select("role")
@@ -59,6 +76,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       org,
+      rootPlan,
       role: member.role,
       sprints: sprintsRes.data || [],
       bets,

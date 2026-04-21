@@ -28,7 +28,7 @@ export default function NewSubOrgPage() {
   const effectiveParentId = selectedParentOrg?.id || org?.id;
   const effectiveParentLevel = selectedParentOrg?.cascade_level || org?.cascade_level || 1;
   const childLevel = effectiveParentLevel + 1;
-  const isTrialOrg = org?.plan === "trial";
+  const isTrialOrg = rootPlan === "trial";
 
   const childLevelName = "Area";
 
@@ -60,7 +60,7 @@ export default function NewSubOrgPage() {
           levelName:     "area",
           childLevel,
           plan:          org.plan,
-          parentOrgPlan: org.plan,
+          parentOrgPlan: rootPlan,
           primaryColor:  org.primary_color,
           trialEndsAt:   new Date(Date.now() + 90*86400000).toISOString(),
         }),

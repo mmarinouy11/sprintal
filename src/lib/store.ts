@@ -14,6 +14,7 @@ interface Store {
   loading:      boolean;
 
   // ── Multinivel ───────────────────────────────────────
+  rootPlan:     string;               // plan de la org raíz (L1)
   orgTree:      OrgTreeNode | null;   // árbol completo del L1 hacia abajo
   currentRole:  OrgRole | null;       // rol del usuario en la org actual
   childOrgs:    Organization[];       // sub-orgs directas del nivel actual
@@ -27,6 +28,7 @@ interface Store {
   setSignalChecks: (signalChecks: SignalCheck[]) => void;
   setLoading:      (loading: boolean) => void;
   setOrgTree:      (tree: OrgTreeNode | null) => void;
+  setRootPlan:     (plan: string) => void;
   setCurrentRole:  (role: OrgRole | null) => void;
   setChildOrgs:      (orgs: Organization[]) => void;
   setBetAlignments:  (alignments: BetAlignment[]) => void;
@@ -52,6 +54,7 @@ const initialState = {
   evidence:     [],
   signalChecks: [],
   loading:      false,
+  rootPlan:     'trial',
   orgTree:      null,
   currentRole:  null,
   childOrgs:     [],
@@ -69,6 +72,7 @@ export const useStore = create<Store>((set) => ({
   setSignalChecks: (signalChecks) => set({ signalChecks }),
   setLoading:      (loading)      => set({ loading }),
   setOrgTree:      (orgTree)      => set({ orgTree }),
+  setRootPlan:     (rootPlan)     => set({ rootPlan }),
   setCurrentRole:  (currentRole)  => set({ currentRole }),
   setChildOrgs:      (childOrgs)    => set({ childOrgs }),
   setBetAlignments:  (betAlignments) => set({ betAlignments }),

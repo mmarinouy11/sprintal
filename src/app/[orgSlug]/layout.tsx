@@ -15,7 +15,7 @@ export default function OrgLayout({
 }) {
   const {
     setOrg, setSprints, setBets, setEvidence, setSignalChecks,
-    setLoading, setChildOrgs, setCurrentRole, setBetAlignments, org,
+    setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, org,
   } = useStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -46,7 +46,7 @@ export default function OrgLayout({
       }
 
       const data = await res.json();
-      const { org: orgData, role, sprints, bets, evidence, signalChecks, children, betAlignments } = data;
+      const { org: orgData, rootPlan, role, sprints, bets, evidence, signalChecks, children, betAlignments } = data;
 
       // Reset store if switching orgs
       if (orgData.id !== org?.id) {
@@ -55,6 +55,7 @@ export default function OrgLayout({
       }
 
       setOrg(orgData);
+      setRootPlan(rootPlan || orgData.plan);
       setCurrentRole(role);
 
       // Trial enforcement — redirect if trial expired
