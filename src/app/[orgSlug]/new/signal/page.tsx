@@ -6,10 +6,10 @@ import { useStore } from "@/lib/store";
 import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 import type { SignalStrength } from "@/types";
 
-const SIGNALS: { value: SignalStrength; label: string; color: string; desc: string }[] = [
-  { value:"Strong",  label:"Strong",  color:"var(--strong)",  desc:"Evidence is accumulating. Hypothesis looks valid." },
-  { value:"Unclear", label:"Unclear", color:"var(--unclear)", desc:"Mixed signals. Not enough data to decide." },
-  { value:"Weak",    label:"Weak",    color:"var(--weak)",    desc:"Hypothesis is not holding. Consider killing." },
+const SIGNALS: { value: SignalStrength; color: string }[] = [
+  { value:"Strong" as SignalStrength,  color:"var(--strong)"  },
+  { value:"Unclear" as SignalStrength, color:"var(--unclear)" },
+  { value:"Weak" as SignalStrength,    color:"var(--weak)"    },
 ];
 
 const SIDEBAR = (
@@ -23,8 +23,8 @@ const SIDEBAR = (
       <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>Signal Meanings</div>
       {SIGNALS.map(s => (
         <div key={s.value} className="mb-3 pl-3" style={{ borderLeft:`2px solid ${s.color}` }}>
-          <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{s.label}</div>
-          <div style={{ fontSize:"0.8125rem", color:"var(--t2)" }}>{s.desc}</div>
+          <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{s.value}</div>
+          <div style={{ fontSize:"0.8125rem", color:"var(--t2)" }}>{/* desc removed */}</div>
         </div>
       ))}
     </div>
@@ -100,7 +100,7 @@ export default function SignalCheckPage() {
                   background: signal===s.value ? `color-mix(in srgb, ${s.color} 10%, transparent)` : "transparent",
                   color: signal===s.value ? s.color : "var(--t3)",
                 }}>
-                ● {s.label}
+                ● {s.value}
               </button>
             ))}
           </div>

@@ -14,7 +14,9 @@
     "betsBoardSub": "Agrupados por estado · Hacé click para expandir",
     "sprintsSub": "Ciclos estratégicos con tiempo definido",
     "dashboardSub": "Vista estratégica · Sprint actual",
-    "evidenceSub": "Seguimiento de señales y decisiones"
+    "evidenceSub": "Seguimiento de señales y decisiones",
+    "newArea": "Nueva Área",
+    "noSubAreas": "sin sub-áreas"
   },
   "actions": {
     "newSprint": "Nuevo Sprint",
@@ -143,5 +145,23 @@
     "impact": "Impacto",
     "all": "Todos",
     "noResults": "Ningún bet coincide con los filtros."
+  },
+  "landing": {
+    "tagline": "El sistema operativo para el liderazgo estratégico",
+    "headline": "Testear.\nEscalar.\nGanar.",
+    "desc": "Sprints estratégicos de 90 días para equipos de liderazgo que deciden con convicción.",
+    "step1": "Colocá bets",
+    "step2": "Seguí la señal, no el ruido",
+    "step3": "Escalá lo que funciona. Matá lo que no."
+  },
+  "sprints": {
+    "strategicFocus": "Foco Estratégico",
+    "bets": "bets",
+    "active": "activas",
+    "strongSignal": "señal fuerte",
+    "whatWorked": "Qué funcionó",
+    "whatDidnt": "Qué no funcionó",
+    "surprises": "Sorpresas",
+    "noSprintsDesc": "Un sprint define el foco estratégico de un ciclo. Creá tu primer sprint para empezar a registrar bets y progreso."
   }
 }

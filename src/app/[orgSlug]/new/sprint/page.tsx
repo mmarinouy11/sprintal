@@ -1,263 +1,106 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useRouter, useParams } from "next/navigation";
-import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
-import Modal, { Field, FieldRow, ModalFooter } from "@/components/ui/Modal";
+import { StatusBadge } from "@/components/ui/Badge";
+import { sprintProgress, daysRemaining } from "@/lib/utils";
+import Link from "next/link";
+import { useT } from "@/lib/i18n";
+import { useParams } from "next/navigation";
 
-// Recommended sprint durations by level
-const LEVEL_CONFIG: Record<number, { default: number; min: number; max: number; label: string }> = {
-  1: { default: 90, min: 60, max: 90,  label: "60–90 days" },
-  2: { default: 30, min: 30, max: 60,  label: "30–60 days" },
-  3: { default: 15, min: 15, max: 30,  label: "15–30 days" },
-  4: { default: 7,  min: 7,  max: 15,  label: "7–15 days"  },
-};
-
-function getLevelConfig(level: number) {
-  return LEVEL_CONFIG[level] || LEVEL_CONFIG[4];
-}
-
-function addDays(date: string, days: number): string {
-  const d = new Date(date);
-  d.setDate(d.getDate() + days);
-  return d.toISOString().split("T")[0];
-}
-
-function daysBetween(start: string, end: string): number {
-  return Math.round((new Date(end).getTime() - new Date(start).getTime()) / 86400000);
-}
-
-function Helper({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-5">
-      <div className="font-semibold text-sm mb-1.5" style={{ color: "var(--text)" }}>{title}</div>
-      <div style={{ fontSize: "0.875rem", color: "var(--t2)", lineHeight: 1.6 }}>{children}</div>
-    </div>
-  );
-}
-
-export default function NewSprintPage() {
-  const router = useRouter();
+export default function SprintsPage() {
+  const { sprints, bets } = useStore();
   const params = useParams();
-  const { org, addSprint } = useStore();
-  const level = org?.cascade_level || 1;
-  const config = getLevelConfig(level);
-  const today = new Date().toISOString().split("T")[0];
+  const t = useT();
 
-  const [form, setForm] = useState({
-    name: "",
-    start_date: today,
-    end_date: addDays(today, config.default),
-    focus: "",
-    signals: "",
-    status: "Planned",
-  });
-  const [saving, setSaving] = useState(false);
-  const [parentSprint, setParentSprint] = useState<{
-    name: string; start_date: string; end_date: string;
-  } | null>(null);
-
-  const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
-    setForm(f => ({ ...f, [k]: e.target.value }));
-
-  // Load parent sprint for context
-  useEffect(() => {
-    if (!org?.parent_org_id) return;
-    supabase.from("sprints").select("name, start_date, end_date")
-      .eq("org_id", org.parent_org_id).eq("status", "Active")
-      .maybeSingle()
-      .then(({ data }) => setParentSprint(data));
-  }, [org?.parent_org_id]);
-
-  // Auto-update end_date when start_date changes
-  function handleStartDate(e: React.ChangeEvent<HTMLInputElement>) {
-    const start = e.target.value;
-    setForm(f => ({ ...f, start_date: start, end_date: addDays(start, config.default) }));
-  }
-
-  // Compute warnings
-  const duration = form.start_date && form.end_date ? daysBetween(form.start_date, form.end_date) : 0;
-  const warnings: string[] = [];
-
-  if (duration > 0) {
-    if (duration < config.min) {
-      warnings.push(`Sprint is shorter than recommended (${config.min} days min for L${level}).`);
-    }
-    if (duration > config.max) {
-      warnings.push(`Sprint is longer than recommended (${config.max} days max for L${level}).`);
-    }
-  }
-
-  if (parentSprint && form.start_date && form.end_date) {
-    if (form.end_date > parentSprint.end_date) {
-      warnings.push(`Sprint ends after parent sprint "${parentSprint.name}" (${parentSprint.end_date}).`);
-    }
-    if (duration > daysBetween(parentSprint.start_date, parentSprint.end_date)) {
-      warnings.push(`Sprint is longer than the parent sprint.`);
-    }
-  }
-
-  async function save(e: React.FormEvent) {
-    e.preventDefault();
-    if (!org) return;
-    setSaving(true);
-    const { data } = await supabase.from("sprints")
-      .insert({ ...form, org_id: org.id }).select().single();
-    if (data) { addSprint(data); router.push(`/${params.orgSlug}/sprints`); }
-    setSaving(false);
-  }
-
-  const SIDEBAR = (
-    <div>
-      <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
-        letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>
-        Sprint Definition
-      </div>
-      <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem",
-        color:"var(--text)", letterSpacing:"-0.02em", marginBottom:8 }}>
-        Define the Sprint
-      </div>
-      <p style={{ fontSize:"0.875rem", color:"var(--t2)", lineHeight:1.6, marginBottom:20 }}>
-        Set the strategic direction for the next cycle. A Sprint defines where we focus — not what we execute.
-      </p>
-
-      {/* Recommended duration for this level */}
-      <div style={{ padding:"10px 14px", borderRadius:"var(--rs)", marginBottom:16,
-        background:"var(--brand-bg)", border:"1px solid var(--brand-mid)" }}>
-        <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
-          letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--brand)", marginBottom:4 }}>
-          L{level} Recommended Duration
+  return (
+    <div className="w-full px-10 py-8">
+      <div className="mb-8 pb-5 border-b border-[var(--border)] flex items-end justify-between">
+        <div>
+          <h1 className="ph-title">Enterprise Sprints</h1>
+          <p className="ph-sub">{t("nav.sprintsSub")}</p>
         </div>
-        <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.5rem",
-          color:"var(--brand)", letterSpacing:"-0.02em" }}>
-          {config.label}
-        </div>
-        <div style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--t2)", marginTop:4 }}>
-          Default: {config.default} days
-        </div>
+        <Link href={`/${params.orgSlug}/new/sprint`} className="btn-primary">
+          + New Sprint
+        </Link>
       </div>
 
-      {/* Parent sprint context */}
-      {parentSprint && (
-        <div style={{ padding:"10px 14px", borderRadius:"var(--rs)", marginBottom:16,
-          background:"var(--raised)", border:"1px solid var(--border)" }}>
-          <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
-            letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--t3)", marginBottom:6 }}>
-            Parent Sprint
+      {sprints.length === 0 ? (
+        <div style={{
+          display: "flex", flexDirection: "column", alignItems: "center",
+          justifyContent: "center", padding: "80px 24px", textAlign: "center",
+          background: "var(--surface)", border: "1px solid var(--border)",
+          borderRadius: "var(--r)", borderLeft: "3px solid var(--brand)",
+        }}>
+          <div style={{ fontSize: "2.5rem", marginBottom: 16 }}>🏃</div>
+          <div style={{ fontFamily: "var(--font-display)", fontWeight: 700,
+            fontSize: "1.125rem", color: "var(--text)", marginBottom: 8 }}>
+            No sprints yet
           </div>
-          <div style={{ fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.875rem",
-            color:"var(--text)", marginBottom:4 }}>
-            {parentSprint.name}
-          </div>
-          <div style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem", color:"var(--t3)" }}>
-            {parentSprint.start_date} → {parentSprint.end_date}
-          </div>
-          <button type="button"
-            onClick={() => setForm(f => ({
-              ...f,
-              start_date: parentSprint.start_date,
-              end_date: addDays(parentSprint.start_date, config.default),
-            }))}
-            style={{ marginTop:8, background:"none", border:"none", cursor:"pointer",
-              fontFamily:"var(--font-body)", fontSize:"0.8125rem",
-              color:"var(--brand)", fontWeight:600, padding:0 }}>
-            Align to parent dates →
-          </button>
+          <p style={{ fontFamily: "var(--font-body)", fontSize: "0.875rem",
+            color: "var(--t3)", maxWidth: 360, lineHeight: 1.6, marginBottom: 24 }}>
+            A sprint defines your strategic focus for a cycle. Create your first sprint to start tracking bets and progress.
+          </p>
+          <Link href={`/${params.orgSlug}/new/sprint`} className="btn-primary">
+            + New Sprint
+          </Link>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {sprints.map(s => {
+            const sprintBets = bets.filter(b => b.sprint_id === s.id);
+            const pct = s.status === "Active" ? sprintProgress(s.start_date, s.end_date) : 0;
+            return (
+              <div key={s.id} className="bg-[var(--surface)] border border-[var(--border)] rounded p-5"
+                style={{ borderLeft: "3px solid var(--brand)" }}>
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <div style={{ fontFamily:"var(--font-display)", fontWeight:600,
+                      color:"var(--text)", fontSize:"1.0625rem" }}>{s.name}</div>
+                    <div className="text-xs mt-0.5" style={{ color:"var(--t3)",
+                      fontFamily:"var(--font-mono)" }}>{s.start_date} → {s.end_date}</div>
+                  </div>
+                  <StatusBadge status={s.status as any} />
+                </div>
+                {s.focus && (
+                  <>
+                    <div className="t-label mb-1" style={{ color:"var(--t3)" }}>{t("sprints.strategicFocus")}</div>
+                    <div className="text-sm" style={{ color:"var(--t2)" }}>{s.focus}</div>
+                  </>
+                )}
+                {s.status === "Active" && (
+                  <div className="mt-3">
+                    <div className="w-full h-0.5 bg-[var(--raised)] rounded overflow-hidden">
+                      <div className="h-full bg-[var(--brand)]" style={{width: `${pct}%`}} />
+                    </div>
+                    <div className="text-xs mt-1" style={{ color:"var(--brand)",
+                      fontFamily:"var(--font-body)", fontWeight:500 }}>
+                      {pct}% through sprint
+                    </div>
+                  </div>
+                )}
+                <div className="flex gap-4 mt-3 text-xs" style={{ color:"var(--t3)",
+                  fontFamily:"var(--font-body)" }}>
+                  <span>{sprintBets.length} bets</span>
+                  <span>·</span>
+                  <span>{sprintBets.filter(b => b.status === "Active").length} active</span>
+                  <span>·</span>
+                  <span>{sprintBets.filter(b => b.signal === "Strong").length} strong signal</span>
+                </div>
+                {s.closure && (
+                  <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-3 gap-4">
+                    {[[t("sprints.whatWorked"), s.closure.worked], [t("sprints.whatDidnt"), s.closure.didnt],
+                      [t("sprints.surprises"), s.closure.surprised]].map(([label, val]) => (
+                      <div key={label as string}>
+                        <div className="t-label mb-1" style={{ color:"var(--t3)" }}>{label as string}</div>
+                        <div className="text-xs" style={{ color:"var(--t2)" }}>{val || "—"}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       )}
-
-      <Helper title="Strategic Focus">
-        3 clear priorities maximum. If everything is a focus, nothing is.
-      </Helper>
-      <Helper title="Success Signals">
-        How will you recognize progress? Keep these directional, not metric-precise.
-      </Helper>
-      <Helper title="Rules">
-        <ul style={{ paddingLeft:14, marginTop:4 }}>
-          <li style={{ marginBottom:4 }}>The Sprint is fixed in time.</li>
-          <li style={{ marginBottom:4 }}>The portfolio is flexible within the Sprint.</li>
-          <li>Focus is intentionally limited by design.</li>
-        </ul>
-      </Helper>
     </div>
-  );
-
-  return (
-    <Modal title="New Sprint" subtitle={`L${level} · Recommended ${config.label}`} sidebar={SIDEBAR}>
-      <form onSubmit={save}>
-        <Field label="Sprint Name" hint="Use fiscal quarter format">
-          <input className="input" value={form.name} onChange={set("name")}
-            placeholder="e.g. Q2 FY27 Sprint" required autoFocus />
-        </Field>
-
-        <FieldRow>
-          <Field label="Start Date">
-            <input className="input" type="date" value={form.start_date}
-              onChange={handleStartDate} required />
-          </Field>
-          <Field label="End Date">
-            <input className="input" type="date" value={form.end_date}
-              onChange={set("end_date")} required />
-          </Field>
-        </FieldRow>
-
-        {/* Duration display */}
-        {duration > 0 && (
-          <div style={{ marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
-            <span style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem",
-              color:"var(--t3)" }}>Duration:</span>
-            <span style={{ fontFamily:"var(--font-display)", fontWeight:700,
-              fontSize:"1rem", color:"var(--text)" }}>{duration} days</span>
-            {/* Quick preset buttons */}
-            <div style={{ display:"flex", gap:4, marginLeft:"auto" }}>
-              {[config.min, config.default, config.max].filter((v,i,a) => a.indexOf(v) === i).map(d => (
-                <button key={d} type="button"
-                  onClick={() => setForm(f => ({ ...f, end_date: addDays(f.start_date, d) }))}
-                  style={{
-                    padding:"2px 8px", borderRadius:"var(--rs)", border:"1px solid var(--border-mid)",
-                    background: duration === d ? "var(--brand)" : "var(--raised)",
-                    color: duration === d ? "#fff" : "var(--t2)",
-                    fontFamily:"var(--font-body)", fontSize:"0.75rem", cursor:"pointer",
-                  }}>
-                  {d}d
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Warnings */}
-        {warnings.map((w, i) => (
-          <div key={i} style={{ padding:"8px 12px", borderRadius:"var(--rs)", marginBottom:8,
-            background:"rgba(234,160,18,0.06)", border:"1px solid rgba(234,160,18,0.2)",
-            fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--unclear)",
-            display:"flex", alignItems:"flex-start", gap:8 }}>
-            <span style={{ flexShrink:0, fontWeight:700 }}>!</span>
-            {w}
-          </div>
-        ))}
-
-        <Field label="Strategic Focus" hint="Max 3 priorities — be ruthless">
-          <textarea className="input" rows={3} value={form.focus} onChange={set("focus")}
-            placeholder="What matters most this cycle? List up to 3 priorities." required />
-        </Field>
-        <Field label="Success Signals" hint="How will we recognize progress?">
-          <textarea className="input" rows={2} value={form.signals} onChange={set("signals")}
-            placeholder="e.g. Increased AI adoption, Stronger pipeline" />
-        </Field>
-        <Field label="Status">
-          <select className="input" value={form.status} onChange={set("status")}>
-            <option>Planned</option><option>Active</option>
-          </select>
-        </Field>
-
-        <ModalFooter>
-          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
-          <button type="submit" disabled={saving} className="btn-primary flex-1">
-            {saving ? "Creating..." : "Create Sprint →"}
-          </button>
-        </ModalFooter>
-      </form>
-    </Modal>
   );
 }

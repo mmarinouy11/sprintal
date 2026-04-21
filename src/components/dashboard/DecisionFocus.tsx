@@ -9,12 +9,13 @@ import BetDetailPanel from "@/components/bets/BetDetailPanel";
 // Labels defined inside component using translations
 
 function EmptyState({ color }: { color: string }) {
+  const t = useT("dashboard");
   return (
     <div style={{ padding:"24px 16px", textAlign:"center" }}>
       <div style={{ width:32, height:32, borderRadius:"50%", background:`${color}15`, margin:"0 auto 8px", display:"flex", alignItems:"center", justifyContent:"center" }}>
         <div style={{ width:8, height:8, borderRadius:"50%", background:color, opacity:0.4 }}/>
       </div>
-      <div style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--t3)", fontStyle:"italic" }}>None</div>
+      <div style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--t3)", fontStyle:"italic" }}>{t("none")}</div>
     </div>
   );
 }

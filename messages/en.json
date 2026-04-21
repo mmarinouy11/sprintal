@@ -14,7 +14,9 @@
     "betsBoardSub": "Grouped by status · Click any bet to expand",
     "sprintsSub": "Time-boxed strategic cycles",
     "dashboardSub": "Strategic overview · Current sprint only",
-    "evidenceSub": "Signal tracking and decisions"
+    "evidenceSub": "Signal tracking and decisions",
+    "newArea": "New Area",
+    "noSubAreas": "no sub-areas"
   },
   "actions": {
     "newSprint": "New Sprint",
@@ -143,5 +145,23 @@
     "impact": "Impact",
     "all": "All",
     "noResults": "No bets match the current filters."
+  },
+  "landing": {
+    "tagline": "The operating system for strategic leadership",
+    "headline": "Test.\nScale.\nWin.",
+    "desc": "90-day strategic sprints for leadership teams who make decisions with conviction.",
+    "step1": "Place bets",
+    "step2": "Track signal, not noise",
+    "step3": "Scale what works. Kill what doesn't."
+  },
+  "sprints": {
+    "strategicFocus": "Strategic Focus",
+    "bets": "bets",
+    "active": "active",
+    "strongSignal": "strong signal",
+    "whatWorked": "What worked",
+    "whatDidnt": "What didn't",
+    "surprises": "Surprises",
+    "noSprintsDesc": "A sprint defines your strategic focus for a cycle. Create your first sprint to start tracking bets and progress."
   }
 }

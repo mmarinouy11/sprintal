@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -9,6 +10,7 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
   const store = useStore();
   const org = store.org;
   const childOrgs = store.childOrgs;
+    const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [parentOrg, setParentOrg] = useState<Organization | null>(null);
@@ -182,7 +184,7 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                     color: org?.plan === "trial" ? "var(--t3)" : "var(--brand)",
                   }}>
                   <span style={{ display:"flex", alignItems:"center", gap:8 }}>
-                    <span style={{ fontWeight: 700 }}>+</span> New Area
+                    <span style={{ fontWeight: 700 }}>+</span> {t("nav.newArea")}
                   </span>
                   {org?.plan === "trial" && (
                     <span style={{ fontSize:"0.6875rem", fontFamily:"var(--font-body)",
@@ -236,7 +238,7 @@ function AreaItem({ org, current, navigable, onClick }: {
           {org.name}
         </div>
         {!navigable && !current && (
-          <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.6875rem", color: "var(--t3)" }}>
+          <div style={{ fontFamily: "var(--font-body)", fontSize: "0.6875rem", color: "var(--t3)" }}>
             no sub-areas
           </div>
         )}
