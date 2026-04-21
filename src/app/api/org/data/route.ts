@@ -29,6 +29,9 @@ export async function GET(req: NextRequest) {
     if (!slug) return NextResponse.json({ error: "slug requerido." }, { status: 400 });
 
     // Load org
+    const { data: allOrgs } = await supabaseAdmin
+      .from("organizations").select("id, slug, plan").eq("slug", slug);
+    console.log("ALL ORGS WITH SLUG:", JSON.stringify(allOrgs));
     const { data: org, error: orgErr } = await supabaseAdmin
       .from("organizations").select("*").eq("slug", slug).single();
     console.log("ORG PLAN DEBUG:", org?.id, org?.plan, new Date().toISOString());
