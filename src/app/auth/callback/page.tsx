@@ -46,7 +46,7 @@ export default function AuthCallbackPage() {
       setStatus("success");
       setTimeout(() => {
         if (!org.onboarding_complete) {
-          router.replace(`/${org.slug}/onboarding`);
+          router.replace(`/onboarding/${org.slug}`);
         } else {
           router.replace(`/${org.slug}/dashboard`);
         }

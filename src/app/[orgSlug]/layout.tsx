@@ -67,10 +67,9 @@ export default function OrgLayout({
         }
       }
 
-      // Redirect to onboarding if needed
-      const onboardingPath = `/${params.orgSlug}/onboarding`;
-      if (!orgData.onboarding_complete && pathname !== onboardingPath) {
-        router.replace(onboardingPath);
+      // Redirect to onboarding if needed — outside this layout to avoid loops
+      if (!orgData.onboarding_complete) {
+        router.replace(`/onboarding/${params.orgSlug}`);
         setLoading(false);
         return;
       }

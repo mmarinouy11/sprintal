@@ -43,7 +43,7 @@ export default function LoginPage() {
     const org = await res.json();
 
     if (!org.onboarding_complete) {
-      router.push(`/${org.slug}/onboarding`);
+      router.push(`/onboarding/${org.slug}`);
     } else {
       router.push(`/${org.slug}/dashboard`);
     }

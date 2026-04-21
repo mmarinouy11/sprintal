@@ -56,7 +56,7 @@ export default function SignupPage() {
       // 3. If session exists immediately (email confirmation disabled), go to onboarding
       // If no session, email confirmation is required — go to verify page
       if (authData.session) {
-        router.push(`/${data.slug}/onboarding`);
+        router.push(`/onboarding/${data.slug}`);
       } else {
         router.push(`/auth/verify?email=${encodeURIComponent(form.email)}`);
       }
