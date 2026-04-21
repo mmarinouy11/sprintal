@@ -31,6 +31,7 @@ export async function GET(req: NextRequest) {
     // Load org
     const { data: org, error: orgErr } = await supabaseAdmin
       .from("organizations").select("*").eq("slug", slug).single();
+    console.log("ORG PLAN DEBUG:", org?.id, org?.plan, new Date().toISOString());
     if (!org) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
 
     // Verify membership
