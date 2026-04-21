@@ -3,3 +3,7 @@
 node_modules/
 .next/
 out/
+
+# macOS
+.DS_Store
+.tmp.driveupload
