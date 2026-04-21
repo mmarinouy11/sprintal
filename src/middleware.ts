@@ -4,11 +4,8 @@ import { routing } from "./i18n/routing";
 export default createMiddleware(routing);
 
 export const config = {
+  // Only run on non-API, non-static routes
   matcher: [
-    // Match all pathnames except:
-    // - API routes
-    // - Static files (_next, public)
-    // - Auth callback (Supabase handles redirect)
-    "/((?!api|_next|_vercel|.*\\..*).*)",
+    "/((?!api|_next|_vercel|auth|.*\\..*).*)",
   ],
 };
