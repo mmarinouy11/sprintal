@@ -6,6 +6,7 @@ import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 
 const AREA_DOTS = ["#EC4899","#22C55E","#EAA012","#7C3AED","#2563EB","#0891B2","#F97316","#DC2626"];
 
@@ -15,6 +16,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
   const { org, childOrgs, reset, currentRole } = useStore();
   const perms = usePermissions(currentRole);
   const base = `/${orgSlug}`;
+  const t = useTranslations();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -31,19 +33,19 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
   }, []);
 
   const coreNav = [
-    { href:`${base}/dashboard`,  label:"Executive Dashboard", dot:"var(--brand)",   icon:"◉" },
-    { href:`${base}/sprints`,    label:"Enterprise Sprints",  dot:"var(--active)",  icon:"⚡" },
-    { href:`${base}/bets/board`, label:"Bets — Board",        dot:"var(--unclear)", icon:"⬡" },
-    { href:`${base}/bets/table`, label:"Bets — Table",        dot:"var(--t3)",      icon:"≡" },
-    { href:`${base}/evidence`,   label:"Evidence Log",        dot:"var(--pivoted)", icon:"◎" },
+    { href:`${base}/dashboard`,  label:t("nav.dashboard"), dot:"var(--brand)",   icon:"◉" },
+    { href:`${base}/sprints`,    label:t("nav.sprints"), dot:"var(--active)",  icon:"⚡" },
+    { href:`${base}/bets/board`, label:t("nav.betsBoard"), dot:"var(--unclear)", icon:"⬡" },
+    { href:`${base}/bets/table`, label:t("nav.betsTable"), dot:"var(--t3)",      icon:"≡" },
+    { href:`${base}/evidence`,   label:t("nav.evidence"), dot:"var(--pivoted)", icon:"◎" },
   ];
 
   const actionNav = [
-    { href:`${base}/new/sprint`,  label:"New Sprint",       show: perms.canCreateSprint },
-    { href:`${base}/new/bet`,     label:"New Bet",          show: perms.canCreateBet },
-    { href:`${base}/new/signal`,  label:"Signal Check",     show: perms.canSignalCheck },
-    { href:`${base}/new/review`,  label:"Strategic Review", show: perms.canReview },
-    { href:`${base}/new/closure`, label:"Close Sprint",     show: perms.canCloseSprint },
+    { href:`${base}/new/sprint`,  label:t("actions.newSprint"), show: perms.canCreateSprint },
+    { href:`${base}/new/bet`,     label:t("actions.newBet"), show: perms.canCreateBet },
+    { href:`${base}/new/signal`,  label:t("actions.signalCheck"), show: perms.canSignalCheck },
+    { href:`${base}/new/review`,  label:t("actions.strategicReview"), show: perms.canReview },
+    { href:`${base}/new/closure`, label:t("actions.closeSprint"), show: perms.canCloseSprint },
   ].filter(item => item.show);
 
   const sidebarWidth = collapsed ? 52 : 224;
@@ -81,7 +83,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
 
         {/* Core */}
         <div style={{ padding:"8px 0 4px" }}>
-          {!collapsed && <div className="nav-group-label">Core</div>}
+          {!collapsed && <div className="nav-group-label">{t("nav.core")}</div>}
           {coreNav.map(item => {
             const active = pathname === item.href;
             return (
@@ -117,7 +119,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
         {/* Actions */}
         {!collapsed && (
           <div style={{ padding:"8px 0 4px" }}>
-            <div className="nav-group-label">Actions</div>
+            <div className="nav-group-label">{t("nav.actions")}</div>
             {actionNav.map(item => {
               const active = pathname === item.href;
               return (
@@ -144,7 +146,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
         {/* By Area */}
         {!collapsed && childOrgs.length > 0 && (
           <div style={{ padding:"8px 0 4px" }}>
-            <div className="nav-group-label">By Area</div>
+            <div className="nav-group-label">{t("nav.byArea")}</div>
             {childOrgs.map((area, i) => {
               const href = `${base}/bets/table?area=${encodeURIComponent(area.name)}`;
               const active = pathname + (typeof window !== "undefined" ? window.location.search : "") === href;
@@ -190,7 +192,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
         ) : (
           <>
             <Link href={`${base}/settings`} title="Settings"
-              style={{ color:"var(--t3)", textDecoration:"none", fontSize:"1rem" }}>⚙</Link>
+              style={{ color:"var(--t3)", textDecoration:"none", fontSize:"1rem" }}>{t("nav.settings")}</Link>
             <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
               title="Sign out"
               style={{ color:"var(--t3)", background:"none", border:"none", cursor:"pointer",

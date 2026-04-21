@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -36,6 +37,48 @@ function Section({ title, subtitle, children }: {
   );
 }
 
+
+const LANGS = [
+  { code: "en", label: "English" },
+  { code: "es", label: "Español" },
+  { code: "pt", label: "Português" },
+] as const;
+
+function LanguageSelector() {
+  const [current, setCurrent] = useState<string>("en");
+
+  useEffect(() => {
+    const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
+    if (match) setCurrent(match[1]);
+  }, []);
+
+  function setLocale(code: string) {
+    document.cookie = `NEXT_LOCALE=${code}; path=/; max-age=31536000`;
+    setCurrent(code);
+    window.location.reload();
+  }
+
+  return (
+    <Section title="Language" subtitle="Interface language for this browser.">
+      <div style={{ display: "flex", gap: 8 }}>
+        {LANGS.map(lang => (
+          <button key={lang.code} onClick={() => setLocale(lang.code)}
+            style={{
+              padding: "8px 16px", borderRadius: "var(--rs)",
+              border: `1px solid ${current === lang.code ? "var(--brand)" : "var(--border-mid)"}`,
+              background: current === lang.code ? "var(--brand-bg)" : "var(--surface)",
+              color: current === lang.code ? "var(--brand)" : "var(--t2)",
+              fontFamily: "var(--font-body)", fontSize: "0.875rem",
+              fontWeight: current === lang.code ? 600 : 400, cursor: "pointer",
+            }}>
+            {lang.label}
+          </button>
+        ))}
+      </div>
+    </Section>
+  );
+}
+
 export default function SettingsPage() {
   const params = useParams();
   const router = useRouter();
@@ -47,6 +90,7 @@ export default function SettingsPage() {
   const [color, setColor] = useState("");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
+  const t = useTranslations();
   const isOwner = currentRole === "owner";
   const isAdmin = currentRole === "admin" || isOwner;
 
@@ -256,6 +300,9 @@ export default function SettingsPage() {
         )}
       </Section>
 
+
+      {/* Language */}
+      <LanguageSelector />
       {/* Plan */}
       <Section title="Plan" subtitle="Your current subscription.">
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",

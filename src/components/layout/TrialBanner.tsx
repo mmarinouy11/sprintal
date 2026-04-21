@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { Organization } from "@/types";
 
 export default function TrialBanner({ org }: { org: Organization }) {
@@ -9,7 +10,8 @@ export default function TrialBanner({ org }: { org: Organization }) {
   const daysLeft = Math.ceil((trialEnd.getTime() - now.getTime()) / 86400000);
 
   if (daysLeft <= 0) return null; // Layout already redirects if expired
-  if (daysLeft > 14) return null; // Only show when 14 days or less remain
+  if (daysLeft > 14) return null;
+  const t = useTranslations("trial"); // Only show when 14 days or less remain
 
   const isUrgent = daysLeft <= 3;
 
@@ -26,8 +28,8 @@ export default function TrialBanner({ org }: { org: Organization }) {
         color: isUrgent ? "var(--killed)" : "var(--unclear)",
       }}>
         {isUrgent
-          ? `⚠ Tu período de prueba vence en ${daysLeft} día${daysLeft === 1 ? "" : "s"}.`
-          : `Tu período de prueba vence en ${daysLeft} días.`
+          ? `⚠ ${t("daysLeft", { days: daysLeft })}`
+          : `${t("daysLeft", { days: daysLeft })}`
         }
       </div>
       <a href="mailto:hello@sprintal.com?subject=Activar plan Pro"

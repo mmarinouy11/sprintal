@@ -7,6 +7,7 @@ import DecisionFocus from "@/components/dashboard/DecisionFocus";
 import PendingUpdates from "@/components/dashboard/PendingUpdates";
 import SprintCard from "@/components/sprints/SprintCard";
 import LoadingScreen from "@/components/ui/LoadingScreen";
+import { useTranslations } from "next-intl";
 import RollupDashboard from "@/components/dashboard/RollupDashboard";
 import OwnedBetsSection from "@/components/dashboard/OwnedBetsSection";
 
@@ -21,6 +22,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 export default function DashboardPage() {
   const { loading } = useStore();
+  const t = useTranslations("dashboard");
   if (loading) return <LoadingScreen />;
   return (
     <div className="w-full px-10 py-8 fade-up">
@@ -49,8 +51,8 @@ export default function DashboardPage() {
       </div>
 
       <OwnedBetsSection />
-      <Section label="Active Bets in Current Sprint"><ActiveBetsTable /></Section>
-      <Section label="Decision Focus"><DecisionFocus /></Section>
+      <Section label=t("activeBets")><ActiveBetsTable /></Section>
+      <Section label=t("decisionFocus")><DecisionFocus /></Section>
       <Section label="Overdue — Strategic Review"><PendingUpdates type="review" /></Section>
       <Section label="Overdue — Signal Check"><PendingUpdates type="signal" /></Section>
       <RollupDashboard />

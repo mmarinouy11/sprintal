@@ -1,5 +1,6 @@
 "use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -7,6 +8,7 @@ import { Suspense } from "react";
 function VerifyContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
+  const t = useTranslations("auth");
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
 
@@ -75,7 +77,7 @@ function VerifyContent() {
               cursor: resending ? "default" : "pointer",
               transition: "all 0.15s",
             }}>
-            {resent ? "✓ Email enviado" : resending ? "Enviando..." : "Reenviar email"}
+            {resent ? "✓ Email enviado" : resending ? "..." : t("resend")}
           </button>
         </div>
 

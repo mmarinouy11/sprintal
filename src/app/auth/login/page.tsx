@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
+  const t = useTranslations("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -65,7 +67,7 @@ export default function LoginPage() {
             <div>
               <label className="t-label block mb-2">Email</label>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
-                className="input" placeholder="you@company.com" required />
+                className="input" placeholder=t("emailPlaceholder") required />
             </div>
             <div>
               <label className="t-label block mb-2">Password</label>
@@ -79,7 +81,7 @@ export default function LoginPage() {
               </div>
             )}
             <button type="submit" disabled={loading} className="btn-primary w-full py-2.5 mt-2">
-              {loading ? "Signing in..." : "Sign in →"}
+              {loading ? t("signingIn") : t("signIn")}
             </button>
           </form>
           <p className="mt-8 t-mono text-center" style={{color:"var(--t3)"}}>

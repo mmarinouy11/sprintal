@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 export default function SignupPage() {
   const router = useRouter();
+  const t = useTranslations("auth");
   const [form, setForm] = useState({ email: "", password: "", orgName: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -90,7 +92,7 @@ export default function SignupPage() {
                 Organization Name
               </label>
               <input className="input" value={form.orgName} onChange={set("orgName")}
-                placeholder="e.g. Acme Corp" required autoFocus />
+                placeholder=t("orgPlaceholder") required autoFocus />
             </div>
             <div>
               <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
@@ -99,7 +101,7 @@ export default function SignupPage() {
                 Email
               </label>
               <input className="input" type="email" value={form.email} onChange={set("email")}
-                placeholder="you@company.com" required />
+                placeholder=t("emailPlaceholder") required />
             </div>
             <div>
               <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
@@ -108,7 +110,7 @@ export default function SignupPage() {
                 Password
               </label>
               <input className="input" type="password" value={form.password} onChange={set("password")}
-                placeholder="Min. 8 characters" required minLength={8} />
+                placeholder=t("passwordMin") required minLength={8} />
             </div>
 
             {error && (
@@ -124,7 +126,7 @@ export default function SignupPage() {
                 background:"var(--brand)", color:"#fff", border:"none", cursor:"pointer",
                 fontFamily:"var(--font-body)", fontWeight:600, fontSize:"1rem",
                 marginTop:4, opacity: loading ? 0.7 : 1 }}>
-              {loading ? "Creating account..." : "Create Account →"}
+              {loading ? t("creating") : t("signUp")}
             </button>
           </form>
 

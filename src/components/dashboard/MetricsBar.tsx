@@ -1,4 +1,5 @@
 "use client";
+import { useTranslations } from "next-intl";
 import { useStore } from "@/lib/store";
 import { useEffect, useRef } from "react";
 
@@ -53,10 +54,10 @@ export default function MetricsBar() {
       border:"1px solid var(--border)", borderLeft:"3px solid var(--brand)",
       borderRadius:"var(--r)", background:"var(--surface)", overflow:"hidden",
     }}>
-      <Metric label="Active Sprint"  value={active?1:0} sub={active?.name||"None"}  color="var(--brand)" />
-      <Metric label="Bets in Sprint" value={ab.length}  sub="currently testing"     color="var(--text)" />
-      <Metric label="Strong Signal"  value={ab.filter(b=>b.signal==="Strong").length} sub="candidates to scale" color="var(--scaled)" />
-      <Metric label="At Risk"        value={ab.filter(b=>b.signal!=="Strong").length} sub="need a decision"     color="var(--unclear)" last />
+      <Metric label=t("activeSprint")  value={active?1:0} sub={active?.name||t("none")}  color="var(--brand)" />
+      <Metric label=t("betsInSprint") value={ab.length}  sub=t("currentlyTesting")     color="var(--text)" />
+      <Metric label=t("strongSignal")  value={ab.filter(b=>b.signal==="Strong").length} sub=t("candidatesToScale") color="var(--scaled)" />
+      <Metric label=t("atRisk")        value={ab.filter(b=>b.signal!=="Strong").length} sub=t("needADecision")     color="var(--unclear)" last />
     </div>
   );
 }

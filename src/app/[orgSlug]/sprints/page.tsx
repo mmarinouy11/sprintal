@@ -3,11 +3,13 @@ import { useStore } from "@/lib/store";
 import { StatusBadge } from "@/components/ui/Badge";
 import { sprintProgress, daysRemaining } from "@/lib/utils";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 
 export default function SprintsPage() {
   const { sprints, bets } = useStore();
   const params = useParams();
+  const t = useTranslations();
 
   return (
     <div className="w-full px-10 py-8">
