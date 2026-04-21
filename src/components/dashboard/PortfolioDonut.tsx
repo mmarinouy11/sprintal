@@ -3,6 +3,7 @@ import { useStore } from "@/lib/store";
 import { useEffect, useRef } from "react";
 import { Chart, ArcElement, DoughnutController, Tooltip } from "chart.js";
 import { useRouter, useParams } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 Chart.register(ArcElement, DoughnutController, Tooltip);
 
@@ -13,6 +14,7 @@ const COLORS = {
 
 export default function PortfolioDonut() {
   const { bets } = useStore();
+  const t = useT("dashboard");
   const ref = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart|null>(null);
   const router = useRouter();
@@ -50,7 +52,7 @@ export default function PortfolioDonut() {
       height:"100%", boxSizing:"border-box",
     }}>
       <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--t3)", marginBottom:16 }}>
-        Portfolio Balance
+        {t("portfolioBalance")}
       </div>
 
       {/* Chart */}
@@ -62,7 +64,7 @@ export default function PortfolioDonut() {
               {total}
             </div>
             <div style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem", color:"var(--t3)", marginTop:3, fontWeight:500 }}>
-              {total === 1 ? "Bet" : "Bets"}
+              {total === 1 ? t("bet") : t("bets")}
             </div>
           </div>
         </div>
@@ -75,7 +77,7 @@ export default function PortfolioDonut() {
             onClick={()=>router.push(`/${params.orgSlug}/bets/table?status=${s}`)}
             style={{ display:"flex", alignItems:"center", gap:8, background:"none", border:"none", cursor:"pointer", padding:"3px 0" }}>
             <div style={{ width:8, height:8, borderRadius:"50%", background:COLORS[s], flexShrink:0 }}/>
-            <span style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t2)", flex:1, textAlign:"left" }}>{s}</span>
+            <span style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t2)", flex:1, textAlign:"left" }}>{t(`status.${s.toLowerCase()}`)}</span>
             <span style={{ fontFamily:"var(--font-display)", fontSize:"0.9375rem", fontWeight:700, color:"var(--text)" }}>{counts[i]}</span>
           </button>
         ))}

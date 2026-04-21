@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { SignalBadge, AreaTag } from "@/components/ui/Badge";
 import type { Bet } from "@/types";
+import { useT } from "@/lib/i18n";
 import BetDetailPanel from "@/components/bets/BetDetailPanel";
 
 export default function ActiveBetsTable() {
@@ -10,6 +11,7 @@ export default function ActiveBetsTable() {
   const active = sprints.find(s => s.status === "Active");
   const ab = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
   const [selectedBet, setSelectedBet] = useState<Bet|null>(null);
+  const t = useT();
 
   return (
     <>
@@ -17,12 +19,12 @@ export default function ActiveBetsTable() {
         <table className="tbl">
           <thead>
             <tr>
-              {["Bet","Owner","Signal","Last Reviewed","Note"].map(h => <th key={h}>{h}</th>)}
+              {[t("table.bet"),t("table.owner"),t("table.signal"),t("table.lastReviewed"),t("table.note")].map(h => <th key={h}>{h}</th>)}
             </tr>
           </thead>
           <tbody>
             {ab.length === 0
-              ? <tr><td colSpan={5} style={{ color:"var(--t3)", fontFamily:"var(--font-body)", fontStyle:"italic", padding:"20px 16px" }}>No active bets in current sprint.</td></tr>
+              ? <tr><td colSpan={5} style={{ color:"var(--t3)", fontFamily:"var(--font-body)", fontStyle:"italic", padding:"20px 16px" }}>{t("dashboard.noActiveBets")}</td></tr>
               : ab.map(b => {
                   const incomplete = !b.kill_criteria || !b.scale_trigger || !b.hypothesis;
                   const isOrphan = b.bet_type !== "enabler" &&
@@ -48,7 +50,7 @@ export default function ActiveBetsTable() {
                                 fontFamily:"var(--font-body)", fontWeight:500,
                                 background:"rgba(234,160,18,0.1)", color:"var(--unclear)",
                                 border:"1px solid rgba(234,160,18,0.2)", flexShrink:0 }}>
-                              orphan
+                              {t("bet.orphan")}
                             </span>
                           )}
                           {b.parent_alert && (

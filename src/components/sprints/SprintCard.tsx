@@ -40,10 +40,10 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
             {active.name}
           </div>
           <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.8125rem", color:"var(--t3)", marginTop:3 }}>
-            {active.start_date} → {active.end_date} · {days}d remaining
+            {active.start_date} → {active.end_date} · {t("daysRemaining", { days })}
           </div>
         </div>
-        <span className="badge badge-sprint" style={{ flexShrink:0, marginTop:2 }}>Active Sprint</span>
+        <span className="badge badge-sprint" style={{ flexShrink:0, marginTop:2 }}>{t("activeSprint")}</span>
       </div>
 
       {/* Focus */}
@@ -57,7 +57,7 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
       {signals.length > 0 && (
         <div>
           <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--t3)", marginBottom:8 }}>
-            Success Signals
+            {t("successSignals")}
           </div>
           {signals.slice(0,3).map((s,i) => (
             <div key={i} style={{ display:"flex", alignItems:"center", gap:8, fontSize:"0.875rem", fontFamily:"var(--font-body)", color:"var(--t2)", marginBottom:4 }}>
@@ -72,7 +72,7 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
       <div style={{ marginTop:"auto" }}>
         <div style={{ display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:6 }}>
           <span style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--t3)" }}>
-            Sprint Progress
+            {t("sprintProgress")}
           </span>
           <span style={{ fontFamily:"var(--font-display)", fontSize:"0.875rem", fontWeight:600, color:"var(--brand)" }}>
             {pct}%

@@ -13,7 +13,8 @@
     "betsTableSub": "Todos los bets · Hacé click para expandir",
     "betsBoardSub": "Agrupados por estado · Hacé click para expandir",
     "sprintsSub": "Ciclos estratégicos con tiempo definido",
-    "dashboardSub": "Vista estratégica · Sprint actual"
+    "dashboardSub": "Vista estratégica · Sprint actual",
+    "evidenceSub": "Seguimiento de señales y decisiones"
   },
   "actions": {
     "newSprint": "Nuevo Sprint",
@@ -43,7 +44,19 @@
     "overdueSignal": "Vencido — Signal Check",
     "areasRollup": "Áreas — Resumen",
     "noActiveSprint": "Sin sprint activo.",
-    "neverReviewed": "Sin revisión, cada {days}d"
+    "neverReviewed": "Sin revisión, cada {days}d",
+    "daysRemaining": "{days}d restantes",
+    "successSignals": "Señales de Éxito",
+    "sprintProgress": "Progreso del Sprint",
+    "throughSprint": "{pct}% del sprint",
+    "noActiveBets": "Sin bets activas en el sprint actual.",
+    "allUpToDate": "Todos los {label} al día.",
+    "lastReviewed": "{date}, hace {days}d, cada {interval}d",
+    "strategicReviews": "revisiones estratégicas",
+    "signalChecks": "signal checks",
+    "subTeams": "Sub-equipos",
+    "bet": "Bet",
+    "bets": "Bets"
   },
   "auth": {
     "signIn": "Ingresar",
@@ -91,7 +104,8 @@
   "signal": {
     "strong": "Fuerte",
     "unclear": "Incierto",
-    "weak": "Débil"
+    "weak": "Débil",
+    "all": "Todos"
   },
   "status": {
     "active": "Activa",
@@ -113,5 +127,17 @@
     "noData": "—",
     "optional": "opcional",
     "pro": "Pro"
+  },
+  "table": {
+    "bet": "Bet",
+    "owner": "Responsable",
+    "signal": "Señal",
+    "lastReviewed": "Última Revisión",
+    "note": "Nota",
+    "status": "Estado",
+    "area": "Área",
+    "impact": "Impacto",
+    "all": "Todos",
+    "noResults": "Ningún bet coincide con los filtros."
   }
 }

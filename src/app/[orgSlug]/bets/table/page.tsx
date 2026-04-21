@@ -51,19 +51,19 @@ export default function BetsTablePage() {
       {/* Filters */}
       <div className="space-y-2 mb-5">
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="t-label w-14">Status</span>
-          <Pill label="All" active={!statusF} onClick={() => setStatusF(null)} />
-          {STATUSES.map(s => <Pill key={s} label={s} active={statusF === s} onClick={() => setStatusF(s)} />)}
+          <span className="t-label w-14">{t("table.status")}</span>
+          <Pill label={t("table.all")} active={!statusF} onClick={() => setStatusF(null)} />
+          {STATUSES.map(s => <Pill key={s} label={t(`status.${s.toLowerCase()}`)} active={statusF === s} onClick={() => setStatusF(s)} />)}
         </div>
         <div className="flex items-center gap-2 flex-wrap">
-          <span className="t-label w-14">Signal</span>
-          <Pill label="All" active={!signalF} onClick={() => setSignalF(null)} />
-          {SIGNALS.map(s => <Pill key={s} label={s} active={signalF === s} onClick={() => setSignalF(s)} />)}
+          <span className="t-label w-14">{t("table.signal")}</span>
+          <Pill label={t("table.all")} active={!signalF} onClick={() => setSignalF(null)} />
+          {SIGNALS.map(s => <Pill key={s} label={t(`signal.${s.toLowerCase()}`)} active={signalF === s} onClick={() => setSignalF(s)} />)}
         </div>
         {filterAreas.length > 0 && (
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="t-label w-14">Area</span>
-            <Pill label="All" active={!ownerF} onClick={() => setOwnerF(null)} />
+            <span className="t-label w-14">{t("table.area")}</span>
+            <Pill label={t("table.all")} active={!ownerF} onClick={() => setOwnerF(null)} />
             {filterAreas.map(a => <Pill key={a} label={a} active={ownerF === a} onClick={() => setOwnerF(a)} />)}
           </div>
         )}

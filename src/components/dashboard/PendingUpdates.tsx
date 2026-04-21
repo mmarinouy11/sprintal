@@ -3,9 +3,11 @@ import { useStore } from "@/lib/store";
 import { differenceInDays, parseISO } from "date-fns";
 import { AreaTag, SignalBadge, StatusBadge } from "@/components/ui/Badge";
 import { getCadenceConfig, getSprintDuration } from "@/lib/utils";
+import { useT } from "@/lib/i18n";
 
 export default function PendingUpdates({ type }: { type: "review" | "signal" }) {
   const { bets, sprints, evidence, signalChecks } = useStore();
+  const t = useT("dashboard");
   const active = sprints.find(s => s.status === "Active");
   const activeBets = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
   const now = new Date();
@@ -28,11 +30,11 @@ export default function PendingUpdates({ type }: { type: "review" | "signal" }) 
   }).filter(({ days }) => days === null || days > threshold)
     .sort((a, z) => (z.days || 999) - (a.days || 999));
 
-  const label = type === "review" ? "strategic reviews" : "signal checks";
+  const label = type === "review" ? t("strategicReviews") : t("signalChecks");
 
   if (!items.length) return (
-    <p className="t-mono" style={{ color: "var(--scaled)" }}>
-      ✓ All {label} up to date.
+    <p className="text-small" style={{ color: "var(--scaled)" }}>
+      ✓ {t("allUpToDate", { label })}
     </p>
   );
 
@@ -56,8 +58,8 @@ export default function PendingUpdates({ type }: { type: "review" | "signal" }) 
             <div className="t-mono mt-2 font-medium"
               style={{ color: isOverdue ? "var(--killed)" : "var(--unclear)" }}>
               {isNever
-                ? `Never reviewed, due every ${threshold}d`
-                : `${lastDate}, ${days}d ago, due every ${threshold}d`}
+                ? t("neverReviewed", { days: threshold })
+                : t("lastReviewed", { date: lastDate!, days: days!, interval: threshold })}
             </div>
           </div>
         );

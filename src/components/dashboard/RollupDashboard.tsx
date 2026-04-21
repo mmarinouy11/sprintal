@@ -175,7 +175,7 @@ export default function RollupDashboard() {
                   background:"var(--raised)", fontFamily:"var(--font-body)",
                   fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em",
                   textTransform:"uppercase", color:"var(--t3)" }}>
-                  Sub-teams
+                  {t("subTeams")}
                 </div>
                 {descendants.map((d, i) => (
                   <div key={i} style={{

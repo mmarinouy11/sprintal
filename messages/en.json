@@ -13,7 +13,8 @@
     "betsTableSub": "All bets · Click any row to expand",
     "betsBoardSub": "Grouped by status · Click any bet to expand",
     "sprintsSub": "Time-boxed strategic cycles",
-    "dashboardSub": "Strategic overview · Current sprint only"
+    "dashboardSub": "Strategic overview · Current sprint only",
+    "evidenceSub": "Signal tracking and decisions"
   },
   "actions": {
     "newSprint": "New Sprint",
@@ -43,7 +44,19 @@
     "overdueSignal": "Overdue — Signal Check",
     "areasRollup": "Areas — Roll-up",
     "noActiveSprint": "No active sprint.",
-    "neverReviewed": "Never reviewed, due every {days}d"
+    "neverReviewed": "Never reviewed, due every {days}d",
+    "daysRemaining": "{days}d remaining",
+    "successSignals": "Success Signals",
+    "sprintProgress": "Sprint Progress",
+    "throughSprint": "{pct}% through sprint",
+    "noActiveBets": "No active bets in current sprint.",
+    "allUpToDate": "All {label} up to date.",
+    "lastReviewed": "{date}, {days}d ago, due every {interval}d",
+    "strategicReviews": "strategic reviews",
+    "signalChecks": "signal checks",
+    "subTeams": "Sub-teams",
+    "bet": "Bet",
+    "bets": "Bets"
   },
   "auth": {
     "signIn": "Sign in",
@@ -91,7 +104,8 @@
   "signal": {
     "strong": "Strong",
     "unclear": "Unclear",
-    "weak": "Weak"
+    "weak": "Weak",
+    "all": "All"
   },
   "status": {
     "active": "Active",
@@ -113,5 +127,17 @@
     "noData": "—",
     "optional": "optional",
     "pro": "Pro"
+  },
+  "table": {
+    "bet": "Bet",
+    "owner": "Owner",
+    "signal": "Signal",
+    "lastReviewed": "Last Reviewed",
+    "note": "Note",
+    "status": "Status",
+    "area": "Area",
+    "impact": "Impact",
+    "all": "All",
+    "noResults": "No bets match the current filters."
   }
 }

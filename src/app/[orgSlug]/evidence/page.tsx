@@ -10,7 +10,7 @@ export default function EvidencePage() {
     <div className="w-full px-10 py-8">
       <div className="mb-8 pb-5 border-b border-[var(--border)]">
         <h1 className="ph-title">Evidence Log</h1>
-        <p className="ph-sub">Signal tracking and decisions</p>
+        <p className="ph-sub">{t("nav.evidenceSub")}</p>
       </div>
 
       {evidence.length === 0 ? (
