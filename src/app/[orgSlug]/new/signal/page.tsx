@@ -25,8 +25,8 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
       <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>{t("sidebar.signalMeanings")}</div>
       {SIGNALS.map(s => (
         <div key={s.value} className="mb-3 pl-3" style={{ borderLeft:`2px solid ${s.color}` }}>
-          <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{s.value}</div>
-          <div style={{ fontSize:"0.8125rem", color:"var(--t2)" }}>{/* desc removed */}</div>
+          <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{t(`signal.${s.value.toLowerCase()}`)}</div>
+          <div style={{ fontSize:"0.8125rem", color:"var(--t2)" }}>{t(`sidebar.${s.value.toLowerCase()}Desc`)}</div>
         </div>
       ))}
     </div>
@@ -79,7 +79,7 @@ export default function SignalCheckPage() {
           <div className="rounded p-4 mb-4" style={{ background:"var(--raised)", border:"1px solid var(--border)" }}>
             <div className="flex items-center gap-3 mb-3">
               <span className="t-label">{t("currentSignal")}</span>
-              <span className="font-medium text-sm" style={{ color:`var(--${bet.signal.toLowerCase()})` }}>● {bet.signal}</span>
+              <span className="font-medium text-sm" style={{ color:`var(--${bet.signal.toLowerCase()})` }}>● {t(`signal.${bet.signal.toLowerCase()}`)}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -104,7 +104,7 @@ export default function SignalCheckPage() {
                   background: signal===s.value ? `color-mix(in srgb, ${s.color} 10%, transparent)` : "transparent",
                   color: signal===s.value ? s.color : "var(--t3)",
                 }}>
-                ● {s.value}
+                ● {t(`signal.${s.value.toLowerCase()}`)}
               </button>
             ))}
           </div>

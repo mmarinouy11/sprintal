@@ -346,6 +346,11 @@
     "scaleWhenLabel": "Scale when",
     "betLabel": "Bet",
     "actionsFor": "Actions for {area}",
-    "outcomeLabel": "Outcome"
+    "outcomeLabel": "Outcome",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "durationDays2": "{days}d",
+    "betLevelNoteShort": "L{level} bet — referenceable by lower levels."
   }
 }

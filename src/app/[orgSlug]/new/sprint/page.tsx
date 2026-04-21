@@ -185,7 +185,7 @@ export default function NewSprintPage() {
   );
 
   return (
-    <Modal title={t("newSprint")} subtitle={`L${level} · ${t("sidebar.l1Duration")}: ${config.label}`} sidebar={SIDEBAR}>
+    <Modal title={t("newSprint")} subtitle={`L${level} · ${config.label}`} sidebar={SIDEBAR}>
       <form onSubmit={save}>
         <Field label={t("sprintName")} hint={t("sprintNameHint")}>
           <input className="input" value={form.name} onChange={set("name")}

@@ -289,7 +289,7 @@ export default function NewBetPage() {
           {[[t("revenue"),"revenue"],[t("margin"),"margin"],[t("importance"),"importance"]].map(([label,key]) => (
             <Field key={key} label={label}>
               <select className="input" value={form[key as keyof typeof form]} onChange={set(key)}>
-                <option>High</option><option>Medium</option><option>Low</option>
+                <option value="High">{t("high")}</option><option value="Medium">{t("medium")}</option><option value="Low">{t("low")}</option>
               </select>
             </Field>
           ))}

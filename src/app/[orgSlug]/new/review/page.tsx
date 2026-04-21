@@ -127,7 +127,7 @@ export default function StrategicReviewPage() {
   return (
     <Modal title={t("strategicReview")} subtitle={t("reviewSubtitle")} sidebar={<SidebarContent t={t} />}>
       <form onSubmit={save}>
-        <Field label="Bet">
+        <Field label={t("betLabel")}>
           <select className="input" value={betId} onChange={e => setBetId(e.target.value)}>
             {activeBets.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
           </select>
@@ -135,15 +135,15 @@ export default function StrategicReviewPage() {
 
         {bet && (
           <div className="rounded p-4 mb-4" style={{ background:"var(--raised)", border:"1px solid var(--border)" }}>
-            <div className="t-label mb-1">Hypothesis</div>
+            <div className="t-label mb-1">{t("hypothesis")}</div>
             <div className="text-sm mb-3" style={{ color:"var(--t2)" }}>{bet.hypothesis || "—"}</div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="t-label mb-1" style={{ color:"var(--killed)" }}>Kill if</div>
+                <div className="t-label mb-1" style={{ color:"var(--killed)" }}>{t("killIfLabel")}</div>
                 <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.kill_criteria || "—"}</div>
               </div>
               <div>
-                <div className="t-label mb-1" style={{ color:"var(--scaled)" }}>Scale when</div>
+                <div className="t-label mb-1" style={{ color:"var(--scaled)" }}>{t("scaleWhenLabel")}</div>
                 <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.scale_trigger || "—"}</div>
               </div>
             </div>
@@ -199,7 +199,7 @@ export default function StrategicReviewPage() {
         )}
 
         <ModalFooter>
-          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">{t("cancel")}</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
             {saving ? t("saving") : t("logReview")}
           </button>
