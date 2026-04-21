@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 
 const STATUS_CLASS: Record<string,string> = {
   Active:        "badge badge-active",
@@ -30,13 +31,21 @@ const AREA_STYLE: Record<string,{bg:string;color:string}> = {
 };
 
 export function StatusBadge({ status }: { status: string }) {
-  return <span className={STATUS_CLASS[status] || "badge badge-closed"}>{status}</span>;
+  const t = useT();
+  const key = `status.${status.toLowerCase().replace(/ /g, "_")}`;
+  const label = t(key);
+  const display = label === key ? status : label;
+  return <span className={STATUS_CLASS[status] || "badge badge-closed"}>{display}</span>;
 }
 
 export function SignalBadge({ signal }: { signal: string }) {
+  const t = useT();
+  const key = `signal.${signal.toLowerCase()}`;
+  const label = t(key);
+  const display = label === key ? signal : label;
   return (
     <span className="t-mono font-medium" style={{color:SIGNAL_COLOR[signal]||"var(--t2)"}}>
-      ● {signal}
+      ● {display}
     </span>
   );
 }

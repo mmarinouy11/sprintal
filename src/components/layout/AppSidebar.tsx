@@ -181,12 +181,12 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
             <Link href={`${base}/settings`}
               style={{ display:"block", fontSize:"0.8125rem", fontFamily:"var(--font-body)",
                 color:"var(--t3)", textDecoration:"none" }}>
-              ⚙ Settings
+              ⚙ {t("nav.settings")}
             </Link>
             <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
               style={{ fontSize:"0.8125rem", fontFamily:"var(--font-body)", color:"var(--t3)",
                 background:"none", border:"none", cursor:"pointer", padding:0 }}>
-              ↪ Sign out
+              ↪ {t("nav.signOut")}
             </button>
           </>
         ) : (

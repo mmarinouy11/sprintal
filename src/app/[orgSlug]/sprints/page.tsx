@@ -62,7 +62,7 @@ export default function SprintsPage() {
                 </div>
                 {s.focus && (
                   <>
-                    <div className="t-label mb-1" style={{ color:"var(--t3)" }}>Strategic Focus</div>
+                    <div className="t-label mb-1" style={{ color:"var(--t3)" }}>{t("sprints.strategicFocus")}</div>
                     <div className="text-sm" style={{ color:"var(--t2)" }}>{s.focus}</div>
                   </>
                 )}
@@ -73,7 +73,7 @@ export default function SprintsPage() {
                     </div>
                     <div className="text-xs mt-1" style={{ color:"var(--brand)",
                       fontFamily:"var(--font-body)", fontWeight:500 }}>
-                      {pct}% through sprint
+                      {t("dashboard.throughSprint", { pct })}
                     </div>
                   </div>
                 )}
@@ -87,10 +87,10 @@ export default function SprintsPage() {
                 </div>
                 {s.closure && (
                   <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-3 gap-4">
-                    {[["What worked", s.closure.worked], ["What didn't", s.closure.didnt],
-                      ["Surprises", s.closure.surprised]].map(([label, val]) => (
+                    {[[t("sprints.whatWorked"), s.closure.worked], [t("sprints.whatDidnt"), s.closure.didnt],
+                      [t("sprints.surprises"), s.closure.surprised]].map(([label, val]) => (
                       <div key={label as string}>
-                        <div className="t-label mb-1" style={{ color:"var(--t3)" }}>{label}</div>
+                        <div className="t-label mb-1" style={{ color:"var(--t3)" }}>{label as string}</div>
                         <div className="text-xs" style={{ color:"var(--t2)" }}>{val || "—"}</div>
                       </div>
                     ))}

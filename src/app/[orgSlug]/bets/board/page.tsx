@@ -62,7 +62,7 @@ export default function BetsBoardPage() {
                 }}>
                 <div className="flex items-center justify-between mb-3 pb-2"
                   style={{ borderBottom: "1px solid var(--border)" }}>
-                  <span className="t-label" style={{ color: COLORS[col] }}>{col}</span>
+                  <span className="t-label" style={{ color: COLORS[col] }}>{t(`status.${col.toLowerCase()}`)}</span>
                   <span style={{
                     background: "var(--raised)", color: "var(--t2)",
                     borderRadius: 4, padding: "1px 6px",

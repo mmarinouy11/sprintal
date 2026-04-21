@@ -14,7 +14,7 @@ const COLORS = {
 
 export default function PortfolioDonut() {
   const { bets } = useStore();
-  const t = useT("dashboard");
+  const t = useT();
   const ref = useRef<HTMLCanvasElement>(null);
   const chartRef = useRef<Chart|null>(null);
   const router = useRouter();
@@ -52,7 +52,7 @@ export default function PortfolioDonut() {
       height:"100%", boxSizing:"border-box",
     }}>
       <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--t3)", marginBottom:16 }}>
-        {t("portfolioBalance")}
+        {t("dashboard.portfolioBalance")}
       </div>
 
       {/* Chart */}
@@ -64,7 +64,7 @@ export default function PortfolioDonut() {
               {total}
             </div>
             <div style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem", color:"var(--t3)", marginTop:3, fontWeight:500 }}>
-              {total === 1 ? t("bet") : t("bets")}
+              {total === 1 ? t("dashboard.bet") : t("dashboard.bets")}
             </div>
           </div>
         </div>
