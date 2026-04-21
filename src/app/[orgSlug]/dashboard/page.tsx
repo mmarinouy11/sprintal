@@ -30,7 +30,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Top section — left grows, right is fixed 420px, both stretch to same height */}
-      <div style={{
+      <div className="dashboard-grid" style={{
         display: "grid",
         gridTemplateColumns: "1fr 420px",
         gap: 12,

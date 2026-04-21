@@ -465,3 +465,22 @@ textarea.input { resize: none; }
   border-color: var(--border-hi) !important;
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
 }
+
+/* ── RESPONSIVE ──────────────────────────────────────── */
+
+/* Tablet — hide sidebar labels, stack dashboard grid */
+@media (max-width: 900px) {
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+  .bets-board-grid {
+    grid-template-columns: repeat(5, minmax(180px, 1fr)) !important;
+    overflow-x: auto;
+  }
+}
+
+/* Mobile — further adjustments */
+@media (max-width: 640px) {
+  .px-10 { padding-left: 1rem !important; padding-right: 1rem !important; }
+  .py-8  { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
+}

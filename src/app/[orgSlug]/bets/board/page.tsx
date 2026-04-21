@@ -48,7 +48,7 @@ export default function BetsBoardPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-5 gap-3">
+        <div className="bets-board-grid grid grid-cols-5 gap-3">
           {COLS.map(col => {
             const cb = bets.filter(b => b.status === col);
             return (
