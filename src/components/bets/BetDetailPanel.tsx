@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useEffect, useState } from "react";
 import { Bet, Evidence, SignalCheck } from "@/types";
 import { StatusBadge, SignalBadge, AreaTag } from "@/components/ui/Badge";
@@ -31,13 +32,14 @@ function Section({ label, color, children }: { label: string; color?: string; ch
 }
 
 function Field({ label, value, color }: { label: string; value?: string; color?: string }) {
+  const t = useT("betDetail");
   const empty = !value;
   return (
     <div className="mb-3">
       <div className="t-label mb-1">{label}</div>
       <div className="text-sm leading-relaxed"
         style={{ color: empty ? "var(--t3)" : (color || "var(--text)"), fontStyle: empty ? "italic" : "normal" }}>
-        {value || "Not defined"}
+        {value || t("notDefined")}
       </div>
     </div>
   );
@@ -56,14 +58,14 @@ function ImpactPill({ label, value }: { label: string; value?: string }) {
   );
 }
 
-function getBetCompleteness(bet: Bet) {
+function getBetCompleteness(bet: Bet, t: (k:string)=>string) {
   const fields = [
-    { label:"Hypothesis",        done: !!bet.hypothesis },
-    { label:"Kill Criteria",     done: !!bet.kill_criteria },
-    { label:"Scale Trigger",     done: !!bet.scale_trigger },
-    { label:"Strategic Outcome", done: !!bet.outcome },
-    { label:"Why Now",           done: !!bet.why_now },
-    { label:"Indicators",        done: (bet.indicators?.length||0) > 0 },
+    { label:t("hypothesis"),       done: !!bet.hypothesis },
+    { label:t("killCriteria"),     done: !!bet.kill_criteria },
+    { label:t("scaleTrigger"),     done: !!bet.scale_trigger },
+    { label:t("strategicOutcome"), done: !!bet.outcome },
+    { label:t("whyNow"),           done: !!bet.why_now },
+    { label:t("leadingIndicators"),done: (bet.indicators?.length||0) > 0 },
   ];
   const done = fields.filter(f=>f.done).length;
   return { fields, done, total: fields.length, pct: Math.round((done/fields.length)*100) };
@@ -75,6 +77,8 @@ const EV_BORDER: Record<string,string> = {
 
 // ── Edit form ─────────────────────────────────────────────────────────────
 function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => void; onCancel: () => void }) {
+  const t = useT("betDetail");
+  const tg = useT();
   const { childOrgs } = useStore();
   const areas = childOrgs.map(a => a.name);
   const [form, setForm] = useState({
@@ -122,40 +126,40 @@ function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => voi
 
   return (
     <div>
-      <F label="Bet Name">
+      <F label={t("betName")}>
         <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.name} onChange={set("name")} />
       </F>
       <div className="grid grid-cols-2 gap-3">
-        <F label="Owner Area">
+        <F label={t("ownerArea")}>
           <select className={`${inputCls} ${focusStyle}`} style={{...inputStyle, appearance:"none", cursor:"pointer"}}
             value={form.owner_area} onChange={set("owner_area")}>
             <option value="">— Select —</option>
             {areas.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
         </F>
-        <F label="Point of Contact">
+        <F label={t("pointOfContact")}>
           <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.owner_contact} onChange={set("owner_contact")} placeholder="Name or role" />
         </F>
       </div>
-      <F label="Strategic Outcome">
+      <F label={t("strategicOutcome")}>
         <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.outcome} onChange={set("outcome")} placeholder="Measurable in 90 days" />
       </F>
-      <F label="Why Now">
+      <F label={t("whyNow")}>
         <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.why_now} onChange={set("why_now")} placeholder="Why is this the right moment?" />
       </F>
-      <F label="Hypothesis" hint="If X → Y → measured by Z">
+      <F label={t("hypothesis")} hint={t("hypothesisHint")}>
         <textarea className={`${inputCls} ${focusStyle}`} style={{...inputStyle, resize:"none"}} rows={3}
           value={form.hypothesis} onChange={set("hypothesis")} placeholder="If we do X, we believe Y will happen..." />
       </F>
       <div className="grid grid-cols-2 gap-3">
-        <F label="Kill Criteria">
+        <F label={t("killCriteria")}>
           <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.kill_criteria} onChange={set("kill_criteria")} placeholder="When do we stop?" />
         </F>
-        <F label="Scale Trigger">
+        <F label={t("scaleTrigger")}>
           <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.scale_trigger} onChange={set("scale_trigger")} placeholder="When do we double down?" />
         </F>
       </div>
-      <F label="Leading Indicators" hint="comma-separated, max 3">
+      <F label={t("leadingIndicators")} hint={t("indicatorsHint")}>
         <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.indicators} onChange={set("indicators")} placeholder="Metric 1, Metric 2, Metric 3" />
       </F>
       <div className="grid grid-cols-3 gap-3 mb-4">
@@ -163,7 +167,7 @@ function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => voi
           <F key={key} label={label}>
             <select className={`${inputCls} ${focusStyle}`} style={{...inputStyle, appearance:"none", cursor:"pointer"}}
               value={form[key as keyof typeof form]} onChange={set(key)}>
-              <option>High</option><option>Medium</option><option>Low</option>
+              <option value="High">{t("high")}</option><option value="Medium">{t("medium")}</option><option value="Low">{t("low")}</option>
             </select>
           </F>
         ))}
@@ -171,7 +175,7 @@ function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => voi
       <div className="flex gap-2 pt-3" style={{ borderTop:"1px solid var(--border)" }}>
         <button onClick={onCancel} className="btn-ghost flex-1" disabled={saving}>Cancel</button>
         <button onClick={save} className="btn-primary flex-1" disabled={saving}>
-          {saving ? "Saving..." : "Save Changes →"}
+          {saving ? t("saving") : t("saveChanges")}
         </button>
       </div>
     </div>
@@ -183,6 +187,8 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
   const { updateBet, betAlignments, bets: allBets, childOrgs } = useStore();
   const areas = childOrgs.map(a => a.name);
   const [bet, setBet] = useState(initialBet);
+  const t = useT("betDetail");
+  const tg = useT();
   const [editing, setEditing] = useState(false);
 
   // Cascade relationships
@@ -227,7 +233,7 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
     .sort((a,z)=>new Date(z.created_at||z.date).getTime()-new Date(a.created_at||a.date).getTime());
   const betSignals = signalChecks.filter(s=>s.bet_id===bet.id)
     .sort((a,z)=>new Date(z.created_at||z.date).getTime()-new Date(a.created_at||a.date).getTime());
-  const completeness = getBetCompleteness(bet);
+  const completeness = getBetCompleteness(bet, t);
   const isIncomplete = completeness.pct < 100;
 
   useEffect(() => {
@@ -273,7 +279,7 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
                   border:"1px solid var(--border-mid)",
                   cursor:"pointer",
                 }}>
-                {editing ? "← View" : "Edit"}
+                {editing ? t("viewMode") : t("edit")}
               </button>
               <button onClick={onClose}
                 className="w-7 h-7 flex items-center justify-center rounded transition-colors"
@@ -301,13 +307,13 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
               style={{background:"var(--unclear)", color:"#fff", fontSize:"0.6rem", fontWeight:700}}>!</div>
             <div className="flex-1">
               <div className="t-mono font-medium" style={{color:"var(--unclear)"}}>
-                {completeness.done}/{completeness.total} fields — {completeness.fields.filter(f=>!f.done).map(f=>f.label).join(", ")}
+                {t("fieldsIncomplete", { done: String(completeness.done), total: String(completeness.total), fields: completeness.fields.filter(f=>!f.done).map(f=>f.label).join(", ") })}
               </div>
             </div>
             <button onClick={()=>setEditing(true)}
               className="t-mono text-xs underline underline-offset-2"
               style={{color:"var(--unclear)", background:"none", border:"none", cursor:"pointer"}}>
-              Complete →
+              {t("completeBtn")}
             </button>
           </div>
         )}
@@ -336,10 +342,10 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
             <EditForm bet={bet} onSave={handleSave} onCancel={()=>setEditing(false)} />
           ) : (
             <>
-              <Section label="Context">
+              <Section label={t("context")}>
                 <div className="grid grid-cols-2 gap-3 mb-3">
-                  <Field label="Sprint" value={sprintName} />
-                  <Field label="Point of Contact" value={bet.owner_contact} />
+                  <Field label={t("sprint")} value={sprintName} />
+                  <Field label={t("pointOfContact")} value={bet.owner_contact} />
                 </div>
                 {(bet.alignment?.length||0)>0 && (
                   <div>
@@ -349,13 +355,13 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
                 )}
               </Section>
 
-              <Section label="Strategic Definition">
-                <Field label="Strategic Outcome" value={bet.outcome} />
-                <Field label="Hypothesis" value={bet.hypothesis} />
-                <Field label="Why Now" value={bet.why_now} />
+              <Section label={t("strategicDefinition")}>
+                <Field label={t("strategicOutcome")} value={bet.outcome} />
+                <Field label={t("hypothesis")} value={bet.hypothesis} />
+                <Field label={t("whyNow")} value={bet.why_now} />
               </Section>
 
-              <Section label="Evidence & Signal">
+              <Section label={t("evidenceSignal")}>
                 <div className="t-label mb-2">Leading Indicators</div>
                 {(bet.indicators?.length||0)>0
                   ? <div className="flex flex-wrap gap-1.5">
@@ -367,22 +373,22 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
                 }
               </Section>
 
-              <Section label="Decision Criteria">
-                <Field label="Kill Criteria" value={bet.kill_criteria} color="var(--killed)" />
-                <Field label="Scale Trigger" value={bet.scale_trigger} color="var(--scaled)" />
+              <Section label={t("decisionCriteria")}>
+                <Field label={t("killCriteria")} value={bet.kill_criteria} color="var(--killed)" />
+                <Field label={t("scaleTrigger")} value={bet.scale_trigger} color="var(--scaled)" />
               </Section>
 
-              <Section label="Business Impact">
+              <Section label={t("businessImpact")}>
                 <div className="grid grid-cols-3 gap-2">
-                  <ImpactPill label="Revenue" value={bet.revenue} />
-                  <ImpactPill label="Margin" value={bet.margin} />
-                  <ImpactPill label="Strategic" value={bet.importance} />
+                  <ImpactPill label={t("revenue")} value={bet.revenue} />
+                  <ImpactPill label={t("margin")} value={bet.margin} />
+                  <ImpactPill label={t("strategicImportance")} value={bet.importance} />
                 </div>
               </Section>
 
               {/* Cascade section */}
               {(parentBets.length > 0 || childBets.length > 0 || (!bet.parent_alert && bet.bet_type === "strategic" && parentBets.length === 0)) && (
-                <Section label="Cascade">
+                <Section label={t("cascade")}>
                   {/* Enabler badge */}
                   {bet.bet_type === "enabler" && (
                     <div style={{ display:"inline-flex", alignItems:"center", gap:6, padding:"4px 10px",
@@ -390,7 +396,7 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
                       marginBottom:12 }}>
                       <span style={{ fontSize:"0.875rem" }}>⚙</span>
                       <span style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--brand)", fontWeight:500 }}>
-                        Enabler Bet — capability building
+                        {t("enablerBet")}
                       </span>
                     </div>
                   )}
@@ -426,14 +432,14 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
                         color:"#fff", fontSize:"0.6rem", fontWeight:700,
                         display:"flex", alignItems:"center", justifyContent:"center", flexShrink:0 }}>!</div>
                       <div style={{ fontSize:"0.8125rem", color:"var(--unclear)" }}>
-                        Orphan bet — not aligned to any parent objective. Consider linking or marking as Enabler.
+                        {t("orphanWarning")}
                       </div>
                     </div>
                   )}
                   {/* Child bets */}
                   {childBets.length > 0 && (
                     <div>
-                      <div className="t-label mb-2" style={{ color:"var(--t3)" }}>Supporting bets ({childBets.length})</div>
+                      <div className="t-label mb-2" style={{ color:"var(--t3)" }}>{t("supportingBets", { count: String(childBets.length) })}</div>
                       {childBets.map(cb => cb && (
                         <div key={cb.id} style={{ display:"flex", alignItems:"center", gap:8, padding:"6px 10px",
                           borderRadius:"var(--rs)", background:"var(--raised)", border:"1px solid var(--border)",
@@ -457,7 +463,7 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
               )}
 
               {betEvidence.length>0 && (
-                <Section label={`Evidence Log (${betEvidence.length})`}>
+                <Section label={t("evidenceLog", { count: String(betEvidence.length) })}>
                   <div className="space-y-2">
                     {betEvidence.map(e=>(
                       <div key={e.id} className="rounded p-3"
