@@ -76,13 +76,10 @@ export default function OrgLayout({
 
       // Redirect leaf orgs (no children) to parent
       if (children.length === 0 && orgData.parent_org_id) {
-        const parentRes = await fetch(`/api/org/data?slug=${orgData.parent_org_id}`, {
-          headers: { "Authorization": `Bearer ${session.access_token}` },
-        });
-        // Try to get parent slug directly
-        const { data: parentOrg } = await supabase
+        const { data: parentOrgs } = await supabase
           .from("organizations").select("slug")
-          .eq("id", orgData.parent_org_id).limit(1).then((r: any) => ({ data: r.data?.[0] ?? null, error: r.error }));
+          .eq("id", orgData.parent_org_id).limit(1);
+        const parentOrg = parentOrgs?.[0];
         if (parentOrg) {
           router.replace(`/${parentOrg.slug}/dashboard`);
           setLoading(false);

@@ -22,17 +22,15 @@ export async function GET(req: NextRequest) {
     if (!token) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    console.log("getUser result:", user?.id, "error:", authError?.message, "token prefix:", token?.slice(0, 20));
-    if (authError || !user) return NextResponse.json({ error: "No autorizado.", debug: authError?.message }, { status: 401 });
+    if (authError || !user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
 
     const slug = req.nextUrl.searchParams.get("slug");
     if (!slug) return NextResponse.json({ error: "slug requerido." }, { status: 400 });
 
-    // Load org — avoid .single() which may cache
+    // Load org
     const { data: orgRows } = await supabaseAdmin
       .from("organizations").select("*").eq("slug", slug).limit(1);
     const org = orgRows?.[0] ?? null;
-    console.log("ORG PLAN DEBUG (no single):", org?.id, org?.plan, new Date().toISOString());
     if (!org) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
 
     // Verify membership
