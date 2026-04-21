@@ -15,11 +15,11 @@ export default function SprintsPage() {
     <div className="w-full px-10 py-8">
       <div className="mb-8 pb-5 border-b border-[var(--border)] flex items-end justify-between">
         <div>
-          <h1 className="ph-title">Enterprise Sprints</h1>
+          <h1 className="ph-title">{t("nav.sprints")}</h1>
           <p className="ph-sub">{t("nav.sprintsSub")}</p>
         </div>
         <Link href={`/${params.orgSlug}/new/sprint`} className="btn-primary">
-          + New Sprint
+          + {t("actions.newSprint")}
         </Link>
       </div>
 
@@ -40,7 +40,7 @@ export default function SprintsPage() {
             A sprint defines your strategic focus for a cycle. Create your first sprint to start tracking bets and progress.
           </p>
           <Link href={`/${params.orgSlug}/new/sprint`} className="btn-primary">
-            + New Sprint
+            + {t("actions.newSprint")}
           </Link>
         </div>
       ) : (
@@ -81,9 +81,9 @@ export default function SprintsPage() {
                   fontFamily:"var(--font-body)" }}>
                   <span>{sprintBets.length} bets</span>
                   <span>·</span>
-                  <span>{sprintBets.filter(b => b.status === "Active").length} active</span>
+                  <span>{sprintBets.filter(b => b.status === "Active").length} {t("sprints.active")}</span>
                   <span>·</span>
-                  <span>{sprintBets.filter(b => b.signal === "Strong").length} strong signal</span>
+                  <span>{sprintBets.filter(b => b.signal === "Strong").length} {t("sprints.strongSignal")}</span>
                 </div>
                 {s.closure && (
                   <div className="mt-4 pt-4 border-t border-[var(--border)] grid grid-cols-3 gap-4">

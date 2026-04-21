@@ -21,7 +21,7 @@
   "actions": {
     "newSprint": "Nuevo Sprint",
     "newBet": "Nueva Bet",
-    "signalCheck": "Signal Check",
+    "signalCheck": "Chequeo de Señal",
     "strategicReview": "Revisión Estratégica",
     "closeSprint": "Cerrar Sprint",
     "newArea": "Nueva Área"
