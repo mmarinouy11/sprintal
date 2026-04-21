@@ -72,6 +72,7 @@ export async function POST(req: NextRequest) {
       const { data: anyMember } = await supabaseAdmin
         .from("org_members").select("role").eq("user_id", userId).maybeSingle();
       if (!anyMember) {
+        console.log("403: no membership for user", userId, "in org", parentOrgId);
         return NextResponse.json({ error: "No tenés membresía en esta organización." }, { status: 403 });
       }
     }
@@ -79,6 +80,7 @@ export async function POST(req: NextRequest) {
     // Only owner/admin can create sub-areas
     const role = member?.role;
     if (role && !["owner", "admin"].includes(role)) {
+      console.log("403: wrong role", role, "for user", userId);
       return NextResponse.json({ error: "Se requiere rol owner o admin." }, { status: 403 });
     }
 
@@ -87,6 +89,7 @@ export async function POST(req: NextRequest) {
       const { data: parentOrgRows } = await supabaseAdmin
         .from("organizations").select("plan").eq("id", parentOrgId).limit(1);
       const parentOrgData = parentOrgRows?.[0];
+      console.log("TRIAL CHECK: plan=", parentOrgData?.plan, "fromOnboarding=", fromOnboarding);
       if (parentOrgData?.plan === "trial") {
         return NextResponse.json({
           error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
