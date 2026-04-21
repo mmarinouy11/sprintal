@@ -78,16 +78,16 @@ export default function SignalCheckPage() {
         {bet && (
           <div className="rounded p-4 mb-4" style={{ background:"var(--raised)", border:"1px solid var(--border)" }}>
             <div className="flex items-center gap-3 mb-3">
-              <span className="t-label">Current signal</span>
+              <span className="t-label">{t("currentSignal")}</span>
               <span className="font-medium text-sm" style={{ color:`var(--${bet.signal.toLowerCase()})` }}>● {bet.signal}</span>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="t-label mb-1" style={{ color:"var(--killed)" }}>Kill if</div>
+                <div className="t-label mb-1" style={{ color:"var(--killed)" }}>{t("killIf")}</div>
                 <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.kill_criteria||"—"}</div>
               </div>
               <div>
-                <div className="t-label mb-1" style={{ color:"var(--scaled)" }}>Scale when</div>
+                <div className="t-label mb-1" style={{ color:"var(--scaled)" }}>{t("scaleWhen")}</div>
                 <div className="text-sm" style={{ color:"var(--t2)" }}>{bet.scale_trigger||"—"}</div>
               </div>
             </div>
@@ -114,7 +114,7 @@ export default function SignalCheckPage() {
             placeholder={t("notePlaceholder")} />
         </Field>
         <ModalFooter>
-          <button type="button" onClick={()=>router.back()} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={()=>router.back()} className="btn-ghost flex-1">{t("cancel")}</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">{saving?t("saving"):t("saveSignalCheck")}</button>
         </ModalFooter>
       </form>

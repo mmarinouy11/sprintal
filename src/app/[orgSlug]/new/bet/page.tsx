@@ -110,7 +110,7 @@ export default function NewBetPage() {
       if (org.plan === "trial") {
         const activeBets = bets.filter(b => b.status === "Active");
         if (activeBets.length >= 5) {
-          setError("Tu plan trial permite un máximo de 5 bets activos. Activá Pro para continuar.");
+          setError(t("trialBetLimit"));
           setSaving(false);
           return;
         }
@@ -157,7 +157,7 @@ export default function NewBetPage() {
               {isEnabler ? "⚙ Enabler Bet" : "Bet"}
             </div>
             <div style={{ fontSize:"0.8125rem", color:"var(--t3)" }}>
-              {isEnabler ? t("enablerDesc") : "Tests a market or strategic hypothesis"}
+              {isEnabler ? t("enablerDesc") : t("betTypeDefault")}
             </div>
           </div>
           <button type="button" onClick={() => setIsEnabler(!isEnabler)}
@@ -173,7 +173,7 @@ export default function NewBetPage() {
 
         {/* Parent bets cascade selector */}
         {!isEnabler && parentBets.length > 0 && (
-          <Field label="Responds to (parent bets)" hint="optional — select all that apply">
+          <Field label={t("respondsTo")} hint={t("respondsToHint")}>
             <div style={{ display:"flex", flexDirection:"column", gap:6, marginTop:4 }}>
               {parentBets.map(b => (
                 <button key={b.id} type="button" onClick={() => toggleParent(b.id)}
@@ -224,7 +224,7 @@ export default function NewBetPage() {
               ))}
             </select>
           </Field>
-          <Field label={t("ownerArea")} hint="from this level">
+          <Field label={t("ownerArea")} hint={t("fromThisLevel")}>
             <select className="input" value={form.owner_area} onChange={set("owner_area")} required>
               <option value="">— Select —</option>
               {areas.map(a => <option key={a}>{a}</option>)}
@@ -233,7 +233,7 @@ export default function NewBetPage() {
         </FieldRow>
 
         <Field label={t("ownerContact")}>
-          <input className="input" value={form.owner_contact} onChange={set("owner_contact")} placeholder="Name or role" />
+          <input className="input" value={form.owner_contact} onChange={set("owner_contact")} placeholder={t("ownerContactPlaceholder")} />
         </Field>
         <Field label={t("betName")}>
           <input className="input" value={form.name} onChange={set("name")} placeholder={t("betNamePlaceholder")} required />
@@ -248,25 +248,25 @@ export default function NewBetPage() {
         {!isEnabler && (
           <Field label={t("hypothesis")} hint="If X → Y → measured by Z">
             <textarea className="input" rows={3} value={form.hypothesis} onChange={set("hypothesis")} required
-              placeholder="If we do X, we believe Y will happen, measured by Z" />
+              placeholder={t("hypothesisPlaceholderShort")} />
           </Field>
         )}
 
         <FieldRow>
           <Field label={t("killCriteria")}>
-            <input className="input" value={form.kill_criteria} onChange={set("kill_criteria")} placeholder="When do we stop?" />
+            <input className="input" value={form.kill_criteria} onChange={set("kill_criteria")} placeholder={t("killPlaceholderShort")} />
           </Field>
           <Field label={t("scaleTrigger")}>
-            <input className="input" value={form.scale_trigger} onChange={set("scale_trigger")} placeholder="When do we double down?" />
+            <input className="input" value={form.scale_trigger} onChange={set("scale_trigger")} placeholder={t("scalePlaceholderShort")} />
           </Field>
         </FieldRow>
 
         <Field label={t("indicators")} hint="comma-separated, max 3">
           <textarea className="input" rows={2} value={form.indicators} onChange={set("indicators")}
-            placeholder="Metric 1, Metric 2, Metric 3" />
+            placeholder={t("indicatorsPlaceholder")} />
         </Field>
 
-        <Field label="Support & Alignment">
+        <Field label={t("supportAlignment")}>
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:4 }}>
             {areas.map(a => (
               <button key={a} type="button"
@@ -304,7 +304,7 @@ export default function NewBetPage() {
         )}
 
         <ModalFooter>
-          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">{t("cancel")}</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
             {saving ? t("creating") : t("createBet")}
           </button>

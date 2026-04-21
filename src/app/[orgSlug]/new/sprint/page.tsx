@@ -128,14 +128,14 @@ export default function NewSprintPage() {
         background:"var(--brand-bg)", border:"1px solid var(--brand-mid)" }}>
         <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
           letterSpacing:"0.05em", textTransform:"uppercase", color:"var(--brand)", marginBottom:4 }}>
-          L{level} Recommended Duration
+          {t("recommendedDuration", { level: String(level) })}
         </div>
         <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.5rem",
           color:"var(--brand)", letterSpacing:"-0.02em" }}>
           {config.label}
         </div>
         <div style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--t2)", marginTop:4 }}>
-          Default: {config.default} days
+          {t("durationDefault", { days: String(config.default) })}
         </div>
       </div>
 
@@ -185,7 +185,7 @@ export default function NewSprintPage() {
   );
 
   return (
-    <Modal title={t("newSprint")} subtitle={`L${level} · Recommended ${config.label}`} sidebar={SIDEBAR}>
+    <Modal title={t("newSprint")} subtitle={`L${level} · ${t("sidebar.l1Duration")}: ${config.label}`} sidebar={SIDEBAR}>
       <form onSubmit={save}>
         <Field label={t("sprintName")} hint={t("sprintNameHint")}>
           <input className="input" value={form.name} onChange={set("name")}
@@ -207,9 +207,9 @@ export default function NewSprintPage() {
         {duration > 0 && (
           <div style={{ marginBottom:12, display:"flex", alignItems:"center", gap:8 }}>
             <span style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem",
-              color:"var(--t3)" }}>Duration:</span>
+              color:"var(--t3)" }}>{t("durationLabel")}</span>
             <span style={{ fontFamily:"var(--font-display)", fontWeight:700,
-              fontSize:"1rem", color:"var(--text)" }}>{duration} days</span>
+              fontSize:"1rem", color:"var(--text)" }}>{duration} {t("durationDays", { days: "" }).replace("{days}", "").trim() || "days"}</span>
             {/* Quick preset buttons */}
             <div style={{ display:"flex", gap:4, marginLeft:"auto" }}>
               {[config.min, config.default, config.max].filter((v,i,a) => a.indexOf(v) === i).map(d => (
@@ -249,12 +249,12 @@ export default function NewSprintPage() {
         </Field>
         <Field label={t("status")}>
           <select className="input" value={form.status} onChange={set("status")}>
-            <option>Planned</option><option>Active</option>
+            <option value="Planned">{t("statusPlanned")}</option><option value="Active">{t("statusActive")}</option>
           </select>
         </Field>
 
         <ModalFooter>
-          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
+          <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">{t("cancel")}</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
             {saving ? t("creating") : t("createSprint")}
           </button>
