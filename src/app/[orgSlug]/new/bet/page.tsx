@@ -25,31 +25,31 @@ function Rule({ children }: { children: React.ReactNode }) {
 function SidebarContent({ t }: { t: (k: string) => string }) {
   return (
   <div>
-    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>Bet Creation</div>
-    <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem", color:"var(--text)", letterSpacing:"-0.02em", marginBottom:8 }}>Create a Bet</div>
+    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>{t("sidebar.betTitle")}</div>
+    <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem", color:"var(--text)", letterSpacing:"-0.02em", marginBottom:8 }}>{t("sidebar.betHeading")}</div>
     <p style={{ fontSize:"0.875rem", color:"var(--t2)", lineHeight:1.6, marginBottom:20 }}>
-      A Bet is a testable hypothesis — not a project. If it cannot produce evidence within the sprint, it is not a bet.
+      {t("sidebar.betDesc")}
     </p>
     <Helper title={t("hypothesisFormat")}>
       {t("hypothesisFormatDesc")}
       <Example text={t("hypothesisPlaceholder")} />
     </Helper>
     <Helper title={t("killCriteria")}>
-      Define upfront when you will stop. This removes politics from the decision later.
+      {t("sidebar.hypothesisRuleDesc")}
       <Example text={t("killCriteriaPlaceholder")} />
     </Helper>
     <Helper title={t("scaleTrigger")}>
-      Define the signal that confirms you should double down.
+      {t("sidebar.scaleRuleDesc")}
       <Example text={t("scaleTriggerPlaceholder")} />
     </Helper>
     <Helper title={t("enablerBets")}>
-      Mark a bet as Enabler when it builds capability rather than testing a market hypothesis. Tech debt, infrastructure, talent — these don't need a parent bet.
+      {t("sidebar.enablerRuleDesc")}
     </Helper>
     <div style={{ marginTop:16, paddingTop:16, borderTop:"1px solid var(--border)" }}>
-      <div style={{ fontWeight:600, fontSize:"0.875rem", color:"var(--text)", marginBottom:8 }}>Portfolio Rules</div>
-      <Rule>3–5 active bets per sprint maximum.</Rule>
-      <Rule>Balance across revenue, margin, and capability.</Rule>
-      <Rule>Each bet must have a clear owner area.</Rule>
+      <div style={{ fontWeight:600, fontSize:"0.875rem", color:"var(--text)", marginBottom:8 }}>{t("sidebar.portfolioRules")}</div>
+      <Rule>{t("sidebar.portfolioRule1")}</Rule>
+      <Rule>{t("sidebar.portfolioRule2")}</Rule>
+      <Rule>{t("sidebar.portfolioRule3")}</Rule>
     </div>
   </div>
   );

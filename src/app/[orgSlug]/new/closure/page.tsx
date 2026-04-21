@@ -16,13 +16,13 @@ const OUTCOME_COLORS: Record<string,string> = {
 function SidebarContent({ t }: { t: (k: string) => string }) {
   return (
   <div>
-    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase" as const, color:"var(--brand)", marginBottom:4 }}>Sprint Closure</div>
-    <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>Close the Sprint</div>
+    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase" as const, color:"var(--brand)", marginBottom:4 }}>{t("sidebar.closureTitle")}</div>
+    <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>{t("sidebar.closureHeading")}</div>
     <p className="text-sm mb-6" style={{ color:"var(--t2)", lineHeight:1.6 }}>
-      Closure is not reporting — it is reconfiguration. Decide what to carry forward, what to stop, and what the next cycle needs.
+      {t("sidebar.closureDesc")}
     </p>
     <div className="mb-5">
-      <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>Bet Outcomes</div>
+      <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>{t("sidebar.closureBetOutcomes")}</div>
       {[
         { c:"var(--scaled)",  t:t("scale"),        d:t("scaleDesc2") },
         { c:"var(--pivoted)", t:t("pivot"),         d:t("pivotDesc2") },
@@ -36,9 +36,9 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
       ))}
     </div>
     <div className="pt-4" style={{ borderTop:"1px solid var(--border)" }}>
-      <div className="font-semibold text-sm mb-2" style={{ color:"var(--text)" }}>Capability Decisions</div>
+      <div className="font-semibold text-sm mb-2" style={{ color:"var(--text)" }}>{t("sidebar.closureCapabilityTitle")}</div>
       <p style={{ fontSize:"0.8125rem", color:"var(--t2)", lineHeight:1.6 }}>
-        For each function, define what needs to change to support the next sprint. These are structural actions, not tasks.
+        {t("sidebar.closureCapabilityDesc")}
       </p>
     </div>
   </div>
@@ -108,7 +108,7 @@ export default function SprintClosurePage() {
   return (
     <Modal title={t("closeSprint")} subtitle={`Closing: ${active.name}, Closure is reconfiguration, not reporting.`} wide>
       <form onSubmit={save}>
-        <div className="t-label mb-3">Bet Outcomes</div>
+        <div className="t-label mb-3">{t("sidebar.closureBetOutcomes")}</div>
         <div className="space-y-3 mb-6">
           {sprintBets.map(b=>(
             <div key={b.id} className="rounded p-4"
@@ -157,7 +157,7 @@ export default function SprintClosurePage() {
             </Field>
           ))}
         </div>
-        <div className="t-label mb-3">Capability Decisions</div>
+        <div className="t-label mb-3">{t("sidebar.closureCapabilityTitle")}</div>
         <div className="grid grid-cols-2 gap-4 mb-2">
           {[["HR","hr"],["TAG","tag"],["L&D","ld"],["Marketing","mkt"]].map(([label,key])=>(
             <Field key={key} label={label}>

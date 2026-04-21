@@ -13,15 +13,16 @@ const SIGNALS: { value: SignalStrength; color: string }[] = [
   { value:"Weak" as SignalStrength,    color:"var(--weak)"    },
 ];
 
-const SIDEBAR = (
+function SidebarContent({ t }: { t: (k: string) => string }) {
+  return (
   <div>
-    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:4 }}>Signal Check</div>
-    <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>Read the Signal</div>
+    <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:4 }}>{t("sidebar.signalTitle")}</div>
+    <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>{t("sidebar.signalHeading")}</div>
     <p className="text-sm mb-6" style={{ color:"var(--t2)", lineHeight:1.6 }}>
-      A lightweight awareness checkpoint — not a decision meeting. No status changes. Just signal strength.
+      {t("sidebar.signalDesc")}
     </p>
     <div className="mb-5">
-      <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>Signal Meanings</div>
+      <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>{t("sidebar.signalMeanings")}</div>
       {SIGNALS.map(s => (
         <div key={s.value} className="mb-3 pl-3" style={{ borderLeft:`2px solid ${s.color}` }}>
           <div className="font-semibold text-sm mb-0.5" style={{ color:s.color }}>{s.value}</div>
@@ -30,13 +31,14 @@ const SIDEBAR = (
       ))}
     </div>
     <div className="pt-4" style={{ borderTop:"1px solid var(--border)" }}>
-      <div className="font-semibold text-sm mb-2" style={{ color:"var(--text)" }}>Cadence</div>
+      <div className="font-semibold text-sm mb-2" style={{ color:"var(--text)" }}>{t("sidebar.cadenceTitle")}</div>
       <p style={{ fontSize:"0.8125rem", color:"var(--t2)", lineHeight:1.6 }}>
-        Signal Checks happen at the midpoint between Strategic Reviews — roughly twice per review interval. Keep it short: signal + one observation.
+        {t("sidebar.signalCadenceDesc")}
       </p>
     </div>
   </div>
-);
+  );
+}
 
 export default function SignalCheckPage() {
   const t = useT("form");
@@ -66,7 +68,7 @@ export default function SignalCheckPage() {
   }
 
   return (
-    <Modal title={t("signalCheck")} subtitle={t("signalSubtitle")} sidebar={SIDEBAR}>
+    <Modal title={t("signalCheck")} subtitle={t("signalSubtitle")} sidebar={<SidebarContent t={t} />}>
       <form onSubmit={save}>
         <Field label="Bet">
           <select className="input" value={betId} onChange={e=>setBetId(e.target.value)}>

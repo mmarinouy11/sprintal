@@ -31,22 +31,22 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
     </div>
     <p style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t2)",
       lineHeight:1.6, marginBottom:20 }}>
-      Not a status update — a structured decision moment. What happened, what does it tell us, and what do we do next?
+      {t("sidebar.reviewDesc")}
     </p>
     <div style={{ marginBottom:16 }}>
       <div style={{ fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.875rem",
-        color:"var(--text)", marginBottom:12 }}>Bet Outcomes</div>
-      <Rule color="var(--active)"  title={t("keepActive")}>Not enough signal yet. Continue testing.</Rule>
-      <Rule color="var(--scaled)"  title={t("scale")}>Hypothesis confirmed. Generates a draft bet for the next sprint.</Rule>
-      <Rule color="var(--pivoted)" title={t("pivot")}>Direction changes. Generates a draft with updated hypothesis.</Rule>
-      <Rule color="var(--done)"    title={t("markAsDone")}>Reached its natural conclusion.</Rule>
-      <Rule color="var(--killed)"  title={t("kill")}>No signal after sufficient time. Stop now, free the capacity.</Rule>
+        color:"var(--text)", marginBottom:12 }}>{t("sidebar.betOutcomes")}</div>
+      <Rule color="var(--active)"  title={t("keepActive")}>{t("sidebar.keepActiveRuleDesc")}</Rule>
+      <Rule color="var(--scaled)"  title={t("scale")}>{t("sidebar.scaleRuleDesc2")}</Rule>
+      <Rule color="var(--pivoted)" title={t("pivot")}>{t("sidebar.pivotRuleDesc")}</Rule>
+      <Rule color="var(--done)"    title={t("markAsDone")}>{t("sidebar.doneRuleDesc")}</Rule>
+      <Rule color="var(--killed)"  title={t("kill")}>{t("sidebar.killRuleDesc")}</Rule>
     </div>
     <div style={{ paddingTop:16, borderTop:"1px solid var(--border)" }}>
       <div style={{ fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.875rem",
-        color:"var(--text)", marginBottom:6 }}>Cadence</div>
+        color:"var(--text)", marginBottom:6 }}>{t("sidebar.cadenceTitle")}</div>
       <p style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--t2)", lineHeight:1.6 }}>
-        3× per sprint. Signal Checks happen at the midpoint — they update signal strength but do not change bet status.
+        {t("sidebar.reviewCadenceDesc")}
       </p>
     </div>
   </div>

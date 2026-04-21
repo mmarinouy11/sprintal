@@ -113,14 +113,14 @@ export default function NewSprintPage() {
     <div>
       <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
         letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>
-        Sprint Definition
+        {t("sidebar.sprintTitle")}
       </div>
       <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem",
         color:"var(--text)", letterSpacing:"-0.02em", marginBottom:8 }}>
-        Define the Sprint
+        {t("sidebar.sprintHeading")}
       </div>
       <p style={{ fontSize:"0.875rem", color:"var(--t2)", lineHeight:1.6, marginBottom:20 }}>
-        Set the strategic direction for the next cycle. A Sprint defines where we focus — not what we execute.
+        {t("sidebar.sprintDesc")}
       </p>
 
       {/* Recommended duration for this level */}
@@ -169,16 +169,16 @@ export default function NewSprintPage() {
       )}
 
       <Helper title={t("strategicFocus")}>
-        3 clear priorities maximum. If everything is a focus, nothing is.
+        {t("sidebar.focusRuleDesc")}
       </Helper>
       <Helper title={t("successSignals")}>
-        How will you recognize progress? Keep these directional, not metric-precise.
+        {t("sidebar.signalsRuleDesc")}
       </Helper>
       <Helper title={t("rules")}>
         <ul style={{ paddingLeft:14, marginTop:4 }}>
-          <li style={{ marginBottom:4 }}>The Sprint is fixed in time.</li>
-          <li style={{ marginBottom:4 }}>The portfolio is flexible within the Sprint.</li>
-          <li>Focus is intentionally limited by design.</li>
+          <li style={{ marginBottom:4 }}>{t("sidebar.rule1")}</li>
+          <li style={{ marginBottom:4 }}>{t("sidebar.rule2")}</li>
+          <li>{t("sidebar.rule3")}</li>
         </ul>
       </Helper>
     </div>
