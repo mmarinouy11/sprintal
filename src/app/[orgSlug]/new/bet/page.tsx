@@ -212,7 +212,7 @@ export default function NewBetPage() {
           <div style={{ padding:"8px 12px", borderRadius:"var(--rs)", marginBottom:16,
             background:"var(--raised)", border:"1px solid var(--border)" }}>
             <div style={{ fontSize:"0.8125rem", color:"var(--t3)" }}>
-              This is a <strong>L1 bet</strong> — it can be referenced by lower levels.
+              {t("betLevelNote", { level: String(org?.cascade_level || 1) })}
             </div>
           </div>
         )}

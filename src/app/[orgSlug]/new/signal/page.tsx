@@ -110,7 +110,7 @@ export default function SignalCheckPage() {
             ))}
           </div>
         </Field>
-        <Field label={t("note")} hint={t("common.optional")}>
+        <Field label={t("note")} hint={tg("common.optional")}>
           <textarea className="input" rows={3} value={note} onChange={e=>setNote(e.target.value)}
             placeholder={t("notePlaceholder")} />
         </Field>
