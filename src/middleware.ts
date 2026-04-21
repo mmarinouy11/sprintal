@@ -1,12 +1,9 @@
-import createMiddleware from "next-intl/middleware";
+// i18n middleware — Phase 2 will activate this
+// For now locale is detected client-side from browser/cookie
+export { default } from "next-intl/middleware";
 import { routing } from "./i18n/routing";
 
-export default createMiddleware(routing);
-
 export const config = {
-  // Only run on org routes that need translation
-  // Exclude: root, api, auth, onboarding, static files
-  matcher: [
-    "/:orgSlug((?!api|_next|_vercel|auth|onboarding|trial-expired)[^/]+)/:path*",
-  ],
+  // Disabled — no routes matched
+  matcher: [],
 };
