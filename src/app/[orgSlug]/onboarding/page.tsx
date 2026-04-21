@@ -168,9 +168,18 @@ export default function OnboardingPage() {
       if (data) addBet(data);
     }
     // Mark onboarding complete
-    await supabase.from("organizations")
+    const { error: updateError } = await supabase.from("organizations")
       .update({ onboarding_complete: true } as any)
       .eq("id", org.id);
+    
+    if (updateError) {
+      console.error("Failed to mark onboarding complete:", updateError);
+      setSaving(false);
+      return;
+    }
+
+    // Update store immediately so layout doesn't redirect back to onboarding
+    setOrg({ ...org, onboarding_complete: true });
     setSaving(false);
     // Full reload so layout re-fetches org data including newly created sub-orgs
     window.location.href = `/${params.orgSlug}/dashboard`;
