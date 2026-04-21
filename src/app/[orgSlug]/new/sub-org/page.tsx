@@ -8,7 +8,7 @@ import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 export default function NewSubOrgPage() {
   const router = useRouter();
   const params = useParams();
-  const { org, setChildOrgs, childOrgs } = useStore();
+  const { org, setChildOrgs, childOrgs, currentRole, rootPlan } = useStore();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [name, setName] = useState("");
