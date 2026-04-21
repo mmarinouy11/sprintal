@@ -107,7 +107,7 @@ export default function SprintClosurePage() {
   }
 
   return (
-    <Modal title={t("closeSprint")} subtitle={`${t("closingLabel")}: ${active.name}, ${t("closeSubtitle")}`} wide>
+    <Modal title={t("closeSprint")} subtitle={`${t("closingLabel")}: ${active.name}, ${t("closeSubtitle")}`} wide sidebar={<SidebarContent t={t} />}>
       <form onSubmit={save}>
         <div className="t-label mb-3">{t("sidebar.closureBetOutcomes")}</div>
         <div className="space-y-3 mb-6">
