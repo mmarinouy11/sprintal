@@ -7,13 +7,7 @@ import { useStore } from "@/lib/store";
 import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 import type { BetStatus } from "@/types";
 
-const OUTCOMES: { value: BetStatus; label: string; color: string; hint: string }[] = [
-  { value:"Active",  label:t("keepActive"),  color:"var(--active)",  hint:t("keepActiveDesc") },
-  { value:"Scaled",  label:t("scale"),        color:"var(--scaled)",  hint:t("scaleDesc") },
-  { value:"Pivoted", label:t("pivot"),        color:"var(--pivoted)", hint:t("pivotDesc") },
-  { value:"Done",    label:t("markAsDone"), color:"var(--done)",    hint:t("doneDesc") },
-  { value:"Killed",  label:t("kill"),         color:"var(--killed)",  hint:t("killDesc") },
-];
+
 
 function Rule({ color, title, children }: { color: string; title: string; children: React.ReactNode }) {
   return (
@@ -24,7 +18,8 @@ function Rule({ color, title, children }: { color: string; title: string; childr
   );
 }
 
-const SIDEBAR = (
+function SidebarContent({ t }: { t: (k: string) => string }) {
+  return (
   <div>
     <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700,
       letterSpacing:"0.08em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>
@@ -55,10 +50,18 @@ const SIDEBAR = (
       </p>
     </div>
   </div>
-);
+  );
+}
 
 export default function StrategicReviewPage() {
   const t = useT("form");
+  const OUTCOMES: { value: BetStatus; label: string; color: string; hint: string }[] = [
+    { value:"Active",  label:t("keepActive"),  color:"var(--active)",  hint:t("keepActiveDesc") },
+    { value:"Scaled",  label:t("scale"),        color:"var(--scaled)",  hint:t("scaleDesc") },
+    { value:"Pivoted", label:t("pivot"),        color:"var(--pivoted)", hint:t("pivotDesc") },
+    { value:"Done",    label:t("markAsDone"),   color:"var(--done)",    hint:t("doneDesc") },
+    { value:"Killed",  label:t("kill"),         color:"var(--killed)",  hint:t("killDesc") },
+  ];
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, addEvidence, updateBet, addBet } = useStore();
@@ -122,7 +125,7 @@ export default function StrategicReviewPage() {
   }
 
   return (
-    <Modal title={t("strategicReview")} subtitle={t("reviewSubtitle")} sidebar={SIDEBAR}>
+    <Modal title={t("strategicReview")} subtitle={t("reviewSubtitle")} sidebar={<SidebarContent t={t} />}>
       <form onSubmit={save}>
         <Field label="Bet">
           <select className="input" value={betId} onChange={e => setBetId(e.target.value)}>

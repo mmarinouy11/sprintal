@@ -13,7 +13,8 @@ const OUTCOME_COLORS: Record<string,string> = {
 };
 
 
-const SIDEBAR = (
+function SidebarContent({ t }: { t: (k: string) => string }) {
+  return (
   <div>
     <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase" as const, color:"var(--brand)", marginBottom:4 }}>Sprint Closure</div>
     <div className="font-bold text-xl mb-2" style={{ color:"var(--text)", letterSpacing:"-0.02em" }}>Close the Sprint</div>
@@ -41,7 +42,8 @@ const SIDEBAR = (
       </p>
     </div>
   </div>
-);
+  );
+}
 
 export default function SprintClosurePage() {
   const t = useT("form");
