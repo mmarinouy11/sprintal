@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
       .from("org_members").select("org_id").eq("user_id", userId).maybeSingle();
     if (existingMember) {
       const { data: existingOrg } = await supabaseAdmin
-        .from("organizations").select("slug").eq("id", existingMember.org_id).single();
+        .from("organizations").select("slug").eq("id", existingMember.org_id).limit(1).then(r => ({ data: r.data?.[0] ?? null, error: r.error }));
       if (existingOrg) return NextResponse.json({ success: true, slug: existingOrg.slug });
     }
 
@@ -71,7 +71,7 @@ export async function POST(req: NextRequest) {
         trial_ends_at: trialEndsAt.toISOString(),
         primary_color: "#5C6AC4", onboarding_complete: false,
         cascade_level: 1, parent_org_id: null, level_name: "Corporate",
-      }).select().single();
+      }).select().limit(1).then(r => ({ data: r.data?.[0] ?? null, error: r.error }));
 
     if (orgError || !org) {
       return NextResponse.json({ error: `Error creando organización: ${orgError?.message}` }, { status: 500 });

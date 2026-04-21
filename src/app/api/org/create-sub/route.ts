@@ -9,7 +9,7 @@ function slugify(s: string) {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate limit: 20 sub-orgs per IP per hour
+  // Rate limit
   const ip = getClientIp(req);
   const { allowed, resetAt } = rateLimit({ key: `create-sub:${ip}`, limit: 20, windowMs: 60 * 60 * 1000 });
   if (!allowed) {
@@ -19,7 +19,6 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Create fresh client per request — avoids stale cache in serverless
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -27,13 +26,6 @@ export async function POST(req: NextRequest) {
   );
 
   try {
-    // Verify auth via Bearer token
-    const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-
-    const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
-
     const body = await req.json();
     const name = sanitizeText(body.name, 100);
     const parentOrgId = body.parentOrgId?.trim();
@@ -52,20 +44,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Máximo 4 niveles." }, { status: 400 });
     }
 
+    // Resolve user — for onboarding use userId from body, otherwise verify token
+    let userId: string | null = null;
+
+    if (fromOnboarding && body.userId) {
+      // Trust userId from body during onboarding — user was just created
+      userId = body.userId;
+    } else {
+      // Verify token for post-onboarding requests
+      const token = req.headers.get("authorization")?.replace("Bearer ", "");
+      if (!token) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+      const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
+      if (authError || !user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+      userId = user.id;
+    }
+
+    if (!userId) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+
     // Check permission — user must be member of parent org
-    // Use ANY role — if they're a member, they can create sub-areas
     const { data: member } = await supabaseAdmin
       .from("org_members").select("role")
-      .eq("org_id", parentOrgId).eq("user_id", user.id)
+      .eq("org_id", parentOrgId).eq("user_id", userId)
       .maybeSingle();
 
     if (!member) {
-      // Also check if user owns any org that is the parent (for new orgs)
+      // Allow if user has ANY membership (new org during onboarding)
       const { data: anyMember } = await supabaseAdmin
-        .from("org_members").select("role")
-        .eq("user_id", user.id)
-        .maybeSingle();
-
+        .from("org_members").select("role").eq("user_id", userId).maybeSingle();
       if (!anyMember) {
         return NextResponse.json({ error: "No tenés membresía en esta organización." }, { status: 403 });
       }
@@ -77,15 +82,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Se requiere rol owner o admin." }, { status: 403 });
     }
 
-    // Trial limit — no sub-areas allowed on trial plan
-    // Exception: onboarding flow is always allowed (fromOnboarding flag)
-    const { data: parentOrgData } = await supabaseAdmin
-      .from("organizations").select("plan").eq("id", parentOrgId).single();
-    if (parentOrgData?.plan === "trial" && !fromOnboarding) {
-      return NextResponse.json({
-        error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
-        code: "TRIAL_LIMIT"
-      }, { status: 403 });
+    // Trial limit — no sub-areas post-onboarding
+    if (!fromOnboarding) {
+      const { data: parentOrgRows } = await supabaseAdmin
+        .from("organizations").select("plan").eq("id", parentOrgId).limit(1);
+      const parentOrgData = parentOrgRows?.[0];
+      if (parentOrgData?.plan === "trial") {
+        return NextResponse.json({
+          error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
+          code: "TRIAL_LIMIT"
+        }, { status: 403 });
+      }
     }
 
     // Unique slug
@@ -106,7 +113,7 @@ export async function POST(req: NextRequest) {
         plan,
         trial_ends_at:       trialEndsAt,
         onboarding_complete: true,
-      }).select().single();
+      }).select().limit(1).then(r => ({ data: r.data?.[0] ?? null, error: r.error }));
 
     if (orgError || !newOrg) {
       console.error("Org creation error:", orgError);
@@ -115,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     // Add user as owner
     await supabaseAdmin.from("org_members").insert({
-      org_id: newOrg.id, user_id: user.id, role: "owner",
+      org_id: newOrg.id, user_id: userId, role: "owner",
     });
 
     return NextResponse.json({ success: true, org: newOrg });

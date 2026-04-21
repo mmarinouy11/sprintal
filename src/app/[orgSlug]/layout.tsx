@@ -82,7 +82,7 @@ export default function OrgLayout({
         // Try to get parent slug directly
         const { data: parentOrg } = await supabase
           .from("organizations").select("slug")
-          .eq("id", orgData.parent_org_id).single();
+          .eq("id", orgData.parent_org_id).limit(1).then((r: any) => ({ data: r.data?.[0] ?? null, error: r.error }));
         if (parentOrg) {
           router.replace(`/${parentOrg.slug}/dashboard`);
           setLoading(false);

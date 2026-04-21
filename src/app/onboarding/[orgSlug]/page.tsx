@@ -47,7 +47,7 @@ export default function OnboardingPage() {
       if (!session) { window.location.href = "/auth/login"; return; }
       const { data } = await supabase
         .from("organizations").select("*")
-        .eq("slug", params.orgSlug as string).single();
+        .eq("slug", params.orgSlug as string).limit(1).then((r: any) => ({ data: r.data?.[0] ?? null, error: r.error }));
       if (data) { setLocalOrg(data); setOrg(data); }
     }
     loadOrg();
@@ -404,6 +404,7 @@ export default function OnboardingPage() {
                           primaryColor:   org.primary_color,
                           trialEndsAt:    new Date(Date.now() + 90*86400000).toISOString(),
                           fromOnboarding: true,
+                          userId:         session.user.id,
                         }),
                       });
                     }

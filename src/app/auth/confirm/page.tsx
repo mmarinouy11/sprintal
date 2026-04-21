@@ -27,7 +27,7 @@ function ConfirmContent() {
         if (!members?.length) { router.push("/auth/login"); return; }
         const { data: org } = await supabase
           .from("organizations").select("slug, onboarding_complete")
-          .eq("id", members[0].org_id).single();
+          .eq("id", members[0].org_id).limit(1).then((r: any) => ({ data: r.data?.[0] ?? null, error: r.error }));
         if (!org) { router.push("/auth/login"); return; }
         router.push(org.onboarding_complete ? `/${org.slug}/dashboard` : `/${org.slug}/onboarding`);
       }, 1500);
