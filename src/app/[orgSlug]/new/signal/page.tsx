@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -38,6 +39,7 @@ const SIDEBAR = (
 );
 
 export default function SignalCheckPage() {
+  const t = useT("form");
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, addSignalCheck, updateBet } = useStore();
@@ -64,7 +66,7 @@ export default function SignalCheckPage() {
   }
 
   return (
-    <Modal title="Signal Check" subtitle="Lightweight checkpoint. Not a decision meeting." sidebar={SIDEBAR}>
+    <Modal title={t("signalCheck")} subtitle={t("signalSubtitle")} sidebar={SIDEBAR}>
       <form onSubmit={save}>
         <Field label="Bet">
           <select className="input" value={betId} onChange={e=>setBetId(e.target.value)}>
@@ -89,7 +91,7 @@ export default function SignalCheckPage() {
             </div>
           </div>
         )}
-        <Field label="Updated Signal">
+        <Field label={t("updatedSignal")}>
           <div className="flex gap-2">
             {SIGNALS.map(s => (
               <button key={s.value} type="button" onClick={()=>setSignal(s.value)}
@@ -105,13 +107,13 @@ export default function SignalCheckPage() {
             ))}
           </div>
         </Field>
-        <Field label="Note" hint="optional">
+        <Field label={t("note")} hint={t("common.optional")}>
           <textarea className="input" rows={3} value={note} onChange={e=>setNote(e.target.value)}
-            placeholder="What changed or caught your attention?" />
+            placeholder={t("notePlaceholder")} />
         </Field>
         <ModalFooter>
           <button type="button" onClick={()=>router.back()} className="btn-ghost flex-1">Cancel</button>
-          <button type="submit" disabled={saving} className="btn-primary flex-1">{saving?"Saving...":"Save Signal Check →"}</button>
+          <button type="submit" disabled={saving} className="btn-primary flex-1">{saving?t("saving"):t("saveSignalCheck")}</button>
         </ModalFooter>
       </form>
     </Modal>

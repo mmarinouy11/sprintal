@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -21,26 +22,27 @@ function Rule({ children }: { children: React.ReactNode }) {
   return <div style={{ display:"flex", gap:8, fontSize:"0.875rem", color:"var(--t2)", marginBottom:6 }}><span style={{ color:"var(--brand)", flexShrink:0 }}>·</span>{children}</div>;
 }
 
-const SIDEBAR = (
+function SidebarContent({ t }: { t: (k: string) => string }) {
+  return (
   <div>
     <div style={{ fontFamily:"var(--font-body)", fontSize:"0.6875rem", fontWeight:700, letterSpacing:"0.06em", textTransform:"uppercase", color:"var(--brand)", marginBottom:6 }}>Bet Creation</div>
     <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem", color:"var(--text)", letterSpacing:"-0.02em", marginBottom:8 }}>Create a Bet</div>
     <p style={{ fontSize:"0.875rem", color:"var(--t2)", lineHeight:1.6, marginBottom:20 }}>
       A Bet is a testable hypothesis — not a project. If it cannot produce evidence within the sprint, it is not a bet.
     </p>
-    <Helper title="Hypothesis Format">
-      Use: "If we do X, we believe Y will happen, measured by Z."
-      <Example text="If we embed AI copilots in 3 squads, we believe cycle time will drop 20%, measured by sprint velocity." />
+    <Helper title={t("hypothesisFormat")}>
+      {t("hypothesisFormatDesc")}
+      <Example text={t("hypothesisPlaceholder")} />
     </Helper>
-    <Helper title="Kill Criteria">
+    <Helper title={t("killCriteria")}>
       Define upfront when you will stop. This removes politics from the decision later.
-      <Example text="AI usage rate below 30% after 6 weeks." />
+      <Example text={t("killCriteriaPlaceholder")} />
     </Helper>
-    <Helper title="Scale Trigger">
+    <Helper title={t("scaleTrigger")}>
       Define the signal that confirms you should double down.
-      <Example text="Cycle time reduction ≥20% across all 3 squads." />
+      <Example text={t("scaleTriggerPlaceholder")} />
     </Helper>
-    <Helper title="Enabler Bets">
+    <Helper title={t("enablerBets")}>
       Mark a bet as Enabler when it builds capability rather than testing a market hypothesis. Tech debt, infrastructure, talent — these don't need a parent bet.
     </Helper>
     <div style={{ marginTop:16, paddingTop:16, borderTop:"1px solid var(--border)" }}>
@@ -50,9 +52,11 @@ const SIDEBAR = (
       <Rule>Each bet must have a clear owner area.</Rule>
     </div>
   </div>
-);
+  );
+}
 
 export default function NewBetPage() {
+  const t = useT("form");
   const router = useRouter();
   const params = useParams();
   const { org, sprints, childOrgs, addBet, addBetAlignment, bets } = useStore();
@@ -119,7 +123,7 @@ export default function NewBetPage() {
         parent_alert: false,
       }).select().single();
 
-      if (!bet) { setError("Error creando el bet."); setSaving(false); return; }
+      if (!bet) { setError(t("errorCreating")); setSaving(false); return; }
       addBet(bet);
 
       // Save parent alignments
@@ -132,14 +136,14 @@ export default function NewBetPage() {
 
       router.push(`/${params.orgSlug}/bets/board`);
     } catch {
-      setError("Error de conexión. Intentá de nuevo.");
+      setError(t("connectionError"));
     } finally {
       setSaving(false);
     }
   }
 
   return (
-    <Modal title="New Bet" subtitle="A testable hypothesis — not a project." sidebar={SIDEBAR} wide>
+    <Modal title={t("newBet")} subtitle={t("betSubtitle")} sidebar={<SidebarContent t={t} />} wide>
       <form onSubmit={save}>
 
         {/* Enabler toggle */}
@@ -153,7 +157,7 @@ export default function NewBetPage() {
               {isEnabler ? "⚙ Enabler Bet" : "Bet"}
             </div>
             <div style={{ fontSize:"0.8125rem", color:"var(--t3)" }}>
-              {isEnabler ? "Capability building — no parent required" : "Tests a market or strategic hypothesis"}
+              {isEnabler ? t("enablerDesc") : "Tests a market or strategic hypothesis"}
             </div>
           </div>
           <button type="button" onClick={() => setIsEnabler(!isEnabler)}
@@ -163,7 +167,7 @@ export default function NewBetPage() {
               color: isEnabler ? "#fff" : "var(--t2)",
               fontFamily:"var(--font-body)", fontSize:"0.8125rem", cursor:"pointer",
             }}>
-            {isEnabler ? "Strategic →" : "Mark as Enabler"}
+            {isEnabler ? "Strategic →" : t("markAsEnabler")}
           </button>
         </div>
 
@@ -220,7 +224,7 @@ export default function NewBetPage() {
               ))}
             </select>
           </Field>
-          <Field label="Owner Area" hint="from this level">
+          <Field label={t("ownerArea")} hint="from this level">
             <select className="input" value={form.owner_area} onChange={set("owner_area")} required>
               <option value="">— Select —</option>
               {areas.map(a => <option key={a}>{a}</option>)}
@@ -228,36 +232,36 @@ export default function NewBetPage() {
           </Field>
         </FieldRow>
 
-        <Field label="Point of Contact">
+        <Field label={t("ownerContact")}>
           <input className="input" value={form.owner_contact} onChange={set("owner_contact")} placeholder="Name or role" />
         </Field>
-        <Field label="Bet Name">
-          <input className="input" value={form.name} onChange={set("name")} placeholder="e.g. AI-Assisted Delivery Pods" required />
+        <Field label={t("betName")}>
+          <input className="input" value={form.name} onChange={set("name")} placeholder={t("betNamePlaceholder")} required />
         </Field>
-        <Field label="Strategic Outcome">
-          <input className="input" value={form.outcome} onChange={set("outcome")} placeholder="Measurable change in 90 days" required />
+        <Field label={t("outcome")}>
+          <input className="input" value={form.outcome} onChange={set("outcome")} placeholder={t("outcomePlaceholder")} required />
         </Field>
-        <Field label="Why Now">
-          <input className="input" value={form.why_now} onChange={set("why_now")} placeholder="Why is this the right moment?" />
+        <Field label={t("whyNow")}>
+          <input className="input" value={form.why_now} onChange={set("why_now")} placeholder={t("whyNowPlaceholder")} />
         </Field>
 
         {!isEnabler && (
-          <Field label="Hypothesis" hint="If X → Y → measured by Z">
+          <Field label={t("hypothesis")} hint="If X → Y → measured by Z">
             <textarea className="input" rows={3} value={form.hypothesis} onChange={set("hypothesis")} required
               placeholder="If we do X, we believe Y will happen, measured by Z" />
           </Field>
         )}
 
         <FieldRow>
-          <Field label="Kill Criteria">
+          <Field label={t("killCriteria")}>
             <input className="input" value={form.kill_criteria} onChange={set("kill_criteria")} placeholder="When do we stop?" />
           </Field>
-          <Field label="Scale Trigger">
+          <Field label={t("scaleTrigger")}>
             <input className="input" value={form.scale_trigger} onChange={set("scale_trigger")} placeholder="When do we double down?" />
           </Field>
         </FieldRow>
 
-        <Field label="Leading Indicators" hint="comma-separated, max 3">
+        <Field label={t("indicators")} hint="comma-separated, max 3">
           <textarea className="input" rows={2} value={form.indicators} onChange={set("indicators")}
             placeholder="Metric 1, Metric 2, Metric 3" />
         </Field>
@@ -282,7 +286,7 @@ export default function NewBetPage() {
         </Field>
 
         <FieldRow>
-          {[["Revenue","revenue"],["Margin","margin"],["Importance","importance"]].map(([label,key]) => (
+          {[[t("revenue"),"revenue"],[t("margin"),"margin"],[t("importance"),"importance"]].map(([label,key]) => (
             <Field key={key} label={label}>
               <select className="input" value={form[key as keyof typeof form]} onChange={set(key)}>
                 <option>High</option><option>Medium</option><option>Low</option>
@@ -302,7 +306,7 @@ export default function NewBetPage() {
         <ModalFooter>
           <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
-            {saving ? "Creating..." : "Create Bet →"}
+            {saving ? t("creating") : t("createBet")}
           </button>
         </ModalFooter>
       </form>

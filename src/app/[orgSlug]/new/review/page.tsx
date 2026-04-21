@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -7,11 +8,11 @@ import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 import type { BetStatus } from "@/types";
 
 const OUTCOMES: { value: BetStatus; label: string; color: string; hint: string }[] = [
-  { value:"Active",  label:"Keep Active",  color:"var(--active)",  hint:"Keep testing, no change." },
-  { value:"Scaled",  label:"Scale",        color:"var(--scaled)",  hint:"Confirmed. Generates a draft for next sprint." },
-  { value:"Pivoted", label:"Pivot",        color:"var(--pivoted)", hint:"New direction. Generates a draft with updated hypothesis." },
-  { value:"Done",    label:"Mark as Done", color:"var(--done)",    hint:"Reached its conclusion." },
-  { value:"Killed",  label:"Kill",         color:"var(--killed)",  hint:"No signal. Stop now." },
+  { value:"Active",  label:t("keepActive"),  color:"var(--active)",  hint:t("keepActiveDesc") },
+  { value:"Scaled",  label:t("scale"),        color:"var(--scaled)",  hint:t("scaleDesc") },
+  { value:"Pivoted", label:t("pivot"),        color:"var(--pivoted)", hint:t("pivotDesc") },
+  { value:"Done",    label:t("markAsDone"), color:"var(--done)",    hint:t("doneDesc") },
+  { value:"Killed",  label:t("kill"),         color:"var(--killed)",  hint:t("killDesc") },
 ];
 
 function Rule({ color, title, children }: { color: string; title: string; children: React.ReactNode }) {
@@ -40,11 +41,11 @@ const SIDEBAR = (
     <div style={{ marginBottom:16 }}>
       <div style={{ fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.875rem",
         color:"var(--text)", marginBottom:12 }}>Bet Outcomes</div>
-      <Rule color="var(--active)"  title="Keep Active">Not enough signal yet. Continue testing.</Rule>
-      <Rule color="var(--scaled)"  title="Scale">Hypothesis confirmed. Generates a draft bet for the next sprint.</Rule>
-      <Rule color="var(--pivoted)" title="Pivot">Direction changes. Generates a draft with updated hypothesis.</Rule>
-      <Rule color="var(--done)"    title="Mark as Done">Reached its natural conclusion.</Rule>
-      <Rule color="var(--killed)"  title="Kill">No signal after sufficient time. Stop now, free the capacity.</Rule>
+      <Rule color="var(--active)"  title={t("keepActive")}>Not enough signal yet. Continue testing.</Rule>
+      <Rule color="var(--scaled)"  title={t("scale")}>Hypothesis confirmed. Generates a draft bet for the next sprint.</Rule>
+      <Rule color="var(--pivoted)" title={t("pivot")}>Direction changes. Generates a draft with updated hypothesis.</Rule>
+      <Rule color="var(--done)"    title={t("markAsDone")}>Reached its natural conclusion.</Rule>
+      <Rule color="var(--killed)"  title={t("kill")}>No signal after sufficient time. Stop now, free the capacity.</Rule>
     </div>
     <div style={{ paddingTop:16, borderTop:"1px solid var(--border)" }}>
       <div style={{ fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.875rem",
@@ -57,6 +58,7 @@ const SIDEBAR = (
 );
 
 export default function StrategicReviewPage() {
+  const t = useT("form");
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, addEvidence, updateBet, addBet } = useStore();
@@ -98,7 +100,7 @@ export default function StrategicReviewPage() {
         const nextSprint = sprints.find(s => s.status === "Planned");
         const { data: draft } = await supabase.from("bets").insert({
           org_id: org.id, sprint_id: nextSprint?.id || bet.sprint_id,
-          name: `${bet.name} — ${outcome === "Scaled" ? "Scale" : "Pivot"}`,
+          name: `${bet.name} — ${outcome === "Scaled" ? t("scale") : t("pivot")}`,
           owner_area: bet.owner_area, owner_contact: bet.owner_contact,
           status: "Active", signal: "Unclear", outcome: bet.outcome,
           hypothesis: outcome === "Pivoted" && newHyp ? newHyp : bet.hypothesis,
@@ -114,13 +116,13 @@ export default function StrategicReviewPage() {
       setSaving(false);
       router.push(`/${params.orgSlug}/dashboard`);
     } catch {
-      setError("Error al guardar. Intentá de nuevo.");
+      setError(t("errorCreating"));
       setSaving(false);
     }
   }
 
   return (
-    <Modal title="Strategic Review" subtitle="Evidence-based decision. 3× per sprint cycle." sidebar={SIDEBAR}>
+    <Modal title={t("strategicReview")} subtitle={t("reviewSubtitle")} sidebar={SIDEBAR}>
       <form onSubmit={save}>
         <Field label="Bet">
           <select className="input" value={betId} onChange={e => setBetId(e.target.value)}>
@@ -145,17 +147,17 @@ export default function StrategicReviewPage() {
           </div>
         )}
 
-        <Field label="What actually happened?">
+        <Field label={t("whatHappened")}>
           <textarea className="input" rows={3} value={actual} onChange={e => setActual(e.target.value)} required
-            placeholder="e.g. AI usage at 52% in squads A and B" />
+            placeholder={t("whatHappenedPlaceholder")} />
         </Field>
 
-        <Field label="Insight — what does this tell us?">
+        <Field label={t("insight")}>
           <textarea className="input" rows={3} value={insight} onChange={e => setInsight(e.target.value)} required
-            placeholder="What did we learn?" />
+            placeholder={t("insightPlaceholder")} />
         </Field>
 
-        <Field label="Decision">
+        <Field label={t("decision")}>
           <div className="space-y-2">
             {OUTCOMES.map(o => (
               <button key={o.value} type="button" onClick={() => setOutcome(o.value)}
@@ -175,15 +177,15 @@ export default function StrategicReviewPage() {
         </Field>
 
         {outcome === "Pivoted" && (
-          <Field label="Updated Hypothesis">
+          <Field label={t("updatedHypothesis")}>
             <textarea className="input" rows={3} value={newHyp} onChange={e => setNewHyp(e.target.value)}
-              placeholder="New direction for the next sprint..." />
+              placeholder={t("updatedHypothesisPlaceholder")} />
           </Field>
         )}
 
-        <Field label="Next Action">
+        <Field label={t("nextAction")}>
           <input className="input" value={action} onChange={e => setAction(e.target.value)}
-            placeholder="One concrete step" />
+            placeholder={t("nextActionPlaceholder")} />
         </Field>
 
         {error && (
@@ -196,7 +198,7 @@ export default function StrategicReviewPage() {
         <ModalFooter>
           <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
-            {saving ? "Saving..." : "Log Review →"}
+            {saving ? t("saving") : t("logReview")}
           </button>
         </ModalFooter>
       </form>

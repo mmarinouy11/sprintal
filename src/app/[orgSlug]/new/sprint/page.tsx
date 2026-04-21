@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -37,6 +38,7 @@ function Helper({ title, children }: { title: string; children: React.ReactNode 
 }
 
 export default function NewSprintPage() {
+  const t = useT("form");
   const router = useRouter();
   const params = useParams();
   const { org, addSprint } = useStore();
@@ -166,13 +168,13 @@ export default function NewSprintPage() {
         </div>
       )}
 
-      <Helper title="Strategic Focus">
+      <Helper title={t("strategicFocus")}>
         3 clear priorities maximum. If everything is a focus, nothing is.
       </Helper>
-      <Helper title="Success Signals">
+      <Helper title={t("successSignals")}>
         How will you recognize progress? Keep these directional, not metric-precise.
       </Helper>
-      <Helper title="Rules">
+      <Helper title={t("rules")}>
         <ul style={{ paddingLeft:14, marginTop:4 }}>
           <li style={{ marginBottom:4 }}>The Sprint is fixed in time.</li>
           <li style={{ marginBottom:4 }}>The portfolio is flexible within the Sprint.</li>
@@ -183,19 +185,19 @@ export default function NewSprintPage() {
   );
 
   return (
-    <Modal title="New Sprint" subtitle={`L${level} · Recommended ${config.label}`} sidebar={SIDEBAR}>
+    <Modal title={t("newSprint")} subtitle={`L${level} · Recommended ${config.label}`} sidebar={SIDEBAR}>
       <form onSubmit={save}>
-        <Field label="Sprint Name" hint="Use fiscal quarter format">
+        <Field label={t("sprintName")} hint={t("sprintNameHint")}>
           <input className="input" value={form.name} onChange={set("name")}
-            placeholder="e.g. Q2 FY27 Sprint" required autoFocus />
+            placeholder={t("sprintNamePlaceholder")} required autoFocus />
         </Field>
 
         <FieldRow>
-          <Field label="Start Date">
+          <Field label={t("startDate")}>
             <input className="input" type="date" value={form.start_date}
               onChange={handleStartDate} required />
           </Field>
-          <Field label="End Date">
+          <Field label={t("endDate")}>
             <input className="input" type="date" value={form.end_date}
               onChange={set("end_date")} required />
           </Field>
@@ -237,15 +239,15 @@ export default function NewSprintPage() {
           </div>
         ))}
 
-        <Field label="Strategic Focus" hint="Max 3 priorities — be ruthless">
+        <Field label={t("strategicFocus")} hint={t("focusHint")}>
           <textarea className="input" rows={3} value={form.focus} onChange={set("focus")}
-            placeholder="What matters most this cycle? List up to 3 priorities." required />
+            placeholder={t("focusPlaceholder")} required />
         </Field>
-        <Field label="Success Signals" hint="How will we recognize progress?">
+        <Field label={t("successSignals")} hint={t("signalsHint")}>
           <textarea className="input" rows={2} value={form.signals} onChange={set("signals")}
-            placeholder="e.g. Increased AI adoption, Stronger pipeline" />
+            placeholder={t("signalsPlaceholder")} />
         </Field>
-        <Field label="Status">
+        <Field label={t("status")}>
           <select className="input" value={form.status} onChange={set("status")}>
             <option>Planned</option><option>Active</option>
           </select>
@@ -254,7 +256,7 @@ export default function NewSprintPage() {
         <ModalFooter>
           <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">Cancel</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
-            {saving ? "Creating..." : "Create Sprint →"}
+            {saving ? t("creating") : t("createSprint")}
           </button>
         </ModalFooter>
       </form>

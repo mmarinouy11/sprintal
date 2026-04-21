@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -22,10 +23,10 @@ const SIDEBAR = (
     <div className="mb-5">
       <div className="font-semibold text-sm mb-3" style={{ color:"var(--text)" }}>Bet Outcomes</div>
       {[
-        { c:"var(--scaled)",  t:"Scale",        d:"Generates a draft bet for expansion into the next sprint." },
-        { c:"var(--pivoted)", t:"Pivot",         d:"Generates a draft with updated hypothesis for the next sprint." },
-        { c:"var(--done)",    t:"Mark as Done",  d:"Reached its conclusion. No continuation." },
-        { c:"var(--killed)",  t:"Kill",          d:"No signal. Stop completely." },
+        { c:"var(--scaled)",  t:t("scale"),        d:t("scaleDesc2") },
+        { c:"var(--pivoted)", t:t("pivot"),         d:t("pivotDesc2") },
+        { c:"var(--done)",    t:t("markAsDone"),  d:t("doneDesc2") },
+        { c:"var(--killed)",  t:t("kill"),          d:t("killDesc2") },
       ].map(o => (
         <div key={o.t} className="mb-3 pl-3" style={{ borderLeft:`2px solid ${o.c}` }}>
           <div className="font-semibold text-sm mb-0.5" style={{ color:o.c }}>{o.t}</div>
@@ -43,6 +44,7 @@ const SIDEBAR = (
 );
 
 export default function SprintClosurePage() {
+  const t = useT("form");
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, updateSprint, updateBet, addBet } = useStore();
@@ -57,7 +59,7 @@ export default function SprintClosurePage() {
   const [error, setError] = useState("");
 
   if (!active) return (
-    <Modal title="Close Sprint" subtitle="No active sprint to close.">
+    <Modal title={t("closeSprint")} subtitle={t("noActiveSprint")}>
       <p className="t-mono" style={{color:"var(--t3)"}}>No active sprint found.</p>
     </Modal>
   );
@@ -81,7 +83,7 @@ export default function SprintClosurePage() {
       if (outcome==="Scaled"||outcome==="Pivoted") {
         const { data: draft } = await supabase.from("bets").insert({
           org_id:org!.id, sprint_id:nextSprint?.id||b.sprint_id,
-          name:`${b.name} — ${outcome==="Scaled"?"Scale":"Pivot"}`,
+          name:`${b.name} — ${outcome==="Scaled"?t("scale"):t("pivot")}`,
           owner_area:b.owner_area, owner_contact:b.owner_contact,
           status:"Active", signal:"Unclear", outcome:b.outcome,
           hypothesis:outcome==="Pivoted"&&newHyp ? newHyp : b.hypothesis,
@@ -102,7 +104,7 @@ export default function SprintClosurePage() {
   }
 
   return (
-    <Modal title="Close Sprint" subtitle={`Closing: ${active.name}, Closure is reconfiguration, not reporting.`} wide>
+    <Modal title={t("closeSprint")} subtitle={`Closing: ${active.name}, Closure is reconfiguration, not reporting.`} wide>
       <form onSubmit={save}>
         <div className="t-label mb-3">Bet Outcomes</div>
         <div className="space-y-3 mb-6">
@@ -127,10 +129,10 @@ export default function SprintClosurePage() {
                     ))}
                   </select>
                 </Field>
-                <Field label="Key Learning">
+                <Field label={t("keyLearning")}>
                   <input className="input" value={learnings[b.id]||""}
                     onChange={e=>setLearnings(l=>({...l,[b.id]:e.target.value}))}
-                    placeholder="What did this bet teach us?" />
+                    placeholder={t("keyLearningPlaceholder")} />
                 </Field>
               </FieldRow>
               {outcomes[b.id]==="Pivoted" && (
@@ -145,7 +147,7 @@ export default function SprintClosurePage() {
         </div>
         <div className="t-label mb-3">Sprint Learnings</div>
         <div className="grid grid-cols-3 gap-4 mb-6">
-          {[["What worked?","worked"],["What didn't?","didnt"],["Surprises?","surprised"]].map(([label,key])=>(
+          {[[t("whatWorked"),"worked"],[t("whatDidnt"),"didnt"],[t("surprises"),"surprised"]].map(([label,key])=>(
             <Field key={key} label={label}>
               <textarea className="input" rows={3}
                 value={closure[key as keyof typeof closure]}
@@ -167,7 +169,7 @@ export default function SprintClosurePage() {
         <ModalFooter>
           <button type="button" onClick={()=>router.back()} className="btn-ghost flex-1">Cancel</button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
-            {saving ? "Closing..." : "Close Sprint →"}
+            {saving ? t("closing") : t("closeSprintBtn")}
           </button>
         </ModalFooter>
       </form>

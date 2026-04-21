@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/lib/i18n";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
@@ -6,6 +7,7 @@ import { useStore } from "@/lib/store";
 import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 
 export default function NewSubOrgPage() {
+  const t = useT("form");
   const router = useRouter();
   const params = useParams();
   const { org, setChildOrgs, childOrgs, currentRole, rootPlan } = useStore();
@@ -40,12 +42,12 @@ export default function NewSubOrgPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!org) return;
-    if (childLevel > 4) { setError("Máximo 4 niveles de jerarquía."); return; }
+    if (childLevel > 4) { setError(t("maxLevelDesc")); return; }
     setSaving(true); setError("");
     try {
       // Get current session token
       const { data: { session } } = await supabase.auth.getSession();
-      if (!session) { setError("Sesión expirada. Iniciá sesión de nuevo."); setSaving(false); return; }
+      if (!session) { setError(t("sessionExpired")); setSaving(false); return; }
 
       const res = await fetch("/api/org/create-sub", {
         method: "POST",
@@ -68,7 +70,7 @@ export default function NewSubOrgPage() {
 
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || "Error al crear la unidad.");
+        setError(data.error || t("errorCreating"));
         setSaving(false); return;
       }
 
@@ -76,7 +78,7 @@ export default function NewSubOrgPage() {
       // Stay on parent — sub-org is a sub-unit, not where you operate from
       router.push(`/${params.orgSlug}/dashboard`);
     } catch {
-      setError("Error de conexión. Intentá de nuevo.");
+      setError(t("connectionError"));
       setSaving(false);
     }
   }
@@ -117,7 +119,7 @@ export default function NewSubOrgPage() {
           <div style={{ width:6, height:6, borderRadius:"50%", background:"var(--scaled)" }} />
           <span style={{ fontFamily:"var(--font-body)", fontSize:"0.75rem",
             color:"var(--scaled)", fontWeight:600 }}>
-            {name || "Nueva área"} ← nuevo
+            {name || t("newArea")} ← nuevo
           </span>
         </div>
       </div>
@@ -133,7 +135,7 @@ export default function NewSubOrgPage() {
 
   if (isTrialOrg) {
     return (
-      <Modal title="Función Pro" subtitle="Sub-áreas no disponibles en el plan trial">
+      <Modal title={t("proFeature")} subtitle={t("subAreasUnavailable")}>
         <div style={{ textAlign:"center", padding:"24px 0 16px" }}>
           <div style={{ fontSize:"3rem", marginBottom:16 }}>🔒</div>
           <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem",
@@ -161,7 +163,7 @@ export default function NewSubOrgPage() {
 
   if ((org?.cascade_level || 1) >= 4) {
     return (
-      <Modal title="Nivel máximo alcanzado" subtitle="No se pueden crear más áreaes.">
+      <Modal title={t("maxLevelReached")} subtitle={t("cantCreateMore")}>
         <p style={{ color:"var(--t2)" }}>La jerarquía máxima es L1 → L2 → L3 → L4.</p>
         <ModalFooter>
           <button onClick={() => router.back()} className="btn-ghost flex-1">Volver</button>
@@ -177,9 +179,9 @@ export default function NewSubOrgPage() {
       sidebar={SIDEBAR}>
       <form onSubmit={save}>
 
-        <Field label="Nombre de la unidad">
+        <Field label={t("areaName")}>
           <input className="input" value={name} onChange={e => setName(e.target.value)}
-            placeholder="e.g. Marketing Team, BU América, Centro Regional LATAM"
+            placeholder={t("areaNamePlaceholder")}
             required autoFocus />
         </Field>
 
@@ -210,7 +212,7 @@ export default function NewSubOrgPage() {
             Cancelar
           </button>
           <button type="submit" disabled={saving} className="btn-primary flex-1">
-            {saving ? "Creando..." : "Crear área →"}
+            {saving ? t("creating") : t("createArea")}
           </button>
         </ModalFooter>
       </form>
