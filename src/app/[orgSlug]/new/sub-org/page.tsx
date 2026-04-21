@@ -55,13 +55,14 @@ export default function NewSubOrgPage() {
         },
         body: JSON.stringify({
           name,
-          parentOrgId:  effectiveParentId,
-          parentArea:   parentArea || null,
-          levelName:    "area",
+          parentOrgId:   effectiveParentId,
+          parentArea:    parentArea || null,
+          levelName:     "area",
           childLevel,
-          plan:         org.plan,
-          primaryColor: org.primary_color,
-          trialEndsAt:  new Date(Date.now() + 90*86400000).toISOString(),
+          plan:          org.plan,
+          parentOrgPlan: org.plan,
+          primaryColor:  org.primary_color,
+          trialEndsAt:   new Date(Date.now() + 90*86400000).toISOString(),
         }),
       });
 

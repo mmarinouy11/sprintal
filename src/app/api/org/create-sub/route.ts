@@ -85,17 +85,12 @@ export async function POST(req: NextRequest) {
     }
 
     // Trial limit — no sub-areas post-onboarding
-    if (!fromOnboarding) {
-      const { data: parentOrgRows } = await supabaseAdmin
-        .from("organizations").select("plan").eq("id", parentOrgId).limit(1);
-      const parentOrgData = parentOrgRows?.[0];
-      console.log("TRIAL CHECK: plan=", parentOrgData?.plan, "fromOnboarding=", fromOnboarding);
-      if (parentOrgData?.plan === "trial") {
-        return NextResponse.json({
-          error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
-          code: "TRIAL_LIMIT"
-        }, { status: 403 });
-      }
+    // Use plan from body (client sends current org plan from store)
+    if (!fromOnboarding && body.parentOrgPlan === "trial") {
+      return NextResponse.json({
+        error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
+        code: "TRIAL_LIMIT"
+      }, { status: 403 });
     }
 
     // Unique slug
