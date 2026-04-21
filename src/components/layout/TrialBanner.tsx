@@ -1,5 +1,5 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 import { Organization } from "@/types";
 
 export default function TrialBanner({ org }: { org: Organization }) {
@@ -11,7 +11,7 @@ export default function TrialBanner({ org }: { org: Organization }) {
 
   if (daysLeft <= 0) return null; // Layout already redirects if expired
   if (daysLeft > 14) return null;
-  const t = useTranslations("trial"); // Only show when 14 days or less remain
+  const t = useT("trial"); // Only show when 14 days or less remain
 
   const isUrgent = daysLeft <= 3;
 

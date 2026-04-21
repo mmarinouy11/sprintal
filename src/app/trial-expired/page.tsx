@@ -1,11 +1,11 @@
 "use client";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 
 export default function TrialExpiredPage() {
   const router = useRouter();
-  const t = useTranslations("trial");
+  const t = useT("trial");
 
   async function handleSignOut() {
     await supabase.auth.signOut();

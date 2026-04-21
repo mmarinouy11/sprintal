@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -90,7 +90,7 @@ export default function SettingsPage() {
   const [color, setColor] = useState("");
   const [message, setMessage] = useState<{ text: string; type: "success" | "error" } | null>(null);
 
-  const t = useTranslations();
+  const t = useT();
   const isOwner = currentRole === "owner";
   const isAdmin = currentRole === "admin" || isOwner;
 

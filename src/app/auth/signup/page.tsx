@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 
 export default function SignupPage() {
   const router = useRouter();
-  const t = useTranslations("auth");
+  const t = useT("auth");
   const [form, setForm] = useState({ email: "", password: "", orgName: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -92,7 +92,7 @@ export default function SignupPage() {
                 Organization Name
               </label>
               <input className="input" value={form.orgName} onChange={set("orgName")}
-                placeholder=t("orgPlaceholder") required autoFocus />
+                placeholder={t("orgPlaceholder")} required autoFocus />
             </div>
             <div>
               <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
@@ -101,7 +101,7 @@ export default function SignupPage() {
                 Email
               </label>
               <input className="input" type="email" value={form.email} onChange={set("email")}
-                placeholder=t("emailPlaceholder") required />
+                placeholder={t("emailPlaceholder")} required />
             </div>
             <div>
               <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
@@ -110,7 +110,7 @@ export default function SignupPage() {
                 Password
               </label>
               <input className="input" type="password" value={form.password} onChange={set("password")}
-                placeholder=t("passwordMin") required minLength={8} />
+                placeholder={t("passwordMin")} required minLength={8} />
             </div>
 
             {error && (

@@ -1,11 +1,11 @@
 "use client";
 import { useStore } from "@/lib/store";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 import { StatusBadge } from "@/components/ui/Badge";
 
 export default function EvidencePage() {
   const { evidence, bets } = useStore();
-  const t = useTranslations();
+  const t = useT();
   return (
     <div className="w-full px-10 py-8">
       <div className="mb-8 pb-5 border-b border-[var(--border)]">

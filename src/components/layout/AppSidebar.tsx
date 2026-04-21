@@ -6,7 +6,7 @@ import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 
 const AREA_DOTS = ["#EC4899","#22C55E","#EAA012","#7C3AED","#2563EB","#0891B2","#F97316","#DC2626"];
 
@@ -16,7 +16,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
   const { org, childOrgs, reset, currentRole } = useStore();
   const perms = usePermissions(currentRole);
   const base = `/${orgSlug}`;
-  const t = useTranslations();
+  const t = useT();
   const [collapsed, setCollapsed] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 

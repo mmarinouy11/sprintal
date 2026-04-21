@@ -1,13 +1,13 @@
 "use client";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export default function LoginPage() {
   const router = useRouter();
-  const t = useTranslations("auth");
+  const t = useT("auth");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -67,7 +67,7 @@ export default function LoginPage() {
             <div>
               <label className="t-label block mb-2">Email</label>
               <input type="email" value={email} onChange={e=>setEmail(e.target.value)}
-                className="input" placeholder=t("emailPlaceholder") required />
+                className="input" placeholder={t("emailPlaceholder")} required />
             </div>
             <div>
               <label className="t-label block mb-2">Password</label>

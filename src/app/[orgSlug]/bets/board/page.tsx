@@ -5,7 +5,7 @@ import { SignalBadge, AreaTag } from "@/components/ui/Badge";
 import { useRouter, useParams } from "next/navigation";
 import type { BetStatus, Bet } from "@/types";
 import BetDetailPanel from "@/components/bets/BetDetailPanel";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 
 const COLS: BetStatus[] = ["Active","Scaled","Pivoted","Done","Killed"];
 const COLORS: Record<BetStatus,string> = {
@@ -16,7 +16,7 @@ export default function BetsBoardPage() {
   const { bets, sprints, evidence, signalChecks } = useStore();
   const [selectedBet, setSelectedBet] = useState<Bet | null>(null);
   const router = useRouter();
-  const t = useTranslations();
+  const t = useT();
   const params = useParams();
 
   const totalBets = bets.length;

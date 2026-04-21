@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import { useTranslations } from "next-intl";
+import { useT } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -8,7 +8,7 @@ import { Suspense } from "react";
 function VerifyContent() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email") || "";
-  const t = useTranslations("auth");
+  const t = useT("auth");
   const [resending, setResending] = useState(false);
   const [resent, setResent] = useState(false);
 
