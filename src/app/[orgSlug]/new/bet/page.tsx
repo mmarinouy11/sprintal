@@ -263,7 +263,7 @@ export default function NewBetPage() {
           </Field>
         </FieldRow>
 
-        <Field label={t("indicators")} hint="comma-separated, max 3">
+        <Field label={t("indicators")} hint={t("indicatorsHint")}>
           <textarea className="input" rows={2} value={form.indicators} onChange={set("indicators")}
             placeholder={t("indicatorsPlaceholder")} />
         </Field>

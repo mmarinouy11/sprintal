@@ -353,6 +353,7 @@
     "durationDays2": "{days}d",
     "betLevelNoteShort": "L{level} bet — referenceable by lower levels.",
     "selectArea": "— Select area —",
-    "closingLabel": "Closing"
+    "closingLabel": "Closing",
+    "indicatorsHint": "comma-separated, max 3"
   }
 }

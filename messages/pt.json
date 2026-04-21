@@ -353,6 +353,7 @@
     "durationDays2": "{days}d",
     "betLevelNoteShort": "Bet L{level} — referenciável por níveis inferiores.",
     "selectArea": "— Selecione área —",
-    "closingLabel": "Encerrando"
+    "closingLabel": "Encerrando",
+    "indicatorsHint": "separados por vírgula, máx. 3"
   }
 }
