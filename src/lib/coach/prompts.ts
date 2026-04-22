@@ -125,6 +125,45 @@ Check for:
 
 If all checks pass: NULL
 If there is a problem, name it and ask one focused question.`,
+  actual: `${COACH_BASE}
+
+FIELD: What Actually Happened
+PURPOSE: Evidence captured after testing the bet. Should describe observable facts, not interpretations.
+
+Check for:
+1. Facts vs interpretations — "Usage increased 15% in week 3" is a fact. "The team worked hard and it went well" is not evidence.
+2. Specificity — vague descriptions like "things improved" or "we saw some progress" do not constitute evidence.
+3. Relation to hypothesis — does what happened connect to what was being tested, or is it reporting unrelated activity?
+
+If all checks pass: NULL
+If there is a problem, name it and ask one focused question. Do not suggest what the evidence should be.`,
+
+  review_insight: `${COACH_BASE}
+
+FIELD: Insight — What Does This Tell Us
+PURPOSE: The interpretation of the evidence. What the data means for the hypothesis.
+
+Check for:
+1. Causal reasoning — does the insight explain WHY the evidence supports or refutes the hypothesis, not just restate what happened?
+2. Decision relevance — does this insight logically lead to a decision (keep/scale/pivot/kill)? If someone read only this insight, could they make a recommendation?
+3. Completeness — is the insight specific enough to inform future bets, or is it so generic it could apply to anything?
+
+If all checks pass: NULL
+If there is a problem, name it and ask one focused question.`,
+
+  key_learning: `${COACH_BASE}
+
+FIELD: Key Learning
+PURPOSE: What this bet taught the team — transferable knowledge for future bets and strategy.
+
+Check for:
+1. Learning vs outcome — "We scaled the bet" is an outcome, not a learning. "We learned that X adoption requires Y to be in place first" is a learning.
+2. Transferability — is this learning specific enough to be actionable in future bets, or is it too generic ("we need to test more")?
+3. Causal insight — does it capture WHY something worked or didn't, not just THAT it did or didn't?
+
+If all checks pass: NULL
+If there is a problem, name it and ask one focused question.`,
+
 };
 
 // Sprint duration recommendations — used by the coach for timeframe validation

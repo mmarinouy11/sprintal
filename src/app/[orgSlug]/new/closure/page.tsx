@@ -1,5 +1,7 @@
 "use client";
 import { useT } from "@/lib/i18n";
+import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
+import CoachObservation from "@/components/coach/CoachObservation";
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -48,6 +50,7 @@ function SidebarContent({ t }: { t: (k: string) => string }) {
 export default function SprintClosurePage() {
   const t = useT("form");
   const tg = useT();
+  const coach = useSyntacticCoach();
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, updateSprint, updateBet, addBet } = useStore();
@@ -135,7 +138,9 @@ export default function SprintClosurePage() {
                 <Field label={t("keyLearning")}>
                   <input className="input" value={learnings[b.id]||""}
                     onChange={e=>setLearnings(l=>({...l,[b.id]:e.target.value}))}
-                    placeholder={t("keyLearningPlaceholder")} />
+                    placeholder={t("keyLearningPlaceholder")}
+                    onBlur={e => coach.check("key_learning", e.target.value)} />
+                  <CoachObservation observation={coach.results["key_learning"]?.observation || null} loading={coach.results["key_learning"]?.loading || false} />
                 </Field>
               </FieldRow>
               {outcomes[b.id]==="Pivoted" && (
