@@ -246,10 +246,12 @@ export default function NewSprintPage() {
         <Field label={t("strategicFocus")} hint={t("focusHint")}>
           <textarea className="input" rows={3} value={form.focus} onChange={set("focus")} onBlur={e => coach.check("focus", e.target.value)}
             placeholder={t("focusPlaceholder")} required />
+          <CoachObservation observation={coach.results["focus"]?.observation || null} loading={coach.results["focus"]?.loading || false} />
         </Field>
         <Field label={t("successSignals")} hint={t("signalsHint")}>
           <textarea className="input" rows={2} value={form.signals} onChange={set("signals")} onBlur={e => coach.check("signals", e.target.value)}
             placeholder={t("signalsPlaceholder")} />
+          <CoachObservation observation={coach.results["signals"]?.observation || null} loading={coach.results["signals"]?.loading || false} />
         </Field>
         <Field label={t("status")}>
           <select className="input" value={form.status} onChange={set("status")}>
