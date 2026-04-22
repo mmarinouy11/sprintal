@@ -46,7 +46,12 @@ export function useSyntacticCoach(sprintDays?: number) {
             "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`,
           },
-          body: JSON.stringify({ field, value: value.trim(), sprintDays }),
+          body: JSON.stringify({
+            field,
+            value: value.trim(),
+            sprintDays,
+            locale: document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1] || navigator.language?.slice(0, 2) || "en",
+          }),
         });
 
         const data = await res.json();

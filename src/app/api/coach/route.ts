@@ -17,19 +17,23 @@ export async function POST(req: NextRequest) {
     const { data: { user } } = await supabase.auth.getUser(token);
     if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 
-    const { field, value, sprintDays } = await req.json() as {
+    const { field, value, sprintDays, locale } = await req.json() as {
       field: CoachField;
       value: string;
       sprintDays?: number;
+      locale?: string;
     };
 
     if (!field || !value || !FIELD_PROMPTS[field]) {
       return NextResponse.json({ observation: null });
     }
 
-    const systemPrompt = sprintDays
+    const lang = locale === "es" ? "Spanish" : locale === "pt" ? "Portuguese" : "English";
+    const languageInstruction = `\n\nRespond in ${lang}. If returning NULL, always return exactly: NULL`;
+
+    const systemPrompt = (sprintDays
       ? `${FIELD_PROMPTS[field]}\n\n${SPRINT_DURATION_CONTEXT(sprintDays)}`
-      : FIELD_PROMPTS[field];
+      : FIELD_PROMPTS[field]) + languageInstruction;
 
     const res = await fetch("https://api.anthropic.com/v1/messages", {
       method: "POST",
