@@ -1,5 +1,7 @@
 "use client";
 import { useT } from "@/lib/i18n";
+import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
+import CoachObservation from "@/components/coach/CoachObservation";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -75,6 +77,12 @@ export default function NewBetPage() {
     why_now:"", hypothesis:"", indicators:"", kill_criteria:"", scale_trigger:"",
     revenue:"Medium", margin:"Medium", importance:"Medium",
   });
+
+  const activeSprint = sprints.find(s => s.status === "Active");
+  const sprintDays = activeSprint
+    ? Math.round((new Date(activeSprint.end_date).getTime() - new Date(activeSprint.start_date).getTime()) / 86400000)
+    : 90;
+  const coach = useSyntacticCoach(sprintDays);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
@@ -241,31 +249,47 @@ export default function NewBetPage() {
           <input className="input" value={form.name} onChange={set("name")} placeholder={t("betNamePlaceholder")} required />
         </Field>
         <Field label={t("outcome")}>
-          <input className="input" value={form.outcome} onChange={set("outcome")} placeholder={t("outcomePlaceholder")} required />
+          <input className="input" value={form.outcome} onChange={set("outcome")}
+            onBlur={e => coach.check("outcome", e.target.value)}
+            placeholder={t("outcomePlaceholder")} required />
+          <CoachObservation {...(coach.results["outcome"] || { observation: null, loading: false })} />
         </Field>
         <Field label={t("whyNow")}>
-          <input className="input" value={form.why_now} onChange={set("why_now")} placeholder={t("whyNowPlaceholder")} />
+          <input className="input" value={form.why_now} onChange={set("why_now")}
+            onBlur={e => coach.check("why_now", e.target.value)}
+            placeholder={t("whyNowPlaceholder")} />
+          <CoachObservation {...(coach.results["why_now"] || { observation: null, loading: false })} />
         </Field>
 
         {!isEnabler && (
           <Field label={t("hypothesis")} hint={t("hypothesisPlaceholderShort")}>
             <textarea className="input" rows={3} value={form.hypothesis} onChange={set("hypothesis")} required
+              onBlur={e => coach.check("hypothesis", e.target.value)}
               placeholder={t("hypothesisPlaceholderShort")} />
+            <CoachObservation {...(coach.results["hypothesis"] || { observation: null, loading: false })} />
           </Field>
         )}
 
         <FieldRow>
           <Field label={t("killCriteria")}>
-            <input className="input" value={form.kill_criteria} onChange={set("kill_criteria")} placeholder={t("killPlaceholderShort")} />
+            <input className="input" value={form.kill_criteria} onChange={set("kill_criteria")}
+              onBlur={e => coach.check("kill_criteria", e.target.value)}
+              placeholder={t("killPlaceholderShort")} />
+            <CoachObservation {...(coach.results["kill_criteria"] || { observation: null, loading: false })} />
           </Field>
           <Field label={t("scaleTrigger")}>
-            <input className="input" value={form.scale_trigger} onChange={set("scale_trigger")} placeholder={t("scalePlaceholderShort")} />
+            <input className="input" value={form.scale_trigger} onChange={set("scale_trigger")}
+              onBlur={e => coach.check("scale_trigger", e.target.value)}
+              placeholder={t("scalePlaceholderShort")} />
+            <CoachObservation {...(coach.results["scale_trigger"] || { observation: null, loading: false })} />
           </Field>
         </FieldRow>
 
         <Field label={t("indicators")} hint={t("indicatorsHint")}>
           <textarea className="input" rows={2} value={form.indicators} onChange={set("indicators")}
+            onBlur={e => coach.check("indicators", e.target.value)}
             placeholder={t("indicatorsPlaceholder")} />
+          <CoachObservation {...(coach.results["indicators"] || { observation: null, loading: false })} />
         </Field>
 
         <Field label={t("supportAlignment")}>

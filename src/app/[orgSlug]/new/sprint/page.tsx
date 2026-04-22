@@ -1,5 +1,7 @@
 "use client";
 import { useT } from "@/lib/i18n";
+import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
+import CoachObservation from "@/components/coach/CoachObservation";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
@@ -80,6 +82,7 @@ export default function NewSprintPage() {
 
   // Compute warnings
   const duration = form.start_date && form.end_date ? daysBetween(form.start_date, form.end_date) : 0;
+  const coach = useSyntacticCoach(duration > 0 ? duration : 90);
   const warnings: string[] = [];
 
   if (duration > 0) {
@@ -241,11 +244,11 @@ export default function NewSprintPage() {
         ))}
 
         <Field label={t("strategicFocus")} hint={t("focusHint")}>
-          <textarea className="input" rows={3} value={form.focus} onChange={set("focus")}
+          <textarea className="input" rows={3} value={form.focus} onChange={set("focus")} onBlur={e => coach.check("focus", e.target.value)}
             placeholder={t("focusPlaceholder")} required />
         </Field>
         <Field label={t("successSignals")} hint={t("signalsHint")}>
-          <textarea className="input" rows={2} value={form.signals} onChange={set("signals")}
+          <textarea className="input" rows={2} value={form.signals} onChange={set("signals")} onBlur={e => coach.check("signals", e.target.value)}
             placeholder={t("signalsPlaceholder")} />
         </Field>
         <Field label={t("status")}>
