@@ -1,5 +1,4 @@
 "use client";
-import { useState, useEffect } from "react";
 
 interface CoachObservationProps {
   observation: string | null;
@@ -7,10 +6,6 @@ interface CoachObservationProps {
 }
 
 export default function CoachObservation({ observation, loading }: CoachObservationProps) {
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
-
-  if (!mounted) return null;
   if (!loading && !observation) return null;
 
   return (
