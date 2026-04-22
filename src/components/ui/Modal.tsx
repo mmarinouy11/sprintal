@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createPortal } from "react-dom";
 
 interface ModalProps {
   title: string;
@@ -26,29 +25,28 @@ export default function Modal({ title, subtitle, onClose, children, wide = false
   const hasSidebar = !!sidebar;
   if (!mounted) return null;
 
-  return createPortal(
+  return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(26,23,20,0.5)", backdropFilter: "blur(4px)" }}
       onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
       <div className="w-full flex flex-col overflow-hidden fade-up"
         style={{
-          maxWidth: hasSidebar ? "860px" : wide ? "780px" : "560px",
+          maxWidth: hasSidebar ? "860px" : wide ? "680px" : "520px",
           maxHeight: "90vh",
           borderRadius: "12px",
           boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
-          border: "1px solid var(--border-mid)",
         }}>
-        {/* Two-col layout when sidebar provided */}
         {hasSidebar ? (
-          <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", maxHeight: "90vh", overflow: "hidden" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "280px 1fr", maxHeight: "90vh", overflow: "hidden", borderRadius: 12 }}>
             {/* Sidebar */}
-            <div className="overflow-y-auto" style={{ background: "var(--sidebar)", borderRight: "1px solid var(--border)", padding: "28px 24px" }}>
+            <div className="overflow-y-auto px-6 py-7"
+              style={{ background: "var(--raised)", borderRight: "1px solid var(--border)", fontSize: "0.875rem", color: "var(--t2)", lineHeight: 1.6 }}>
               {sidebar}
             </div>
             {/* Main */}
             <div className="flex flex-col overflow-hidden" style={{ background: "var(--bg)" }}>
               <div className="flex items-start justify-between px-7 pt-6 pb-4 flex-shrink-0"
-                style={{ borderBottom: "1px solid var(--border)" }}>
+                style={{ background: "var(--sidebar)", borderBottom: "1px solid var(--border)" }}>
                 <div>
                   <div className="font-bold text-xl" style={{ color: "var(--text)", letterSpacing: "-0.02em" }}>{title}</div>
                   {subtitle && <div className="t-mono mt-1" style={{ color: "var(--t2)" }}>{subtitle}</div>}
@@ -81,7 +79,7 @@ export default function Modal({ title, subtitle, onClose, children, wide = false
         )}
       </div>
     </div>
-  , document.body);
+  );
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
