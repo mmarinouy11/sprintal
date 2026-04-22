@@ -1,6 +1,7 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { createPortal } from "react-dom";
 
 interface ModalProps {
   title: string;
@@ -13,16 +14,19 @@ interface ModalProps {
 
 export default function Modal({ title, subtitle, onClose, children, wide = false, sidebar }: ModalProps) {
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
   function handleClose() { if (onClose) onClose(); else router.back(); }
   useEffect(() => {
+    setMounted(true);
     const down = (e: KeyboardEvent) => { if (e.key === "Escape") handleClose(); };
     document.addEventListener("keydown", down);
     return () => document.removeEventListener("keydown", down);
   }, []);
 
   const hasSidebar = !!sidebar;
+  if (!mounted) return null;
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4"
       style={{ background: "rgba(26,23,20,0.5)", backdropFilter: "blur(4px)" }}
       onClick={e => { if (e.target === e.currentTarget) handleClose(); }}>
@@ -77,7 +81,7 @@ export default function Modal({ title, subtitle, onClose, children, wide = false
         )}
       </div>
     </div>
-  );
+  , document.body);
 }
 
 export function Field({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
