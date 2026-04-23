@@ -11,7 +11,7 @@ interface CoachResult {
 }
 
 const DEBOUNCE_MS = 1400;
-const MIN_LENGTH = 20;
+const MIN_LENGTH = 15;
 
 export function useSyntacticCoach(sprintDays?: number) {
   const [results, setResults] = useState<Record<string, CoachResult>>({});

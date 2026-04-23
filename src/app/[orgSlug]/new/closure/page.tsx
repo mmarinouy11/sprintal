@@ -2,7 +2,7 @@
 import { useT } from "@/lib/i18n";
 import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
 import CoachObservation from "@/components/coach/CoachObservation";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -52,19 +52,7 @@ export default function SprintClosurePage() {
   const tg = useT();
   const coach = useSyntacticCoach();
 
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      const textareas = document.querySelectorAll<HTMLTextAreaElement>('[data-coach="key_learning"]');
-      const handlers: Array<[HTMLTextAreaElement, () => void]> = [];
-      textareas.forEach(ta => {
-        const handler = () => coach.check("key_learning", ta.value);
-        ta.addEventListener("blur", handler);
-        handlers.push([ta, handler]);
-      });
-      return () => handlers.forEach(([ta, h]) => ta.removeEventListener("blur", h));
-    }, 100);
-    return () => clearTimeout(timer);
-  }, []);
+
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, updateSprint, updateBet, addBet } = useStore();
@@ -153,7 +141,7 @@ export default function SprintClosurePage() {
                   <input className="input" value={learnings[b.id]||""}
                     onChange={e=>setLearnings(l=>({...l,[b.id]:e.target.value}))}
                     placeholder={t("keyLearningPlaceholder")}
-                    data-coach="key_learning" />
+                    onBlur={e => coach.check("key_learning", e.target.value)} />
                   <CoachObservation observation={coach.results["key_learning"]?.observation || null} loading={coach.results["key_learning"]?.loading || false} />
                 </Field>
               </FieldRow>

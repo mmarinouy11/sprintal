@@ -51,14 +51,11 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await res.json();
-    console.log("Coach API response:", JSON.stringify(data).slice(0, 200));
     const text = data.content?.[0]?.text?.trim() || "";
-    console.log("Coach text:", text);
     const observation = text === "NULL" || text === "" ? null : text;
 
     return NextResponse.json({ observation });
-  } catch (e) {
-    console.error("Coach error:", e);
+  } catch {
     return NextResponse.json({ observation: null });
   }
 }
