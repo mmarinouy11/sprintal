@@ -2,7 +2,7 @@
 import { useT } from "@/lib/i18n";
 import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
 import CoachObservation from "@/components/coach/CoachObservation";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Bet, Evidence, SignalCheck } from "@/types";
 import { StatusBadge, SignalBadge, AreaTag } from "@/components/ui/Badge";
 import { useStore } from "@/lib/store";
@@ -79,7 +79,7 @@ const EV_BORDER: Record<string,string> = {
 };
 
 // ── Edit form ─────────────────────────────────────────────────────────────
-function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => void; onCancel: () => void }) {
+const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => void; onCancel: () => void }) {
   const t = useT("betDetail");
   const tg = useT();
   const { childOrgs } = useStore();
@@ -190,7 +190,7 @@ function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => voi
       </div>
     </div>
   );
-}
+});
 
 // ── Main panel ────────────────────────────────────────────────────────────
 export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, onClose }: Props) {
