@@ -281,6 +281,7 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button onClick={() => setEditing(!editing)}
+                tabIndex={-1}
                 className="px-3 py-1 rounded text-xs font-medium transition-colors"
                 style={{
                   fontFamily:"var(--font-mono)",
