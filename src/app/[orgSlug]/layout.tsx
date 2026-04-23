@@ -7,58 +7,6 @@ import AppSidebar from "@/components/layout/AppSidebar";
 import TrialBanner from "@/components/layout/TrialBanner";
 import TopBar from "@/components/layout/TopBar";
 
-function clamp(n: number, min: number, max: number) {
-  return Math.max(min, Math.min(max, n));
-}
-
-function hexToRgb(hex: string) {
-  const normalized = hex.replace("#", "").trim();
-  const full = normalized.length === 3
-    ? normalized.split("").map((c) => c + c).join("")
-    : normalized;
-  if (!/^[0-9a-fA-F]{6}$/.test(full)) return null;
-  const r = parseInt(full.slice(0, 2), 16);
-  const g = parseInt(full.slice(2, 4), 16);
-  const b = parseInt(full.slice(4, 6), 16);
-  return { r, g, b };
-}
-
-function rgbToHex(r: number, g: number, b: number) {
-  const toHex = (v: number) => clamp(v, 0, 255).toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-function adjustRgb({ r, g, b }: { r: number; g: number; b: number }, amount: number) {
-  return {
-    r: clamp(Math.round(r + (255 - r) * amount), 0, 255),
-    g: clamp(Math.round(g + (255 - g) * amount), 0, 255),
-    b: clamp(Math.round(b + (255 - b) * amount), 0, 255),
-  };
-}
-
-function darkenRgb({ r, g, b }: { r: number; g: number; b: number }, amount: number) {
-  return {
-    r: clamp(Math.round(r * (1 - amount)), 0, 255),
-    g: clamp(Math.round(g * (1 - amount)), 0, 255),
-    b: clamp(Math.round(b * (1 - amount)), 0, 255),
-  };
-}
-
-function applyBrandTheme(primaryColor?: string) {
-  const root = document.documentElement;
-  const rgb = primaryColor ? hexToRgb(primaryColor) : null;
-  if (!rgb) return;
-
-  const dark = darkenRgb(rgb, 0.2);
-  const light = adjustRgb(rgb, 0.9);
-
-  root.style.setProperty("--brand", primaryColor);
-  root.style.setProperty("--brand-dk", rgbToHex(dark.r, dark.g, dark.b));
-  root.style.setProperty("--brand-lt", rgbToHex(light.r, light.g, light.b));
-  root.style.setProperty("--brand-bg", `rgba(${rgb.r},${rgb.g},${rgb.b},0.07)`);
-  root.style.setProperty("--brand-mid", `rgba(${rgb.r},${rgb.g},${rgb.b},0.20)`);
-}
-
 export default function OrgLayout({
   children, params,
 }: {
@@ -107,7 +55,6 @@ export default function OrgLayout({
       }
 
       setOrg(orgData);
-      applyBrandTheme(orgData.primary_color);
       console.log("layout setOrg — plan:", orgData.plan, "full org:", JSON.stringify(orgData).slice(0, 200));
       setRootPlan(rootPlan || orgData.plan);
       setCurrentRole(role);
@@ -152,10 +99,6 @@ export default function OrgLayout({
     }
     load();
   }, [params.orgSlug]);
-
-  useEffect(() => {
-    applyBrandTheme(org?.primary_color);
-  }, [org?.primary_color]);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
