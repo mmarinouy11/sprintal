@@ -165,7 +165,36 @@ export default function AcceptInvitePage() {
 
       if (!cancelled) {
         setPhase("redirecting");
+        const orgId = new URLSearchParams(window.location.search).get("orgId")?.trim();
         stripAuthParamsFromUrl();
+
+        if (orgId) {
+          try {
+            const res = await fetch(
+              `/api/org/invite-target?orgId=${encodeURIComponent(orgId)}`,
+              {
+                headers: { Authorization: `Bearer ${session.access_token}` },
+                cache: "no-store",
+              }
+            );
+            if (res.ok) {
+              const body = (await res.json()) as {
+                slug?: string;
+                onboarding_complete?: boolean;
+              };
+              if (body.slug) {
+                const path = body.onboarding_complete
+                  ? `/${body.slug}/dashboard`
+                  : `/onboarding/${body.slug}`;
+                window.location.replace(path);
+                return;
+              }
+            }
+          } catch {
+            /* fall through to / */
+          }
+        }
+
         window.location.replace("/");
       }
     }

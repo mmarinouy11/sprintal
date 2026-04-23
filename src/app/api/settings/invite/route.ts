@@ -93,12 +93,19 @@ export async function POST(req: NextRequest) {
     if (inviteError) return NextResponse.json({ error: inviteError.message }, { status: 400 });
 
     // Pre-create org_member record
-    await supabaseAdmin.from("org_members").upsert({
-      org_id: orgId,
-      user_id: inviteData.user.id,
-      role,
-      full_name: email.split("@")[0],
-    }, { onConflict: "org_id,user_id" });
+    const { error: memberError } = await supabaseAdmin.from("org_members").upsert(
+      {
+        org_id: orgId,
+        user_id: inviteData.user.id,
+        role,
+        full_name: email.split("@")[0],
+      },
+      { onConflict: "org_id,user_id" }
+    );
+    if (memberError) {
+      console.error("invite org_members upsert:", memberError);
+      return NextResponse.json({ error: memberError.message }, { status: 500 });
+    }
 
     return NextResponse.json({ success: true, redirectTo, inviteBaseSource: baseSource });
   } catch {
