@@ -79,6 +79,18 @@ const EV_BORDER: Record<string,string> = {
 };
 
 // ── Edit form ─────────────────────────────────────────────────────────────
+function F({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
+  return (
+    <div className="mb-3">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="t-label">{label}</div>
+        {hint && <div className="t-mono text-xs" style={{color:"var(--t3)"}}>{hint}</div>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => void; onCancel: () => void }) {
   const t = useT("betDetail");
   const tg = useT();
@@ -115,18 +127,6 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
   const inputCls = "w-full px-3 py-2 rounded text-sm outline-none transition-all";
   const inputStyle = { background:"var(--raised)", border:"1px solid var(--border-mid)", color:"var(--text)", fontFamily:"var(--font-body)", borderRadius:"var(--rs)" };
   const focusStyle = "focus:border-[var(--brand)] focus:shadow-[0_0_0_3px_var(--brand-bg)]";
-
-  function F({ label, hint, children }: { label: string; hint?: string; children: React.ReactNode }) {
-    return (
-      <div className="mb-3">
-        <div className="flex items-center justify-between mb-1.5">
-          <div className="t-label">{label}</div>
-          {hint && <div className="t-mono text-xs" style={{color:"var(--t3)"}}>{hint}</div>}
-        </div>
-        {children}
-      </div>
-    );
-  }
 
   return (
     <div>
