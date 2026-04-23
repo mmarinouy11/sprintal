@@ -254,6 +254,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
   const t = useT();
   const plan = (org.plan || "trial") as Plan;
   const limits = COACH_LIMITS[plan] || COACH_LIMITS["trial"];
+  console.log("CoachTab render — org.plan:", org.plan, "plan:", plan, "limits:", limits);
   const [usage, setUsage] = useState<CoachUsage | null>(null);
   const [areaUsage, setAreaUsage] = useState<Record<string, CoachUsage>>({});
   const [toggling, setToggling] = useState<string | null>(null);
