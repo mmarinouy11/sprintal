@@ -82,7 +82,14 @@
     "confirmationSent": "Enviamos um link de confirmação para",
     "clickToActivate": "Clique no link para ativar sua conta.",
     "resend": "Reenviar email",
-    "backToLogin": "← Voltar ao login"
+    "backToLogin": "← Voltar ao login",
+    "acceptInviteTitle": "Aceitar convite",
+    "acceptInviteSubtitle": "Entrando…",
+    "inviteOtpExpired": "Este link de convite expirou. Peça ao administrador para enviar um novo convite.",
+    "inviteAccessDenied": "Acesso negado. O link pode ser inválido ou já ter sido usado.",
+    "inviteErrorGeneric": "Não foi possível concluir o convite. Tente novamente ou fale com o administrador.",
+    "inviteInvalidLink": "Este link não contém os dados do convite. Abra-o a partir do e-mail.",
+    "inviteSessionError": "Não foi possível iniciar a sessão. Tente o link novamente ou faça login."
   },
   "trial": {
     "expired": "Seu período de teste encerrou",

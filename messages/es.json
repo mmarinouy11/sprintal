@@ -82,7 +82,14 @@
     "confirmationSent": "Te enviamos un link de confirmación a",
     "clickToActivate": "Hacé click en el link para activar tu cuenta.",
     "resend": "Reenviar email",
-    "backToLogin": "← Volver al login"
+    "backToLogin": "← Volver al login",
+    "acceptInviteTitle": "Aceptar invitación",
+    "acceptInviteSubtitle": "Iniciando sesión…",
+    "inviteOtpExpired": "Este enlace de invitación expiró. Pedile a tu administrador que envíe una invitación nueva.",
+    "inviteAccessDenied": "Acceso denegado. El enlace puede ser inválido o ya haberse usado.",
+    "inviteErrorGeneric": "No pudimos completar la invitación. Probá de nuevo o contactá a tu administrador.",
+    "inviteInvalidLink": "Este enlace no tiene los datos de la invitación. Abrilo desde tu correo.",
+    "inviteSessionError": "No pudimos iniciar tu sesión. Probá el enlace de nuevo o iniciá sesión."
   },
   "trial": {
     "expired": "Tu período de prueba finalizó",
