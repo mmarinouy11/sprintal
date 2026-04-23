@@ -1,6 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * Invite links must use the canonical app origin (production), not the caller's
+ * deployment URL (e.g. a Vercel preview). Prefer APP_URL (server-only, runtime on Vercel)
+ * so the value is never baked in at build time; fall back to NEXT_PUBLIC_APP_URL.
+ */
+function getInviteAppBaseUrl(): string {
+  const raw =
+    process.env.APP_URL?.trim() ||
+    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
+    "";
+  return raw.replace(/\/+$/, "");
+}
+
 export async function POST(req: NextRequest) {
   try {
     const authHeader = req.headers.get("Authorization");
@@ -26,10 +39,29 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
+    const baseUrl = getInviteAppBaseUrl();
+    if (!baseUrl) {
+      return NextResponse.json(
+        {
+          error:
+            "Server misconfiguration: set APP_URL or NEXT_PUBLIC_APP_URL to your production origin (e.g. https://sprintal.vercel.app).",
+        },
+        { status: 500 }
+      );
+    }
+
+    const redirectTo = `${baseUrl}/auth/accept-invite?orgId=${encodeURIComponent(orgId)}&role=${encodeURIComponent(role)}`;
+    console.log("invite redirectTo:", redirectTo, {
+      APP_URL: process.env.APP_URL ? "[set]" : "[unset]",
+      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ? "[set]" : "[unset]",
+      VERCEL_ENV: process.env.VERCEL_ENV,
+      VERCEL_URL: process.env.VERCEL_URL,
+    });
+
     // Invite via Supabase Auth
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: { invited_to_org: orgId, invited_role: role },
-      redirectTo: `${process.env.NEXT_PUBLIC_APP_URL}/auth/accept-invite?orgId=${orgId}&role=${role}`,
+      redirectTo,
     });
 
     if (inviteError) return NextResponse.json({ error: inviteError.message }, { status: 400 });
