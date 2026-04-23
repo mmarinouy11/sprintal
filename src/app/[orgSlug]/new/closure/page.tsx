@@ -61,7 +61,7 @@ export default function SprintClosurePage() {
       handlers.push([ta, handler]);
     });
     return () => handlers.forEach(([ta, h]) => ta.removeEventListener("blur", h));
-  }, [sprintBets.length]);
+  }, []);
   const router = useRouter();
   const params = useParams();
   const { org, sprints, bets, updateSprint, updateBet, addBet } = useStore();
