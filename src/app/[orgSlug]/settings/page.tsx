@@ -150,77 +150,40 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
     setSaveError("");
 
     const { data: { session } } = await supabase.auth.getSession();
-    const userId = session?.user?.id;
-    if (!userId) {
+    if (!session?.access_token) {
       setSaveError(t("settings.saveError"));
       setSaving(false);
       return;
     }
 
-    const { data: membership, error: membershipError } = await supabase
-      .from("org_members")
-      .select("role")
-      .eq("org_id", org.id)
-      .eq("user_id", userId)
-      .limit(1)
-      .maybeSingle();
-
-    console.log("settings org save membership:", {
-      orgId: org.id,
-      userId,
-      membership,
-      membershipError,
+    const res = await fetch("/api/settings/update-org", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({
+        orgId: org.id,
+        name,
+        primaryColor: color,
+      }),
     });
 
-    if (membershipError || !membership || !["owner", "admin"].includes(membership.role)) {
-      setSaveError(t("settings.saveError"));
-      setSaving(false);
-      return;
-    }
-
-    const { data, error } = await supabase.from("organizations")
-      .update({ name, primary_color: color })
-      .eq("id", org.id)
-      .select("id, name, primary_color")
-      .limit(1)
-      .maybeSingle();
-
-    console.log("settings org save response:", {
+    const payload = await res.json();
+    console.log("settings org save via api:", {
       orgId: org.id,
-      payload: { name, primary_color: color },
-      data,
-      error,
+      payloadSent: { name, primaryColor: color },
+      status: res.status,
+      payloadReceived: payload,
     });
 
-    if (error) {
-      console.error("settings org save error:", { orgId: org.id, error });
+    if (!res.ok || !payload?.org) {
       setSaveError(t("settings.saveError"));
       setSaving(false);
       return;
     }
 
-    if (!data) {
-      console.error("settings org save returned no row:", { orgId: org.id, color });
-      setSaveError(t("settings.saveError"));
-      setSaving(false);
-      return;
-    }
-
-    const { data: readBack, error: readBackError } = await supabase
-      .from("organizations")
-      .select("id, slug, primary_color")
-      .eq("id", org.id)
-      .limit(1)
-      .maybeSingle();
-
-    console.log("settings org save readback:", {
-      orgId: org.id,
-      attemptedColor: color,
-      readBack,
-      readBackError,
-    });
-
-    updateOrg({ name: data.name, primary_color: data.primary_color });
+    updateOrg({ name: payload.org.name, primary_color: payload.org.primary_color });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
 
