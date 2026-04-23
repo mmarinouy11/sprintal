@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     const parentArea = body.parentArea ? sanitizeText(body.parentArea, 100) : null;
     const levelName = sanitizeText(body.levelName || "area", 50);
     const childLevel = sanitizeInt(body.childLevel, 1, 4, 2);
-    const plan = body.plan === "pro" ? "pro" : "trial";
+    const plan = body.plan || "trial"; // inherit from parent, default trial
     const primaryColor = sanitizeColor(body.primaryColor);
     const trialEndsAt = body.trialEndsAt;
     const fromOnboarding = !!body.fromOnboarding;
