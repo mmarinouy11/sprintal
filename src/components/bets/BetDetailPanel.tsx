@@ -2,7 +2,7 @@
 import { useT } from "@/lib/i18n";
 import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
 import CoachObservation from "@/components/coach/CoachObservation";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { Bet, Evidence, SignalCheck } from "@/types";
 import { StatusBadge, SignalBadge, AreaTag } from "@/components/ui/Badge";
 import { useStore } from "@/lib/store";
@@ -194,7 +194,10 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
 
 // ── Main panel ────────────────────────────────────────────────────────────
 export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, onClose }: Props) {
-  const { updateBet, betAlignments, bets: allBets, childOrgs } = useStore();
+  const updateBet = useStore(s => s.updateBet);
+  const betAlignments = useStore(s => s.betAlignments);
+  const allBets = useStore(s => s.bets);
+  const childOrgs = useStore(s => s.childOrgs);
   const areas = childOrgs.map(a => a.name);
   const [bet, setBet] = useState(initialBet);
   const t = useT("betDetail");
@@ -252,11 +255,13 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
 
-  function handleSave(updated: Bet) {
+  const handleSave = useCallback((updated: Bet) => {
     setBet(updated);
     updateBet(updated);
     setEditing(false);
-  }
+  }, [updateBet]);
+
+  const handleCancel = useCallback(() => setEditing(false), []);
 
   return (
     <>
@@ -350,7 +355,7 @@ export default function BetDetailPanel({ bet: initialBet, evidence, signalChecks
         {/* Body */}
         <div className="flex-1 overflow-y-auto px-6 py-5">
           {editing ? (
-            <EditForm bet={bet} onSave={handleSave} onCancel={()=>setEditing(false)} />
+            <EditForm bet={bet} onSave={handleSave} onCancel={handleCancel} />
           ) : (
             <>
               <Section label={t("context")}>
