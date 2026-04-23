@@ -32,10 +32,8 @@ export default function DashboardPage() {
     () => bets.filter((b) => b.sprint_id === activeSprint?.id && b.status === "Active"),
     [bets, activeSprint?.id]
   );
-  const showPortfolioCoach =
-    !!org?.coach_semantic_enabled &&
-    (COACH_LIMITS[org.plan]?.semantic ?? 0) !== 0 &&
-    activeBets.length > 0;
+  /** Always mount when there are active sprint bets so users see upgrade/settings hints instead of nothing */
+  const showPortfolioCoachSection = !!org && activeBets.length > 0;
 
   if (loading) return <LoadingScreen />;
   return (
@@ -66,7 +64,7 @@ export default function DashboardPage() {
 
       <OwnedBetsSection />
       <Section label={t("activeBets")}><ActiveBetsTable /></Section>
-      {showPortfolioCoach && org && (
+      {showPortfolioCoachSection && org && (
         <Section label={tCoach("portfolioAnalysis")}>
           <SemanticCoachPanel
             mode="portfolio"
@@ -76,7 +74,10 @@ export default function DashboardPage() {
             plan={org.plan}
             portfolioBets={activeBets}
             sprint={activeSprint ?? null}
-            autoRun
+            autoRun={
+              !!org.coach_semantic_enabled &&
+              (COACH_LIMITS[org.plan]?.semantic ?? 0) !== 0
+            }
           />
         </Section>
       )}
