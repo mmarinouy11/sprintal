@@ -257,16 +257,25 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
   const [usage, setUsage] = useState<CoachUsage | null>(null);
   const [areaUsage, setAreaUsage] = useState<Record<string, CoachUsage>>({});
   const [toggling, setToggling] = useState<string | null>(null);
+  // Local state for org coach toggles — avoids page reload
+  const [localOrgs, setLocalOrgs] = useState<any[]>([]);
 
   const month = new Date().toISOString().slice(0, 7);
 
   useEffect(() => {
-    // Load root org usage
+    // Load orgs with fresh coach settings from DB
+    const allIds = [org.id, ...childOrgs.map((a: any) => a.id)];
+    supabase.from("organizations")
+      .select("id, name, coach_syntactic_enabled, coach_semantic_enabled, parent_org_id")
+      .in("id", allIds)
+      .then(({ data }) => {
+        if (data) setLocalOrgs(data);
+      });
+    // Load usage
     supabase.from("coach_usage").select("*").eq("org_id", org.id).eq("month", month)
       .maybeSingle().then(({ data }) => setUsage(data));
-    // Load all child orgs usage
     if (childOrgs.length > 0) {
-      const ids = childOrgs.map(a => a.id);
+      const ids = childOrgs.map((a: any) => a.id);
       supabase.from("coach_usage").select("*").in("org_id", ids).eq("month", month)
         .then(({ data }) => {
           if (data) {
@@ -280,10 +289,12 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
 
   async function toggleCoach(orgId: string, field: "coach_syntactic_enabled" | "coach_semantic_enabled", current: boolean) {
     setToggling(orgId + field);
-    await supabase.from("organizations").update({ [field]: !current }).eq("id", orgId);
+    const { error } = await supabase.from("organizations").update({ [field]: !current }).eq("id", orgId);
+    if (!error) {
+      // Update local state — no reload needed
+      setLocalOrgs(prev => prev.map(o => o.id === orgId ? { ...o, [field]: !current } : o));
+    }
     setToggling(null);
-    // Refresh page data — simplest approach
-    window.location.reload();
   }
 
   const semanticAvailable = limits.semantic > 0 || limits.semantic === -1;
@@ -319,8 +330,10 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
     );
   }
 
-  // All orgs to show (root + children)
-  const allOrgs = [{ ...org, isRoot: true }, ...childOrgs.map(a => ({ ...a, isRoot: false }))];
+  // All orgs to show — use localOrgs (fresh from DB) with fallback
+  const allOrgs = localOrgs.length > 0
+    ? localOrgs.map(o => ({ ...o, isRoot: o.id === org.id }))
+    : [{ ...org, isRoot: true }, ...childOrgs.map(a => ({ ...a, isRoot: false }))];
 
   return (
     <div>
