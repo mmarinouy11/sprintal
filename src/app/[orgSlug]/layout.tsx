@@ -51,9 +51,8 @@ function applyBrandTheme(primaryColor?: string) {
 
   const dark = darkenRgb(rgb, 0.2);
   const light = adjustRgb(rgb, 0.9);
-  const base = rgbToHex(rgb.r, rgb.g, rgb.b);
 
-  root.style.setProperty("--brand", base);
+  root.style.setProperty("--brand", primaryColor);
   root.style.setProperty("--brand-dk", rgbToHex(dark.r, dark.g, dark.b));
   root.style.setProperty("--brand-lt", rgbToHex(light.r, light.g, light.b));
   root.style.setProperty("--brand-bg", `rgba(${rgb.r},${rgb.g},${rgb.b},0.07)`);
