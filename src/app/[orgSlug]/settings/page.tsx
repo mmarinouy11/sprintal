@@ -448,28 +448,26 @@ function LanguageTab() {
   const t = useT();
   const [locale, setLocale] = useState("en");
 
-  function readLocaleFromCookie(): "en" | "es" | "pt" {
-    const raw = document.cookie
-      .split(";")
-      .map(part => part.trim())
-      .find(part => part.startsWith("NEXT_LOCALE="))
-      ?.split("=")
-      .slice(1)
-      .join("=") || "";
-
-    const normalized = decodeURIComponent(raw).trim().toLowerCase();
-    return (["en", "es", "pt"].includes(normalized) ? normalized : "en") as "en" | "es" | "pt";
-  }
-
   useEffect(() => {
-    const syncLocale = () => setLocale(readLocaleFromCookie());
-    syncLocale();
-    window.addEventListener("focus", syncLocale);
-    document.addEventListener("visibilitychange", syncLocale);
-    return () => {
-      window.removeEventListener("focus", syncLocale);
-      document.removeEventListener("visibilitychange", syncLocale);
-    };
+    const cookies = document.cookie || "";
+    const decodedCookies = decodeURIComponent(cookies);
+
+    console.log("LanguageTab cookies:", cookies);
+    console.log("LanguageTab decodedCookies:", decodedCookies);
+
+    // Supports both:
+    // 1) NEXT_LOCALE=es
+    // 2) NEXT_LOCALE%3Des (URL-encoded)
+    const match = cookies.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/)
+      || decodedCookies.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/)
+      || cookies.match(/NEXT_LOCALE%3D([^;]+)/i);
+
+    console.log("LanguageTab localeMatch:", match);
+
+    const nextLocale = match?.[1]?.trim().toLowerCase();
+    if (nextLocale && ["en", "es", "pt"].includes(nextLocale)) {
+      setLocale(nextLocale);
+    }
   }, []);
 
   const LANGS = [
