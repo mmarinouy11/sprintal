@@ -22,7 +22,10 @@ type DeepValue<T, K extends string> = K extends `${infer Head}.${infer Tail}`
   : K extends keyof T ? T[K] : string;
 
 export function useT(namespace?: string) {
-  const [locale, setLocale] = useState<string>("en");
+  const [locale, setLocale] = useState<string>(() => {
+    if (typeof document !== "undefined") return getLocale();
+    return "en";
+  });
 
   useEffect(() => {
     setLocale(getLocale());
