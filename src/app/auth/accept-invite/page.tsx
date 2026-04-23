@@ -124,6 +124,7 @@ export default function AcceptInvitePage() {
       } = await supabase.auth.getSession();
 
       if (!session && implicitTokens) {
+        await supabase.auth.signOut();
         const { error: sessionError } = await supabase.auth.setSession(implicitTokens);
         sessionStorage.removeItem(INVITE_HASH_TOKENS_KEY);
         if (sessionError) {
@@ -136,19 +137,13 @@ export default function AcceptInvitePage() {
         ({
           data: { session },
         } = await supabase.auth.getSession());
-        const afterImplicit = await supabase.auth.getUser();
-        console.info("[accept-invite] after setSession(implicit/hash tokens)", {
-          sessionUserId: session?.user?.id,
-          sessionExpiresAt: session?.expires_at,
-          getUserError: afterImplicit.error?.message ?? null,
-          getUserId: afterImplicit.data.user?.id ?? null,
-        });
       }
 
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get("code");
 
       if (!session && code) {
+        await supabase.auth.signOut();
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         ({
           data: { session },
@@ -170,21 +165,14 @@ export default function AcceptInvitePage() {
         return;
       }
 
-      {
-        const gs = await supabase.auth.getSession();
-        const gu = await supabase.auth.getUser();
-        console.info("[accept-invite] session ready before invite-target / redirect", {
-          getSession: {
-            hasSession: !!gs.data.session,
-            userId: gs.data.session?.user?.id ?? null,
-            expiresAt: gs.data.session?.expires_at ?? null,
-          },
-          getUser: {
-            userId: gu.data.user?.id ?? null,
-            email: gu.data.user?.email ?? null,
-            error: gu.error?.message ?? null,
-          },
-        });
+      const { data: verifiedUser, error: verifyErr } = await supabase.auth.getUser();
+      if (verifyErr || !verifiedUser.user) {
+        await supabase.auth.signOut();
+        if (!cancelled) {
+          setErrorMessage(verifyErr?.message || t("inviteUserNotVerified"));
+          setPhase("error");
+        }
+        return;
       }
 
       if (!cancelled) {

@@ -90,6 +90,7 @@
     "inviteErrorGeneric": "We couldn’t complete the invitation. Try again or contact your admin.",
     "inviteInvalidLink": "This link is missing invitation data. Open the link from your email.",
     "inviteSessionError": "Could not establish your session. Try the link again or sign in.",
+    "inviteUserNotVerified": "Could not verify your account with the server. Open the invitation link again from your email.",
     "setPasswordTitle": "Set your password",
     "setPasswordSubtitle": "Choose a password to finish joining your organization.",
     "passwordLabel": "Password",

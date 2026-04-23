@@ -90,6 +90,7 @@
     "inviteErrorGeneric": "Não foi possível concluir o convite. Tente novamente ou fale com o administrador.",
     "inviteInvalidLink": "Este link não contém os dados do convite. Abra-o a partir do e-mail.",
     "inviteSessionError": "Não foi possível iniciar a sessão. Tente o link novamente ou faça login.",
+    "inviteUserNotVerified": "Não foi possível confirmar sua conta no servidor. Abra novamente o link do convite no e-mail.",
     "setPasswordTitle": "Defina sua senha",
     "setPasswordSubtitle": "Escolha uma senha para concluir sua entrada na organização.",
     "passwordLabel": "Senha",

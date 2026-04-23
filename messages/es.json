@@ -90,6 +90,7 @@
     "inviteErrorGeneric": "No pudimos completar la invitación. Probá de nuevo o contactá a tu administrador.",
     "inviteInvalidLink": "Este enlace no tiene los datos de la invitación. Abrilo desde tu correo.",
     "inviteSessionError": "No pudimos iniciar tu sesión. Probá el enlace de nuevo o iniciá sesión.",
+    "inviteUserNotVerified": "No pudimos verificar tu cuenta en el servidor. Abrí de nuevo el enlace de invitación desde tu correo.",
     "setPasswordTitle": "Establecé tu contraseña",
     "setPasswordSubtitle": "Elegí una contraseña para terminar de unirte a tu organización.",
     "passwordLabel": "Contraseña",
