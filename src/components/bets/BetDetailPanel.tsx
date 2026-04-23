@@ -530,7 +530,7 @@ export default React.memo(BetDetailPanel, (prev, next) => {
   // but bet id and editing-relevant data is the same
   return (
     prev.bet.id === next.bet.id &&
-    prev.bet.updated_at === next.bet.updated_at &&
+    prev.bet.status === next.bet.status &&
     prev.sprintName === next.sprintName &&
     prev.onClose === next.onClose &&
     prev.evidence.length === next.evidence.length &&
