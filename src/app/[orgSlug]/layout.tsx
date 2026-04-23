@@ -55,6 +55,7 @@ export default function OrgLayout({
       }
 
       setOrg(orgData);
+      console.log("layout setOrg — plan:", orgData.plan, "full org:", JSON.stringify(orgData).slice(0, 200));
       setRootPlan(rootPlan || orgData.plan);
       setCurrentRole(role);
 
