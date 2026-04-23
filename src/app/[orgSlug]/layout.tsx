@@ -33,7 +33,8 @@ export default function OrgLayout({
       }
 
       // Fetch all org data via API Route (uses service_role — bypasses RLS correctly)
-      const res = await fetch(`/api/org/data?slug=${params.orgSlug}`, {
+      const res = await fetch(`/api/org/data?slug=${params.orgSlug}&_ts=${Date.now()}`, {
+        cache: "no-store",
         headers: { "Authorization": `Bearer ${session.access_token}` },
       });
 
@@ -55,12 +56,6 @@ export default function OrgLayout({
       }
 
       setOrg(orgData);
-      console.log("layout setOrg:", {
-        id: orgData.id,
-        slug: orgData.slug,
-        plan: orgData.plan,
-        primary_color: orgData.primary_color,
-      });
       setRootPlan(rootPlan || orgData.plan);
       setCurrentRole(role);
 

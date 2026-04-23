@@ -52,7 +52,19 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unable to update organization." }, { status: 500 });
     }
 
-    return NextResponse.json({ org: updatedOrg });
+    // Defensive readback to ensure the response reflects stored DB state.
+    const { data: persistedOrg, error: readbackError } = await supabaseAdmin
+      .from("organizations")
+      .select("id, name, primary_color")
+      .eq("id", orgId)
+      .limit(1)
+      .maybeSingle();
+
+    if (readbackError || !persistedOrg) {
+      return NextResponse.json({ error: "Unable to verify organization update." }, { status: 500 });
+    }
+
+    return NextResponse.json({ org: persistedOrg });
   } catch {
     return NextResponse.json({ error: "Internal error." }, { status: 500 });
   }
