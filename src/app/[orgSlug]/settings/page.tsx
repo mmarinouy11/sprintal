@@ -178,11 +178,16 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
     });
 
     const payload = await res.json();
-    console.log("settings org save via api:", {
+    console.log("[sprintal-debug] settings save request/response", {
       orgId: org.id,
-      payloadSent: { name, primaryColor: color },
+      sentName: name,
+      sentPrimaryColor: color,
       status: res.status,
-      payloadReceived: payload,
+      receivedOrgId: payload?.org?.id ?? null,
+      receivedPrimaryColor: payload?.org?.primary_color ?? null,
+      receivedName: payload?.org?.name ?? null,
+      rawError: payload?.error ?? null,
+      at: new Date().toISOString(),
     });
 
     if (!res.ok || !payload?.org) {
