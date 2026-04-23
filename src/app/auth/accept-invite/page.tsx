@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
+
+/** Survives React Strict Mode double-mount after we strip the hash from the URL. */
+const INVITE_HASH_TOKENS_KEY = "sprintal_invite_hash_tokens_v1";
 
 function parseHashParams(): URLSearchParams {
   if (typeof window === "undefined") return new URLSearchParams();
@@ -51,6 +53,42 @@ function stripAuthParamsFromUrl() {
   window.history.replaceState(null, "", `${url.pathname}${url.search}`);
 }
 
+/**
+ * Supabase hosted /auth/v1/verify often redirects with tokens in the hash (implicit-style).
+ * @supabase/ssr createBrowserClient forces flowType "pkce", so initializing the client while
+ * that hash is still present causes a flow mismatch and can clear / block the session.
+ * We capture tokens and strip the hash synchronously, then load the Supabase module.
+ */
+function takeImplicitHashTokens():
+  | { access_token: string; refresh_token: string }
+  | null {
+  if (typeof window === "undefined") return null;
+  const pending = sessionStorage.getItem(INVITE_HASH_TOKENS_KEY);
+  if (pending) {
+    sessionStorage.removeItem(INVITE_HASH_TOKENS_KEY);
+    try {
+      const o = JSON.parse(pending) as { access_token?: string; refresh_token?: string };
+      if (o.access_token && o.refresh_token) return o as { access_token: string; refresh_token: string };
+    } catch {
+      /* ignore */
+    }
+  }
+  const params = parseHashParams();
+  const access_token = params.get("access_token");
+  const refresh_token = params.get("refresh_token");
+  if (!access_token || !refresh_token) return null;
+  sessionStorage.setItem(
+    INVITE_HASH_TOKENS_KEY,
+    JSON.stringify({ access_token, refresh_token })
+  );
+  window.history.replaceState(
+    null,
+    "",
+    `${window.location.pathname}${window.location.search}`
+  );
+  return { access_token, refresh_token };
+}
+
 export default function AcceptInvitePage() {
   const t = useT("auth");
   const tg = useT();
@@ -60,9 +98,10 @@ export default function AcceptInvitePage() {
   useEffect(() => {
     let cancelled = false;
 
-    async function processInvite() {
-      const { error: hashOrQueryError, errorCode, errorDescription } = readAuthErrors();
+    const { error: hashOrQueryError, errorCode, errorDescription } = readAuthErrors();
+    const implicitTokens = !hashOrQueryError && !errorCode ? takeImplicitHashTokens() : null;
 
+    async function processInvite() {
       if (hashOrQueryError || errorCode) {
         let message = errorDescription;
         if (errorCode === "otp_expired") {
@@ -78,10 +117,26 @@ export default function AcceptInvitePage() {
         return;
       }
 
-      // @supabase/ssr browser client uses PKCE: tokens often arrive as ?code=... not in the hash.
+      const { supabase } = await import("@/lib/supabase");
+
       let {
         data: { session },
       } = await supabase.auth.getSession();
+
+      if (!session && implicitTokens) {
+        const { error: sessionError } = await supabase.auth.setSession(implicitTokens);
+        sessionStorage.removeItem(INVITE_HASH_TOKENS_KEY);
+        if (sessionError) {
+          if (!cancelled) {
+            setErrorMessage(sessionError.message || t("inviteSessionError"));
+            setPhase("error");
+          }
+          return;
+        }
+        ({
+          data: { session },
+        } = await supabase.auth.getSession());
+      }
 
       const searchParams = new URLSearchParams(window.location.search);
       const code = searchParams.get("code");
@@ -101,28 +156,6 @@ export default function AcceptInvitePage() {
       }
 
       if (!session) {
-        const params = parseHashParams();
-        const access_token = params.get("access_token");
-        const refresh_token = params.get("refresh_token");
-        if (access_token && refresh_token) {
-          const { error } = await supabase.auth.setSession({
-            access_token,
-            refresh_token,
-          });
-          if (error) {
-            if (!cancelled) {
-              setErrorMessage(error.message || t("inviteSessionError"));
-              setPhase("error");
-            }
-            return;
-          }
-          ({
-            data: { session },
-          } = await supabase.auth.getSession());
-        }
-      }
-
-      if (!session) {
         if (!cancelled) {
           setErrorMessage(t("inviteInvalidLink"));
           setPhase("error");
@@ -133,7 +166,6 @@ export default function AcceptInvitePage() {
       if (!cancelled) {
         setPhase("redirecting");
         stripAuthParamsFromUrl();
-        // Full navigation so the server sees the session cookies set by the browser client.
         window.location.replace("/");
       }
     }
