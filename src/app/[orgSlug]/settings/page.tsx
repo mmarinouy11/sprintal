@@ -206,6 +206,20 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
       return;
     }
 
+    const { data: readBack, error: readBackError } = await supabase
+      .from("organizations")
+      .select("id, slug, primary_color")
+      .eq("id", org.id)
+      .limit(1)
+      .maybeSingle();
+
+    console.log("settings org save readback:", {
+      orgId: org.id,
+      attemptedColor: color,
+      readBack,
+      readBackError,
+    });
+
     updateOrg({ name: data.name, primary_color: data.primary_color });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);

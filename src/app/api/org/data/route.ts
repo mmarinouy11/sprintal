@@ -29,10 +29,26 @@ export async function GET(req: NextRequest) {
     const slug = req.nextUrl.searchParams.get("slug");
     if (!slug) return NextResponse.json({ error: "slug requerido." }, { status: 400 });
 
-    // Load org
+    // Load org rows by slug first (defensive against unexpected duplicates),
+    // then resolve the org through the authenticated user's memberships.
     const { data: orgRows } = await supabaseAdmin
-      .from("organizations").select("*").eq("slug", slug).limit(1);
-    const org = orgRows?.[0] ?? null;
+      .from("organizations")
+      .select("*")
+      .eq("slug", slug)
+      .limit(10);
+    if (!orgRows?.length) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
+
+    const orgIds = orgRows.map((o: { id: string }) => o.id);
+    const { data: memberRows } = await supabaseAdmin
+      .from("org_members")
+      .select("org_id, role")
+      .eq("user_id", user.id)
+      .in("org_id", orgIds);
+
+    const member = memberRows?.[0] ?? null;
+    if (!member) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
+
+    const org = orgRows.find((o: { id: string }) => o.id === member.org_id) ?? null;
     if (!org) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
 
     // Get root org plan (L1) — plan applies to entire org tree
@@ -51,12 +67,6 @@ export async function GET(req: NextRequest) {
         rootPlan = rootOrgRows?.[0]?.plan || org.plan;
       }
     }
-
-    // Verify membership
-    const { data: member } = await supabaseAdmin
-      .from("org_members").select("role")
-      .eq("org_id", org.id).eq("user_id", user.id).maybeSingle();
-    if (!member) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
 
     // Load everything in parallel
     const [sprintsRes, betsRes, evidenceRes, signalChecksRes, childrenRes] = await Promise.all([
