@@ -136,6 +136,13 @@ export default function AcceptInvitePage() {
         ({
           data: { session },
         } = await supabase.auth.getSession());
+        const afterImplicit = await supabase.auth.getUser();
+        console.info("[accept-invite] after setSession(implicit/hash tokens)", {
+          sessionUserId: session?.user?.id,
+          sessionExpiresAt: session?.expires_at,
+          getUserError: afterImplicit.error?.message ?? null,
+          getUserId: afterImplicit.data.user?.id ?? null,
+        });
       }
 
       const searchParams = new URLSearchParams(window.location.search);
@@ -161,6 +168,23 @@ export default function AcceptInvitePage() {
           setPhase("error");
         }
         return;
+      }
+
+      {
+        const gs = await supabase.auth.getSession();
+        const gu = await supabase.auth.getUser();
+        console.info("[accept-invite] session ready before invite-target / redirect", {
+          getSession: {
+            hasSession: !!gs.data.session,
+            userId: gs.data.session?.user?.id ?? null,
+            expiresAt: gs.data.session?.expires_at ?? null,
+          },
+          getUser: {
+            userId: gu.data.user?.id ?? null,
+            email: gu.data.user?.email ?? null,
+            error: gu.error?.message ?? null,
+          },
+        });
       }
 
       if (!cancelled) {

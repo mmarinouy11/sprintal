@@ -10,7 +10,6 @@ function SetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const t = useT("auth");
-  const tg = useT();
 
   const orgSlug = searchParams.get("orgSlug")?.trim() ?? "";
 
@@ -30,7 +29,20 @@ function SetPasswordForm() {
       const {
         data: { session },
       } = await supabase.auth.getSession();
+      const userFromJwt = await supabase.auth.getUser();
       if (cancelled) return;
+      console.info("[set-password] mount (after invite redirect)", {
+        getSession: {
+          hasSession: !!session,
+          userId: session?.user?.id ?? null,
+          expiresAt: session?.expires_at ?? null,
+        },
+        getUser: {
+          userId: userFromJwt.data.user?.id ?? null,
+          email: userFromJwt.data.user?.email ?? null,
+          error: userFromJwt.error?.message ?? null,
+        },
+      });
       if (!session) {
         router.replace("/auth/login");
         return;
@@ -57,14 +69,46 @@ function SetPasswordForm() {
     }
 
     setLoading(true);
+
+    const preGs = await supabase.auth.getSession();
+    const preGu = await supabase.auth.getUser();
+    console.info("[set-password] submit — before refreshSession / updateUser", {
+      getSession: {
+        hasSession: !!preGs.data.session,
+        userId: preGs.data.session?.user?.id ?? null,
+        expiresAt: preGs.data.session?.expires_at ?? null,
+      },
+      getUser: {
+        userId: preGu.data.user?.id ?? null,
+        error: preGu.error?.message ?? null,
+      },
+    });
+
+    const refreshed = await supabase.auth.refreshSession();
+    console.info("[set-password] refreshSession result", {
+      hasSession: !!refreshed.data.session,
+      userId: refreshed.data.session?.user?.id ?? null,
+      error: refreshed.error?.message ?? null,
+    });
+
+    const postRefreshGu = await supabase.auth.getUser();
+    console.info("[set-password] getUser after refreshSession", {
+      userId: postRefreshGu.data.user?.id ?? null,
+      error: postRefreshGu.error?.message ?? null,
+    });
+
     const { error: updateError } = await supabase.auth.updateUser({ password });
     setLoading(false);
 
     if (updateError) {
+      console.info("[set-password] updateUser failed", {
+        message: updateError.message,
+      });
       setError(updateError.message);
       return;
     }
 
+    console.info("[set-password] updateUser succeeded");
     window.location.replace(`/${orgSlug}/dashboard`);
   }
 
