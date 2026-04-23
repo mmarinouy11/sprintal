@@ -2,6 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(req: NextRequest) {
   // Rate limit: 300 requests per IP per minute (generous for normal use)
   const ip = getClientIp(req);
@@ -84,6 +86,8 @@ export async function GET(req: NextRequest) {
       signalChecks: signalChecksRes.data || [],
       children: childrenRes.data || [],
       betAlignments,
+    }, {
+      headers: { "Cache-Control": "no-store, max-age=0" }
     });
 
   } catch (err) {
