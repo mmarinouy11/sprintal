@@ -14,6 +14,10 @@ const PLAN_LABELS: Record<Plan, string> = {
   trial: "Trial", solo: "Solo", starter: "Starter", growth: "Growth", scale: "Scale"
 };
 
+const VALID_PLANS: Plan[] = ["trial", "solo", "starter", "growth", "scale"];
+const isPlan = (value: unknown): value is Plan =>
+  typeof value === "string" && VALID_PLANS.includes(value as Plan);
+
 function PlanBadge({ plan }: { plan: Plan }) {
   const colors: Record<Plan, string> = {
     trial: "var(--t3)", solo: "var(--brand)", starter: "var(--brand)",
@@ -42,11 +46,41 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
 
 // ── Main page ────────────────────────────────────────────────
 export default function SettingsPage() {
-  const { org, role, childOrgs } = useStore();
+  const { org, role, childOrgs, updateOrg } = useStore();
   const t = useT();
   const [tab, setTab] = useState<Tab>("org");
+  const [displayPlan, setDisplayPlan] = useState<Plan>("trial");
   const isOwner = role === "owner";
   const isAdmin = role === "owner" || role === "admin";
+  const orgId = org?.id;
+  const orgPlan = org?.plan;
+
+  useEffect(() => {
+    if (!orgId) return;
+
+    // Use a fresh DB read for plan to avoid stale or transformed in-memory state.
+    let cancelled = false;
+    (async () => {
+      const { data } = await supabase
+        .from("organizations")
+        .select("plan")
+        .eq("id", orgId)
+        .maybeSingle();
+
+      if (cancelled) return;
+
+      const freshPlan = data?.plan;
+      if (isPlan(freshPlan)) {
+        setDisplayPlan(freshPlan);
+        if (orgPlan !== freshPlan) updateOrg({ plan: freshPlan });
+        return;
+      }
+
+      setDisplayPlan(isPlan(orgPlan) ? orgPlan : "trial");
+    })();
+
+    return () => { cancelled = true; };
+  }, [orgId, orgPlan, updateOrg]);
 
   if (!org) return null;
 
@@ -66,7 +100,7 @@ export default function SettingsPage() {
         </h1>
         <div className="flex items-center gap-2">
           <span style={{ fontSize: "0.875rem", color: "var(--t2)" }}>{org.name}</span>
-          <PlanBadge plan={org.plan as Plan} />
+          <PlanBadge plan={displayPlan} />
         </div>
       </div>
 
