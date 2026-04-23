@@ -53,14 +53,17 @@ export default function SprintClosurePage() {
   const coach = useSyntacticCoach();
 
   useEffect(() => {
-    const textareas = document.querySelectorAll<HTMLTextAreaElement>('[data-coach="key_learning"]');
-    const handlers: Array<[HTMLTextAreaElement, () => void]> = [];
-    textareas.forEach(ta => {
-      const handler = () => coach.check("key_learning", ta.value);
-      ta.addEventListener("blur", handler);
-      handlers.push([ta, handler]);
-    });
-    return () => handlers.forEach(([ta, h]) => ta.removeEventListener("blur", h));
+    const timer = setTimeout(() => {
+      const textareas = document.querySelectorAll<HTMLTextAreaElement>('[data-coach="key_learning"]');
+      const handlers: Array<[HTMLTextAreaElement, () => void]> = [];
+      textareas.forEach(ta => {
+        const handler = () => coach.check("key_learning", ta.value);
+        ta.addEventListener("blur", handler);
+        handlers.push([ta, handler]);
+      });
+      return () => handlers.forEach(([ta, h]) => ta.removeEventListener("blur", h));
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
   const router = useRouter();
   const params = useParams();

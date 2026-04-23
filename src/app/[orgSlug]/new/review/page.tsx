@@ -62,17 +62,21 @@ export default function StrategicReviewPage() {
   const insightRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    const actualEl = actualRef.current;
-    const insightEl = insightRef.current;
-    if (!actualEl || !insightEl) return;
-    const onActualBlur = () => coach.check("actual", actualEl.value);
-    const onInsightBlur = () => coach.check("review_insight", insightEl.value);
-    actualEl.addEventListener("blur", onActualBlur);
-    insightEl.addEventListener("blur", onInsightBlur);
-    return () => {
-      actualEl.removeEventListener("blur", onActualBlur);
-      insightEl.removeEventListener("blur", onInsightBlur);
-    };
+    // Wait for refs to be available (Modal mounts async)
+    const timer = setTimeout(() => {
+      const actualEl = actualRef.current;
+      const insightEl = insightRef.current;
+      if (!actualEl || !insightEl) return;
+      const onActualBlur = () => coach.check("actual", actualEl.value);
+      const onInsightBlur = () => coach.check("review_insight", insightEl.value);
+      actualEl.addEventListener("blur", onActualBlur);
+      insightEl.addEventListener("blur", onInsightBlur);
+      return () => {
+        actualEl.removeEventListener("blur", onActualBlur);
+        insightEl.removeEventListener("blur", onInsightBlur);
+      };
+    }, 100);
+    return () => clearTimeout(timer);
   }, []);
   const OUTCOMES: { value: BetStatus; label: string; color: string; hint: string }[] = [
     { value:"Active",  label:t("keepActive"),  color:"var(--active)",  hint:t("keepActiveDesc") },
