@@ -1,17 +1,40 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 
+export const dynamic = "force-dynamic";
+
+function normalizeOrigin(url: string): string {
+  return url.replace(/\/+$/, "");
+}
+
 /**
- * Invite links must use the canonical app origin (production), not the caller's
- * deployment URL (e.g. a Vercel preview). Prefer APP_URL (server-only, runtime on Vercel)
- * so the value is never baked in at build time; fall back to NEXT_PUBLIC_APP_URL.
+ * Canonical origin for invite emails — never use VERCEL_URL (preview/deployment host).
+ * Vercel: use APP_URL or INVITE_APP_ORIGIN (server env, runtime). Names are case-sensitive;
+ * if you used `app_url` in the dashboard, it must match one of the keys below.
+ * Production fallback: VERCEL_PROJECT_PRODUCTION_URL (https://…) when VERCEL_ENV === "production".
  */
-function getInviteAppBaseUrl(): string {
-  const raw =
-    process.env.APP_URL?.trim() ||
-    process.env.NEXT_PUBLIC_APP_URL?.trim() ||
-    "";
-  return raw.replace(/\/+$/, "");
+function getInviteAppBaseUrl(): { base: string; source: string } {
+  const tryKeys: [string, string | undefined][] = [
+    ["APP_URL", process.env.APP_URL],
+    ["INVITE_APP_ORIGIN", process.env.INVITE_APP_ORIGIN],
+    ["app_url", process.env.app_url],
+    ["invite_app_origin", process.env.invite_app_origin],
+    ["NEXT_PUBLIC_APP_URL", process.env.NEXT_PUBLIC_APP_URL],
+  ];
+
+  for (const [source, raw] of tryKeys) {
+    const t = raw?.trim();
+    if (t) return { base: normalizeOrigin(t), source };
+  }
+
+  const vercelEnv = process.env.VERCEL_ENV;
+  const prodHost = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (vercelEnv === "production" && prodHost) {
+    const base = normalizeOrigin(`https://${prodHost}`);
+    return { base, source: "VERCEL_PROJECT_PRODUCTION_URL" };
+  }
+
+  return { base: "", source: "none" };
 }
 
 export async function POST(req: NextRequest) {
@@ -39,23 +62,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
     }
 
-    const baseUrl = getInviteAppBaseUrl();
+    const { base: baseUrl, source: baseSource } = getInviteAppBaseUrl();
     if (!baseUrl) {
       return NextResponse.json(
         {
           error:
-            "Server misconfiguration: set APP_URL or NEXT_PUBLIC_APP_URL to your production origin (e.g. https://sprintal.vercel.app).",
+            "Server misconfiguration: set APP_URL (or INVITE_APP_ORIGIN) to https://sprintal.vercel.app for Production and Preview if you invite from previews. Optional: NEXT_PUBLIC_APP_URL.",
         },
         { status: 500 }
       );
     }
 
     const redirectTo = `${baseUrl}/auth/accept-invite?orgId=${encodeURIComponent(orgId)}&role=${encodeURIComponent(role)}`;
-    console.log("invite redirectTo:", redirectTo, {
-      APP_URL: process.env.APP_URL ? "[set]" : "[unset]",
-      NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ? "[set]" : "[unset]",
+    console.log("invite redirectTo:", redirectTo, "baseSource:", baseSource, {
       VERCEL_ENV: process.env.VERCEL_ENV,
       VERCEL_URL: process.env.VERCEL_URL,
+      VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
     });
 
     // Invite via Supabase Auth
@@ -74,7 +96,7 @@ export async function POST(req: NextRequest) {
       full_name: email.split("@")[0],
     }, { onConflict: "org_id,user_id" });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, redirectTo, inviteBaseSource: baseSource });
   } catch {
     return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
