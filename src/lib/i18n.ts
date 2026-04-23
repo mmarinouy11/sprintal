@@ -1,19 +1,52 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import en from "../../messages/en.json";
 import es from "../../messages/es.json";
 import pt from "../../messages/pt.json";
 
 const messages: Record<string, typeof en> = { en, es, pt };
+type Locale = "en" | "es" | "pt";
+const VALID_LOCALES: Locale[] = ["en", "es", "pt"];
 
-function getLocale(): string {
+function detectLocale(): Locale {
   if (typeof document === "undefined") return "en";
   const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
-  if (match && ["en", "es", "pt"].includes(match[1])) return match[1];
+  if (match && VALID_LOCALES.includes(match[1] as Locale)) return match[1] as Locale;
   const lang = navigator.language?.slice(0, 2);
   if (lang === "es") return "es";
   if (lang === "pt") return "pt";
   return "en";
+}
+
+let currentLocale: Locale = "en";
+let localeInitialized = false;
+const listeners = new Set<() => void>();
+
+function subscribeLocale(listener: () => void) {
+  listeners.add(listener);
+  return () => listeners.delete(listener);
+}
+
+function getClientLocaleSnapshot(): Locale {
+  return currentLocale;
+}
+
+function getServerLocaleSnapshot(): Locale {
+  return "en";
+}
+
+function emitLocaleChange() {
+  listeners.forEach((listener) => listener());
+}
+
+function ensureLocaleInitialized() {
+  if (localeInitialized || typeof window === "undefined") return;
+  localeInitialized = true;
+  const detected = detectLocale();
+  if (detected !== currentLocale) {
+    currentLocale = detected;
+    emitLocaleChange();
+  }
 }
 
 type Messages = typeof en;
@@ -22,10 +55,14 @@ type DeepValue<T, K extends string> = K extends `${infer Head}.${infer Tail}`
   : K extends keyof T ? T[K] : string;
 
 export function useT(namespace?: string) {
-  const [locale, setLocale] = useState<string>("en");
+  const locale = useSyncExternalStore(
+    subscribeLocale,
+    getClientLocaleSnapshot,
+    getServerLocaleSnapshot
+  );
 
   useEffect(() => {
-    setLocale(getLocale());
+    ensureLocaleInitialized();
   }, []);
 
   const msgs = messages[locale] || messages.en;
@@ -53,5 +90,9 @@ export function useT(namespace?: string) {
 
 export function setLocale(locale: string) {
   document.cookie = `NEXT_LOCALE=${locale}; path=/; max-age=31536000`;
+  if (VALID_LOCALES.includes(locale as Locale) && currentLocale !== locale) {
+    currentLocale = locale as Locale;
+    emitLocaleChange();
+  }
   window.location.reload();
 }
