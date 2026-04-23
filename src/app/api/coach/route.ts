@@ -119,24 +119,25 @@ export async function POST(req: NextRequest) {
     // Record usage if we got a real response
     if (observation !== null) {
       const month = getMonth();
-      const increment = coachType === "syntactic"
-        ? { syntactic_calls: 1 }
-        : { semantic_calls: 1 };
-
-      await supabaseAdmin.rpc("increment_coach_usage", {
-        p_org_id: orgId,
-        p_month: month,
-        p_syntactic: coachType === "syntactic" ? 1 : 0,
-        p_semantic: coachType === "semantic" ? 1 : 0,
-      }).catch(() => {
-        // Fallback: upsert manually
-        supabaseAdmin.from("coach_usage").upsert({
-          org_id: orgId,
-          month,
-          syntactic_calls: coachType === "syntactic" ? 1 : 0,
-          semantic_calls: coachType === "semantic" ? 1 : 0,
-        }, { onConflict: "org_id,month", ignoreDuplicates: false });
-      });
+      try {
+        const { error } = await supabaseAdmin.rpc("increment_coach_usage", {
+          p_org_id: orgId,
+          p_month: month,
+          p_syntactic: coachType === "syntactic" ? 1 : 0,
+          p_semantic: coachType === "semantic" ? 1 : 0,
+        });
+        if (error) {
+          // Fallback: upsert manually
+          await supabaseAdmin.from("coach_usage").upsert({
+            org_id: orgId,
+            month,
+            syntactic_calls: coachType === "syntactic" ? 1 : 0,
+            semantic_calls: coachType === "semantic" ? 1 : 0,
+          }, { onConflict: "org_id,month" });
+        }
+      } catch {
+        // Silent fail — don't block the response
+      }
     }
 
     return NextResponse.json({ observation });
