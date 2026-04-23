@@ -252,21 +252,23 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
 // ── Coach Tab ────────────────────────────────────────────────
 function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isAdmin: boolean }) {
   const t = useT();
-  const plan = (org.plan || "trial") as Plan;
-  const limits = COACH_LIMITS[plan] || COACH_LIMITS["trial"];
+  const [localOrgs, setLocalOrgs] = useState<any[]>([]);
   const [usage, setUsage] = useState<CoachUsage | null>(null);
   const [areaUsage, setAreaUsage] = useState<Record<string, CoachUsage>>({});
   const [toggling, setToggling] = useState<string | null>(null);
-  // Local state for org coach toggles — avoids page reload
-  const [localOrgs, setLocalOrgs] = useState<any[]>([]);
 
   const month = new Date().toISOString().slice(0, 7);
 
+  // Derive plan from localOrgs (fresh DB) once loaded, else fall back to org.plan
+  const rootLocal = localOrgs.find(o => o.id === org.id);
+  const plan = ((rootLocal?.plan || org.plan || "trial") as Plan);
+  const limits = COACH_LIMITS[plan] || COACH_LIMITS["trial"];
+
   useEffect(() => {
-    // Load orgs with fresh coach settings from DB
+    // Load orgs with fresh coach settings AND plan from DB
     const allIds = [org.id, ...childOrgs.map((a: any) => a.id)];
     supabase.from("organizations")
-      .select("id, name, coach_syntactic_enabled, coach_semantic_enabled, parent_org_id")
+      .select("id, name, plan, coach_syntactic_enabled, coach_semantic_enabled, parent_org_id")
       .in("id", allIds)
       .then(({ data }) => {
         if (data) setLocalOrgs(data);
