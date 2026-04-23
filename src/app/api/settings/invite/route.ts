@@ -80,6 +80,10 @@ export async function POST(req: NextRequest) {
       VERCEL_PROJECT_PRODUCTION_URL: process.env.VERCEL_PROJECT_PRODUCTION_URL,
     });
 
+    // If the email link still shows the wrong host, check Supabase Dashboard → Authentication →
+    // Email Templates → "Invite user": use {{ .ConfirmationURL }} (or {{ .RedirectTo }} per docs),
+    // not {{ .SiteURL }}, for the button href. Also whitelist this redirectTo under URL Configuration → Redirect URLs.
+
     // Invite via Supabase Auth
     const { data: inviteData, error: inviteError } = await supabaseAdmin.auth.admin.inviteUserByEmail(email, {
       data: { invited_to_org: orgId, invited_role: role },

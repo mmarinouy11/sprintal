@@ -430,6 +430,7 @@
     "emailPlaceholder": "colega@empresa.com",
     "invite": "Enviar Invitación",
     "inviteSent": "Invitación enviada exitosamente.",
+    "inviteRedirectDebug": "URL de redirección enviada a Supabase (debería coincidir con el enlace del correo):",
     "inviteError": "Error al enviar la invitación.",
     "confirmRemove": "¿Remover este miembro de la organización?",
     "planUsage": "Uso Mensual",
