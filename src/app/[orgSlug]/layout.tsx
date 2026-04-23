@@ -3,9 +3,27 @@ import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
+import {
+  clearPendingPrimary,
+  normalizeHexColor,
+  readPendingPrimary,
+} from "@/lib/orgPendingPrimary";
 import AppSidebar from "@/components/layout/AppSidebar";
 import TrialBanner from "@/components/layout/TrialBanner";
 import TopBar from "@/components/layout/TopBar";
+
+async function fetchOrgDataBundle(accessToken: string, orgSlug: string) {
+  const res = await fetch(
+    `/api/org/data?slug=${encodeURIComponent(orgSlug)}&_ts=${Date.now()}`,
+    {
+      cache: "no-store",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }
+  );
+  if (!res.ok) return { ok: false as const, status: res.status };
+  const data = await res.json();
+  return { ok: true as const, data };
+}
 
 export default function OrgLayout({
   children, params,
@@ -32,22 +50,54 @@ export default function OrgLayout({
         return;
       }
 
-      // Fetch all org data via API Route (uses service_role — bypasses RLS correctly)
-      const res = await fetch(`/api/org/data?slug=${params.orgSlug}&_ts=${Date.now()}`, {
-        cache: "no-store",
-        headers: { "Authorization": `Bearer ${session.access_token}` },
-      });
-
-      if (!res.ok) {
-        if (res.status === 401) router.replace("/auth/login");
-        if (res.status === 403) router.replace("/auth/login");
-        if (res.status === 404) router.replace("/auth/login");
+      const first = await fetchOrgDataBundle(session.access_token, params.orgSlug);
+      if (!first.ok) {
+        if (first.status === 401) router.replace("/auth/login");
+        if (first.status === 403) router.replace("/auth/login");
+        if (first.status === 404) router.replace("/auth/login");
         setLoading(false);
         return;
       }
 
-      const data = await res.json();
-      const { org: orgData, rootPlan, role, sprints, bets, evidence, signalChecks, children, betAlignments } = data;
+      let data = first.data;
+      let { org: orgData, rootPlan, role, sprints, bets, evidence, signalChecks, children, betAlignments } = data;
+
+      const pending = readPendingPrimary(orgData.id);
+      if (
+        pending &&
+        normalizeHexColor(orgData.primary_color) === normalizeHexColor(pending.hex)
+      ) {
+        clearPendingPrimary(orgData.id);
+      } else if (
+        pending &&
+        normalizeHexColor(orgData.primary_color) !== normalizeHexColor(pending.hex)
+      ) {
+        for (let i = 0; i < 4; i++) {
+          await new Promise((r) => setTimeout(r, 350 + i * 150));
+          const again = await fetchOrgDataBundle(session.access_token, params.orgSlug);
+          if (!again.ok) break;
+          data = again.data;
+          orgData = data.org;
+          rootPlan = data.rootPlan;
+          role = data.role;
+          sprints = data.sprints;
+          bets = data.bets;
+          evidence = data.evidence;
+          signalChecks = data.signalChecks;
+          children = data.children;
+          betAlignments = data.betAlignments;
+          if (normalizeHexColor(orgData.primary_color) === normalizeHexColor(pending.hex)) {
+            clearPendingPrimary(orgData.id);
+            break;
+          }
+        }
+        if (
+          normalizeHexColor(orgData.primary_color) !== normalizeHexColor(pending.hex)
+        ) {
+          orgData = { ...orgData, primary_color: pending.hex };
+          data = { ...data, org: orgData };
+        }
+      }
 
       // Reset store if switching orgs
       if (orgData.id !== org?.id) {
@@ -56,13 +106,6 @@ export default function OrgLayout({
       }
 
       setOrg(orgData);
-      console.log("[sprintal-debug] layout after setOrg(orgData)", {
-        source: "/api/org/data",
-        id: orgData.id,
-        slug: orgData.slug,
-        primary_color: orgData.primary_color,
-        at: new Date().toISOString(),
-      });
       setRootPlan(rootPlan || orgData.plan);
       setCurrentRole(role);
 

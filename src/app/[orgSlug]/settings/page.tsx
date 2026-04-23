@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
+import { writePendingPrimary } from "@/lib/orgPendingPrimary";
 import { COACH_LIMITS } from "@/types";
 import type { Plan, OrgRole, OrgMember, CoachUsage } from "@/types";
 
@@ -142,13 +143,6 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
 
   useEffect(() => {
     const nextColor = org.primary_color || "#5C6AC4";
-    console.log("[sprintal-debug] OrgTab sync from org prop", {
-      orgId: org.id,
-      orgName: org.name,
-      primary_color: org.primary_color,
-      appliedColor: nextColor,
-      at: new Date().toISOString(),
-    });
     setName(org.name);
     setColor(nextColor);
   }, [org.id, org.name, org.primary_color]);
@@ -178,17 +172,6 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
     });
 
     const payload = await res.json();
-    console.log("[sprintal-debug] settings save request/response", {
-      orgId: org.id,
-      sentName: name,
-      sentPrimaryColor: color,
-      status: res.status,
-      receivedOrgId: payload?.org?.id ?? null,
-      receivedPrimaryColor: payload?.org?.primary_color ?? null,
-      receivedName: payload?.org?.name ?? null,
-      rawError: payload?.error ?? null,
-      at: new Date().toISOString(),
-    });
 
     if (!res.ok || !payload?.org) {
       setSaveError(t("settings.saveError"));
@@ -196,6 +179,7 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
       return;
     }
 
+    writePendingPrimary(org.id, payload.org.primary_color);
     updateOrg({ name: payload.org.name, primary_color: payload.org.primary_color });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
