@@ -146,10 +146,11 @@ export interface CoachUsage {
 
 export type CoachType = "syntactic" | "semantic";
 
+/** Unified monthly budget: syntactic coach costs 1 unit; semantic costs 5 (stored via syntactic_calls). */
 export const COACH_LIMITS: Record<Plan, { syntactic: number; semantic: number }> = {
   trial:   { syntactic: 30,  semantic: 0   },
   solo:    { syntactic: 100, semantic: 50  },
   starter: { syntactic: 300, semantic: 150 },
   growth:  { syntactic: 800, semantic: 400 },
-  scale:   { syntactic: -1,  semantic: -1  }, // -1 = unlimited
+  scale:   { syntactic: -1,  semantic: -1  },
 };

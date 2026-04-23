@@ -2,6 +2,7 @@
 import { useT } from "@/lib/i18n";
 import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
 import CoachObservation from "@/components/coach/CoachObservation";
+import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
 import React, { useEffect, useState, useCallback } from "react";
 import { Bet, Evidence, SignalCheck } from "@/types";
 import { StatusBadge, SignalBadge, AreaTag } from "@/components/ui/Badge";
@@ -194,7 +195,7 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
 
 // ── Main panel ────────────────────────────────────────────────────────────
 function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, onClose }: Props) {
-  const { updateBet, betAlignments, bets: allBets, childOrgs } = useStore();
+  const { updateBet, betAlignments, bets: allBets, childOrgs, org, sprints } = useStore();
   const areas = childOrgs.map(a => a.name);
   const [bet, setBet] = useState(initialBet);
   const t = useT("betDetail");
@@ -238,6 +239,11 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
 
   const parentBets = externalParentBets;
   const childBets  = externalChildBets;
+
+  const sprintForBet = sprints.find((s) => s.id === bet.sprint_id) ?? null;
+  const siblingBetsInSprint = allBets.filter(
+    (b) => b.sprint_id === bet.sprint_id && b.id !== bet.id
+  );
 
   const betEvidence = evidence.filter(e=>e.bet_id===bet.id)
     .sort((a,z)=>new Date(z.created_at||z.date).getTime()-new Date(a.created_at||a.date).getTime());
@@ -397,6 +403,20 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
                   <ImpactPill label={t("strategicImportance")} value={bet.importance} />
                 </div>
               </Section>
+
+              {org && (
+                <SemanticCoachPanel
+                  mode="bet"
+                  orgId={org.id}
+                  orgName={org.name}
+                  coachSemanticEnabled={org.coach_semantic_enabled}
+                  plan={org.plan}
+                  bet={bet}
+                  sprint={sprintForBet}
+                  siblingBets={siblingBetsInSprint}
+                  autoRun={false}
+                />
+              )}
 
               {/* Cascade section */}
               {(parentBets.length > 0 || childBets.length > 0 || (!bet.parent_alert && bet.bet_type === "strategic" && parentBets.length === 0)) && (

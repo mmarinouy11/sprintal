@@ -100,6 +100,20 @@
     "setPasswordBtn": "Save password",
     "settingPassword": "Saving..."
   },
+  "coach": {
+    "strategicAnalysis": "Strategic Analysis",
+    "identifyingContext": "Identifying context...",
+    "searchingTrends": "Searching trends...",
+    "generatingAnalysis": "Generating analysis...",
+    "analyzeBtn": "✦ Strategic Analysis",
+    "refreshBtn": "Refresh",
+    "availableIn": "Available in",
+    "availableInStarter": "Available in Starter →",
+    "portfolioAnalysis": "Portfolio Analysis",
+    "limitReached": "Monthly analysis limit reached.",
+    "notEnabled": "Strategic analysis not enabled for this area.",
+    "analysisError": "Could not load analysis. Try again."
+  },
   "trial": {
     "expired": "Your trial has ended",
     "expiredDesc": "Your 90-day free trial has ended. Upgrade to Pro to continue.",

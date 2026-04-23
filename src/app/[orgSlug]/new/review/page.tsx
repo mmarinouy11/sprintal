@@ -2,12 +2,14 @@
 import { useT } from "@/lib/i18n";
 import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
 import CoachObservation from "@/components/coach/CoachObservation";
+import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
 import { useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 import type { BetStatus } from "@/types";
+import { COACH_LIMITS } from "@/types";
 
 
 
@@ -78,6 +80,7 @@ export default function StrategicReviewPage() {
   const [newHyp, setNewHyp] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [reviewSemanticNonce, setReviewSemanticNonce] = useState(0);
   const bet = bets.find(b => b.id === betId);
 
   async function save(e: React.FormEvent) {
@@ -155,7 +158,12 @@ export default function StrategicReviewPage() {
 
         <Field label={t("whatHappened")}>
           <textarea className="input" rows={3} value={actual} onChange={e => setActual(e.target.value)} required
-            onBlur={e => coach.check("actual", e.target.value, org?.id)}
+            onBlur={e => {
+              coach.check("actual", e.target.value, org?.id);
+              if (e.target.value.trim().length >= 30) {
+                setReviewSemanticNonce((n) => n + 1);
+              }
+            }}
             placeholder={t("whatHappenedPlaceholder")} />
           <CoachObservation observation={coach.results["actual"]?.observation || null} loading={coach.results["actual"]?.loading || false} />
         </Field>
@@ -166,6 +174,22 @@ export default function StrategicReviewPage() {
             placeholder={t("insightPlaceholder")} />
           <CoachObservation observation={coach.results["review_insight"]?.observation || null} loading={coach.results["review_insight"]?.loading || false} />
         </Field>
+
+        {bet && org && org.coach_semantic_enabled && (COACH_LIMITS[org.plan]?.semantic ?? 0) !== 0 && (
+          <SemanticCoachPanel
+            mode="review"
+            orgId={org.id}
+            orgName={org.name}
+            coachSemanticEnabled={org.coach_semantic_enabled}
+            plan={org.plan}
+            bet={bet}
+            sprint={active ?? null}
+            siblingBets={activeBets.filter((b) => b.id !== bet.id)}
+            reviewActual={actual}
+            autoRun
+            reviewRunNonce={reviewSemanticNonce}
+          />
+        )}
 
         <Field label={t("decision")}>
           <div className="space-y-2">

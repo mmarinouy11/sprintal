@@ -100,6 +100,20 @@
     "setPasswordBtn": "Guardar contraseña",
     "settingPassword": "Guardando..."
   },
+  "coach": {
+    "strategicAnalysis": "Análisis estratégico",
+    "identifyingContext": "Identificando contexto...",
+    "searchingTrends": "Buscando tendencias...",
+    "generatingAnalysis": "Generando análisis...",
+    "analyzeBtn": "✦ Análisis estratégico",
+    "refreshBtn": "Actualizar",
+    "availableIn": "Disponible en",
+    "availableInStarter": "Disponible en Starter →",
+    "portfolioAnalysis": "Análisis de portafolio",
+    "limitReached": "Alcanzaste el límite mensual de análisis.",
+    "notEnabled": "El análisis estratégico no está habilitado para esta área.",
+    "analysisError": "No se pudo cargar el análisis. Probá de nuevo."
+  },
   "trial": {
     "expired": "Tu período de prueba finalizó",
     "expiredDesc": "Tus 90 días de acceso gratuito han concluido. Activá Pro para continuar.",

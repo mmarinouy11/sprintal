@@ -1,4 +1,5 @@
 "use client";
+import { useMemo } from "react";
 import { useStore } from "@/lib/store";
 import MetricsBar from "@/components/dashboard/MetricsBar";
 import PortfolioDonut from "@/components/dashboard/PortfolioDonut";
@@ -10,6 +11,8 @@ import LoadingScreen from "@/components/ui/LoadingScreen";
 import { useT } from "@/lib/i18n";
 import RollupDashboard from "@/components/dashboard/RollupDashboard";
 import OwnedBetsSection from "@/components/dashboard/OwnedBetsSection";
+import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
+import { COACH_LIMITS } from "@/types";
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -21,8 +24,19 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 export default function DashboardPage() {
-  const { loading } = useStore();
+  const { loading, org, bets, sprints } = useStore();
   const t = useT("dashboard");
+  const tCoach = useT("coach");
+  const activeSprint = sprints.find((s) => s.status === "Active");
+  const activeBets = useMemo(
+    () => bets.filter((b) => b.sprint_id === activeSprint?.id && b.status === "Active"),
+    [bets, activeSprint?.id]
+  );
+  const showPortfolioCoach =
+    !!org?.coach_semantic_enabled &&
+    (COACH_LIMITS[org.plan]?.semantic ?? 0) !== 0 &&
+    activeBets.length > 0;
+
   if (loading) return <LoadingScreen />;
   return (
     <div className="w-full px-10 py-8 fade-up">
@@ -52,6 +66,20 @@ export default function DashboardPage() {
 
       <OwnedBetsSection />
       <Section label={t("activeBets")}><ActiveBetsTable /></Section>
+      {showPortfolioCoach && org && (
+        <Section label={tCoach("portfolioAnalysis")}>
+          <SemanticCoachPanel
+            mode="portfolio"
+            orgId={org.id}
+            orgName={org.name}
+            coachSemanticEnabled={org.coach_semantic_enabled}
+            plan={org.plan}
+            portfolioBets={activeBets}
+            sprint={activeSprint ?? null}
+            autoRun
+          />
+        </Section>
+      )}
       <Section label={t("decisionFocus")}><DecisionFocus /></Section>
       <Section label={t("overdueReview")}><PendingUpdates type="review" /></Section>
       <Section label={t("overdueSignal")}><PendingUpdates type="signal" /></Section>

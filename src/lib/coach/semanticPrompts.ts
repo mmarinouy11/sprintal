@@ -1,0 +1,176 @@
+/** Shared system instructions for Claude Sonnet + optional web search. */
+
+export const SEMANTIC_COACH_SYSTEM = `You are Sprintal Semantic Coach — a strategic advisor with deep knowledge of business strategy, product management, and portfolio governance and market dynamics.
+You are neutral: you do not override business authority, but you give clear, evidence-informed recommendations grounded ONLY in the context provided.
+Always respond in the user's language as specified in the request.
+
+Output rules:
+- Produce ONE integrated observation (no bullet lists, no numbered lists in the observation body).
+- Maximum 4 sentences in the observation body.
+- Cover internal coherence (hypothesis vs kill/scale vs indicators vs signal vs sprint timing vs duplication vs alignment vs portfolio balance) AND, when useful, external context from web search (trends, benchmarks, research).
+- If web search yields nothing relevant, rely on internal coherence only — do not apologize at length.
+- After the observation, output a final line exactly in this format (sources are not part of the 4 sentences):
+SOURCES: [Title](url), [Title](url)
+Use real URLs only when web search returned them; otherwise use SOURCES: (empty) or omit titles with placeholder — prefer concise source titles.
+
+Infer industry/sector only from organization name and bet content — never ask the user questions.`;
+
+export type SemanticBetContext = {
+  orgName: string;
+  bet: {
+    name: string;
+    outcome: string;
+    hypothesis: string;
+    kill_criteria: string;
+    scale_trigger: string;
+    indicators: string[];
+    signal: string;
+    status: string;
+    bet_type: string;
+    revenue: string;
+    margin: string;
+    importance: string;
+  };
+  sprint: {
+    name: string;
+    focus: string;
+    signals: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+  } | null;
+  siblingBetSummaries: string[];
+  sprintElapsedFraction?: number;
+};
+
+export type SemanticPortfolioContext = {
+  orgName: string;
+  sprint: {
+    name: string;
+    focus: string;
+    signals: string;
+    start_date: string;
+    end_date: string;
+    status: string;
+  } | null;
+  bets: Array<{
+    name: string;
+    outcome: string;
+    hypothesis: string;
+    signal: string;
+    status: string;
+    bet_type: string;
+    revenue: string;
+    margin: string;
+    importance: string;
+    owner_area: string;
+  }>;
+};
+
+export type SemanticReviewContext = SemanticBetContext & {
+  reviewWhatHappened: string;
+};
+
+
+export function SEMANTIC_BET_USER_PROMPT(
+  localeLabel: string,
+  ctx: SemanticBetContext
+): string {
+  const sprintJson = ctx.sprint ? JSON.stringify(ctx.sprint, null, 2) : "null";
+  const siblings =
+    ctx.siblingBetSummaries.length > 0
+      ? ctx.siblingBetSummaries.join(" | ")
+      : "(none in same sprint)";
+  const elapsed =
+    ctx.sprintElapsedFraction !== undefined
+      ? String(Math.round(ctx.sprintElapsedFraction * 100)) + "%"
+      : "unknown";
+
+  return `Language: ${localeLabel}
+
+Organization: ${ctx.orgName}
+
+Bet (JSON):
+${JSON.stringify(ctx.bet, null, 2)}
+
+Active sprint context (JSON):
+${sprintJson}
+
+Other bets in this sprint (for duplication / alignment): ${siblings}
+
+Approximate sprint time elapsed (if inferred from dates): ${elapsed}
+
+Use web_search when it helps find market trends, benchmarks, or research relevant to this bet's outcome and sector (inferred from org + bet text only).
+
+Deliver one integrated observation (max 4 sentences), then the SOURCES line as specified in the system message.`;
+}
+
+export function SEMANTIC_PORTFOLIO_USER_PROMPT(
+  localeLabel: string,
+  ctx: SemanticPortfolioContext
+): string {
+  const sprintJson = ctx.sprint ? JSON.stringify(ctx.sprint, null, 2) : "null";
+  return `Language: ${localeLabel}
+
+Organization: ${ctx.orgName}
+
+Active sprint (JSON):
+${sprintJson}
+
+Active bets in portfolio (JSON array):
+${JSON.stringify(ctx.bets, null, 2)}
+
+Analyze portfolio balance (revenue / margin / capability mix, risk distribution), coherence with sprint strategic focus, and duplication across bets.
+Use web_search for sector-level trends only when it strengthens the observation.
+
+One integrated observation (max 4 sentences), then SOURCES line.`;
+}
+
+export function SEMANTIC_REVIEW_USER_PROMPT(
+  localeLabel: string,
+  ctx: SemanticReviewContext
+): string {
+  const base = SEMANTIC_BET_USER_PROMPT(localeLabel, ctx);
+  return `${base}
+
+Strategic review — "What happened" (evidence the user entered):
+"""
+${ctx.reviewWhatHappened}
+"""
+
+Weight this evidence heavily; relate it to hypothesis, kill/scale criteria, and signal. Then web_search only if it sharpens external context for this outcome.`;
+}
+
+/** Parse model output: body + trailing SOURCES: line with markdown links */
+export function parseSemanticAssistantText(raw: string): {
+  observation: string;
+  sources: Array<{ title: string; url?: string }>;
+} {
+  const trimmed = raw.trim();
+  const idx = trimmed.search(/\nSOURCES:\s*/i);
+  if (idx === -1) {
+    return { observation: trimmed, sources: [] };
+  }
+  const observation = trimmed.slice(0, idx).trim();
+  const sourcesPart = trimmed.slice(idx).replace(/^\s*SOURCES:\s*/i, "").trim();
+  const sources: Array<{ title: string; url?: string }> = [];
+  const linkRe = /\[([^\]]+)\]\(([^)]*)\)/g;
+  let m: RegExpExecArray | null;
+  while ((m = linkRe.exec(sourcesPart)) !== null) {
+    sources.push({ title: m[1].trim(), url: m[2]?.trim() || undefined });
+  }
+  return { observation, sources };
+}
+
+export function sprintElapsedFraction(
+  start?: string,
+  end?: string
+): number | undefined {
+  if (!start || !end) return undefined;
+  const a = new Date(start).getTime();
+  const b = new Date(end).getTime();
+  const now = Date.now();
+  if (!Number.isFinite(a) || !Number.isFinite(b) || b <= a) return undefined;
+  const t = (now - a) / (b - a);
+  return Math.min(1, Math.max(0, t));
+}
