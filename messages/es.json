@@ -401,5 +401,31 @@
     "scalePlaceholder": "¿Cuándo apostamos más?",
     "indicatorsPlaceholder": "Métrica 1, Métrica 2, Métrica 3",
     "ownerContactPlaceholder": "Nombre o rol"
+  },
+  "settings": {
+    "title": "Configuración",
+    "org": "Organización",
+    "members": "Miembros",
+    "coach": "Coach",
+    "language": "Idioma de la Interfaz",
+    "orgName": "Nombre de la Organización",
+    "brandColor": "Color de Marca",
+    "save": "Guardar Cambios",
+    "inviteMember": "Invitar Miembro",
+    "emailPlaceholder": "colega@empresa.com",
+    "invite": "Enviar Invitación",
+    "inviteSent": "Invitación enviada exitosamente.",
+    "inviteError": "Error al enviar la invitación.",
+    "confirmRemove": "¿Remover este miembro de la organización?",
+    "planUsage": "Uso Mensual",
+    "syntacticCalls": "Llamadas Coach Sintáctico",
+    "semanticCalls": "Llamadas Coach Semántico",
+    "coachByArea": "Coach por Área",
+    "area": "Área",
+    "syntactic": "Sintáctico",
+    "semantic": "Semántico",
+    "syntacticUsage": "Uso sintáctico",
+    "semanticUsage": "Uso semántico",
+    "availableIn": "Disponible en"
   }
 }

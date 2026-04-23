@@ -401,5 +401,31 @@
     "scalePlaceholder": "When do we double down?",
     "indicatorsPlaceholder": "Metric 1, Metric 2, Metric 3",
     "ownerContactPlaceholder": "Name or role"
+  },
+  "settings": {
+    "title": "Settings",
+    "org": "Organization",
+    "members": "Members",
+    "coach": "Coach",
+    "language": "Display Language",
+    "orgName": "Organization Name",
+    "brandColor": "Brand Color",
+    "save": "Save Changes",
+    "inviteMember": "Invite Member",
+    "emailPlaceholder": "colleague@company.com",
+    "invite": "Send Invite",
+    "inviteSent": "Invite sent successfully.",
+    "inviteError": "Error sending invite.",
+    "confirmRemove": "Remove this member from the organization?",
+    "planUsage": "Monthly Usage",
+    "syntacticCalls": "Syntactic Coach calls",
+    "semanticCalls": "Semantic Coach calls",
+    "coachByArea": "Coach by Area",
+    "area": "Area",
+    "syntactic": "Syntactic",
+    "semantic": "Semantic",
+    "syntacticUsage": "Syntactic usage",
+    "semanticUsage": "Semantic usage",
+    "availableIn": "Available in"
   }
 }

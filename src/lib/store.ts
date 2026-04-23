@@ -22,6 +22,8 @@ interface Store {
 
   // ── Setters ──────────────────────────────────────────
   setOrg:          (org: Organization) => void;
+  updateOrg:       (updates: Partial<Organization>) => void;
+  role:            OrgRole | null;
   setSprints:      (sprints: Sprint[]) => void;
   setBets:         (bets: Bet[]) => void;
   setEvidence:     (evidence: Evidence[]) => void;
@@ -66,6 +68,8 @@ export const useStore = create<Store>((set) => ({
 
   // Setters
   setOrg:          (org)          => set({ org }),
+  updateOrg:       (updates)      => set(s => ({ org: s.org ? { ...s.org, ...updates } : null })),
+  role:            null,
   setSprints:      (sprints)      => set({ sprints }),
   setBets:         (bets)         => set({ bets }),
   setEvidence:     (evidence)     => set({ evidence }),
@@ -73,7 +77,7 @@ export const useStore = create<Store>((set) => ({
   setLoading:      (loading)      => set({ loading }),
   setOrgTree:      (orgTree)      => set({ orgTree }),
   setRootPlan:     (rootPlan)     => set({ rootPlan }),
-  setCurrentRole:  (currentRole)  => set({ currentRole }),
+  setCurrentRole:  (currentRole)  => set({ currentRole, role: currentRole }),
   setChildOrgs:      (childOrgs)    => set({ childOrgs }),
   setBetAlignments:  (betAlignments) => set({ betAlignments }),
   addBetAlignment:   (a)  => set(s => ({ betAlignments: [...s.betAlignments, a] })),

@@ -1,4 +1,4 @@
-export type Plan         = "trial" | "starter" | "growth" | "scale" | "enterprise";
+export type Plan         = "trial" | "solo" | "starter" | "growth" | "scale";
 export type OrgRole      = "owner" | "admin" | "editor" | "viewer";
 export type BetStatus    = "Active" | "Scaled" | "Pivoted" | "Done" | "Killed";
 export type SignalStrength = "Strong" | "Unclear" | "Weak";
@@ -23,6 +23,8 @@ export interface Organization {
   level_name?:          string;
   parent_area?:         string | null; // e.g. "Holding", "Business Unit", "Region", "Squad"
   created_at:           string;
+  coach_syntactic_enabled: boolean;
+  coach_semantic_enabled:  boolean;
 }
 
 export interface OrgMember {
@@ -134,3 +136,20 @@ export interface BetAlignment {
   created_at:    string;
 }
 
+export interface CoachUsage {
+  id:               string;
+  org_id:           string;
+  month:            string; // 'YYYY-MM'
+  syntactic_calls:  number;
+  semantic_calls:   number;
+}
+
+export type CoachType = "syntactic" | "semantic";
+
+export const COACH_LIMITS: Record<Plan, { syntactic: number; semantic: number }> = {
+  trial:   { syntactic: 30,  semantic: 0   },
+  solo:    { syntactic: 100, semantic: 50  },
+  starter: { syntactic: 300, semantic: 150 },
+  growth:  { syntactic: 800, semantic: 400 },
+  scale:   { syntactic: -1,  semantic: -1  }, // -1 = unlimited
+};

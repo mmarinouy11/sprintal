@@ -8,6 +8,8 @@ export type CoachField = keyof typeof FIELD_PROMPTS;
 interface CoachResult {
   observation: string | null;
   loading: boolean;
+  limitReached?: boolean;
+  upgradeRequired?: boolean;
 }
 
 const DEBOUNCE_MS = 1400;
@@ -17,7 +19,7 @@ export function useSyntacticCoach(sprintDays?: number) {
   const [results, setResults] = useState<Record<string, CoachResult>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
 
-  const check = useCallback(async (field: CoachField, value: string) => {
+  const check = useCallback(async (field: CoachField, value: string, orgId?: string) => {
     if (timers.current[field]) clearTimeout(timers.current[field]);
 
     if (!value || value.trim().length < MIN_LENGTH) {
@@ -32,7 +34,6 @@ export function useSyntacticCoach(sprintDays?: number) {
       }));
 
       try {
-        // Get session token for auth
         const { data: { session } } = await supabase.auth.getSession();
         const token = session?.access_token;
         if (!token) {
@@ -50,6 +51,8 @@ export function useSyntacticCoach(sprintDays?: number) {
             field,
             value: value.trim(),
             sprintDays,
+            orgId,
+            coachType: "syntactic",
             locale: document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1] || navigator.language?.slice(0, 2) || "en",
           }),
         });
@@ -57,7 +60,12 @@ export function useSyntacticCoach(sprintDays?: number) {
         const data = await res.json();
         setResults(prev => ({
           ...prev,
-          [field]: { observation: data.observation || null, loading: false },
+          [field]: {
+            observation: data.observation || null,
+            loading: false,
+            limitReached: data.limitReached || false,
+            upgradeRequired: data.upgradeRequired || false,
+          },
         }));
       } catch {
         setResults(prev => ({ ...prev, [field]: { observation: null, loading: false } }));
