@@ -448,11 +448,28 @@ function LanguageTab() {
   const t = useT();
   const [locale, setLocale] = useState("en");
 
+  function readLocaleFromCookie(): "en" | "es" | "pt" {
+    const raw = document.cookie
+      .split(";")
+      .map(part => part.trim())
+      .find(part => part.startsWith("NEXT_LOCALE="))
+      ?.split("=")
+      .slice(1)
+      .join("=") || "";
+
+    const normalized = decodeURIComponent(raw).trim().toLowerCase();
+    return (["en", "es", "pt"].includes(normalized) ? normalized : "en") as "en" | "es" | "pt";
+  }
+
   useEffect(() => {
-    const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
-    if (match && ["en", "es", "pt"].includes(match[1])) {
-      setLocale(match[1]);
-    }
+    const syncLocale = () => setLocale(readLocaleFromCookie());
+    syncLocale();
+    window.addEventListener("focus", syncLocale);
+    document.addEventListener("visibilitychange", syncLocale);
+    return () => {
+      window.removeEventListener("focus", syncLocale);
+      document.removeEventListener("visibilitychange", syncLocale);
+    };
   }, []);
 
   const LANGS = [
