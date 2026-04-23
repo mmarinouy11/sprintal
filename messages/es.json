@@ -89,7 +89,15 @@
     "inviteAccessDenied": "Acceso denegado. El enlace puede ser inválido o ya haberse usado.",
     "inviteErrorGeneric": "No pudimos completar la invitación. Probá de nuevo o contactá a tu administrador.",
     "inviteInvalidLink": "Este enlace no tiene los datos de la invitación. Abrilo desde tu correo.",
-    "inviteSessionError": "No pudimos iniciar tu sesión. Probá el enlace de nuevo o iniciá sesión."
+    "inviteSessionError": "No pudimos iniciar tu sesión. Probá el enlace de nuevo o iniciá sesión.",
+    "setPasswordTitle": "Establecé tu contraseña",
+    "setPasswordSubtitle": "Elegí una contraseña para terminar de unirte a tu organización.",
+    "passwordLabel": "Contraseña",
+    "confirmPasswordLabel": "Confirmar contraseña",
+    "passwordMismatch": "Las contraseñas no coinciden.",
+    "passwordTooShort": "La contraseña debe tener al menos 8 caracteres.",
+    "setPasswordBtn": "Guardar contraseña",
+    "settingPassword": "Guardando..."
   },
   "trial": {
     "expired": "Tu período de prueba finalizó",

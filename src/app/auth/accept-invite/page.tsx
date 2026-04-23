@@ -178,15 +178,11 @@ export default function AcceptInvitePage() {
               }
             );
             if (res.ok) {
-              const body = (await res.json()) as {
-                slug?: string;
-                onboarding_complete?: boolean;
-              };
+              const body = (await res.json()) as { slug?: string };
               if (body.slug) {
-                const path = body.onboarding_complete
-                  ? `/${body.slug}/dashboard`
-                  : `/onboarding/${body.slug}`;
-                window.location.replace(path);
+                window.location.replace(
+                  `/auth/set-password?orgSlug=${encodeURIComponent(body.slug)}`
+                );
                 return;
               }
             }

@@ -89,7 +89,15 @@
     "inviteAccessDenied": "Acesso negado. O link pode ser inválido ou já ter sido usado.",
     "inviteErrorGeneric": "Não foi possível concluir o convite. Tente novamente ou fale com o administrador.",
     "inviteInvalidLink": "Este link não contém os dados do convite. Abra-o a partir do e-mail.",
-    "inviteSessionError": "Não foi possível iniciar a sessão. Tente o link novamente ou faça login."
+    "inviteSessionError": "Não foi possível iniciar a sessão. Tente o link novamente ou faça login.",
+    "setPasswordTitle": "Defina sua senha",
+    "setPasswordSubtitle": "Escolha uma senha para concluir sua entrada na organização.",
+    "passwordLabel": "Senha",
+    "confirmPasswordLabel": "Confirmar senha",
+    "passwordMismatch": "As senhas não coincidem.",
+    "passwordTooShort": "A senha deve ter pelo menos 8 caracteres.",
+    "setPasswordBtn": "Salvar senha",
+    "settingPassword": "Salvando..."
   },
   "trial": {
     "expired": "Seu período de teste encerrou",
