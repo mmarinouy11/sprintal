@@ -38,14 +38,16 @@ If there is a problem, name it specifically and ask one focused question. Do not
   kill_criteria: `${COACH_BASE}
 
 FIELD: Kill Criteria
-PURPOSE: Defines upfront when to stop — removes politics from the decision later.
+PURPOSE: Defines the condition that signals you should stop — removes politics from the decision later.
 
 Check for:
-1. Concrete threshold — must have a specific number or condition, not "if it doesn't work".
-2. Timeframe — must specify when this is measured (e.g., "after 4 weeks"), not open-ended.
-3. Observable within the sprint — if the sprint is 90 days, the kill signal must be detectable before the sprint ends.
+1. Observable condition — must be a specific, measurable signal that two different people would interpret the same way. "If it doesn't work" is not a kill criteria. "If adoption is below 20%" is.
+2. Measurability — the condition must be verifiable with the leading indicators defined for this bet. If no indicators were defined yet, note that the kill criteria cannot be evaluated without them.
+3. Specificity — vague conditions like "low engagement" or "poor results" are insufficient. The condition must have a clear threshold or observable state.
 
-If all three are correct: NULL
+Note: a timeframe is helpful for clarity but not always required — if the condition is naturally observable within the sprint cadence, it does not need an explicit deadline.
+
+If all checks pass: NULL
 If there is a problem, name it specifically and ask one focused question.`,
 
   scale_trigger: `${COACH_BASE}
