@@ -138,13 +138,36 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
   const [color, setColor] = useState(org.primary_color || "#5C6AC4");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  useEffect(() => {
+    setName(org.name);
+    setColor(org.primary_color || "#5C6AC4");
+  }, [org.id, org.name, org.primary_color]);
 
   async function save() {
     setSaving(true);
-    const { data } = await supabase.from("organizations")
+    setSaveError("");
+    const { data, error } = await supabase.from("organizations")
       .update({ name, primary_color: color })
-      .eq("id", org.id).select().single();
-    if (data) { updateOrg(data); setSaved(true); setTimeout(() => setSaved(false), 2000); }
+      .eq("id", org.id)
+      .select("id, name, primary_color")
+      .limit(1)
+      .maybeSingle();
+
+    if (error) {
+      console.error("settings org save error:", { orgId: org.id, error });
+      setSaveError(t("settings.inviteError"));
+      setSaving(false);
+      return;
+    }
+
+    if (data) {
+      updateOrg({ name: data.name, primary_color: data.primary_color });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+    }
+
     setSaving(false);
   }
 
@@ -167,9 +190,16 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
         </div>
       </div>
       {isAdmin && (
-        <button onClick={save} disabled={saving} className="btn-primary">
-          {saving ? t("common.loading") : saved ? "✓ Saved" : t("settings.save")}
-        </button>
+        <>
+          <button onClick={save} disabled={saving} className="btn-primary">
+            {saving ? t("common.loading") : saved ? "✓ Saved" : t("settings.save")}
+          </button>
+          {saveError && (
+            <p style={{ fontSize: "0.8125rem", marginTop: 8, color: "var(--killed)" }}>
+              {saveError}
+            </p>
+          )}
+        </>
       )}
     </div>
   );
@@ -450,23 +480,31 @@ function LanguageTab() {
 
   useEffect(() => {
     const cookies = document.cookie || "";
-    const decodedCookies = decodeURIComponent(cookies);
+    const directMatch = cookies.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
+    const directLocale = directMatch?.[1]?.trim().toLowerCase();
+    if (directLocale && ["en", "es", "pt"].includes(directLocale)) {
+      setLocale(directLocale);
+      return;
+    }
 
-    console.log("LanguageTab cookies:", cookies);
-    console.log("LanguageTab decodedCookies:", decodedCookies);
+    // Defensive fallback for URL-encoded cookie keys/values.
+    const encodedMatch = cookies.match(/NEXT_LOCALE%3D([^;]+)/i);
+    const encodedRaw = encodedMatch?.[1] || "";
+    let decoded = "";
+    try {
+      decoded = decodeURIComponent(encodedRaw).trim().toLowerCase();
+    } catch {
+      decoded = encodedRaw.trim().toLowerCase();
+    }
 
-    // Supports both:
-    // 1) NEXT_LOCALE=es
-    // 2) NEXT_LOCALE%3Des (URL-encoded)
-    const match = cookies.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/)
-      || decodedCookies.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/)
-      || cookies.match(/NEXT_LOCALE%3D([^;]+)/i);
+    if (decoded && ["en", "es", "pt"].includes(decoded)) {
+      setLocale(decoded);
+      return;
+    }
 
-    console.log("LanguageTab localeMatch:", match);
-
-    const nextLocale = match?.[1]?.trim().toLowerCase();
-    if (nextLocale && ["en", "es", "pt"].includes(nextLocale)) {
-      setLocale(nextLocale);
+    const navLocale = navigator.language?.slice(0, 2).toLowerCase();
+    if (navLocale === "es" || navLocale === "pt") {
+      setLocale(navLocale);
     }
   }, []);
 
