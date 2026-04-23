@@ -446,11 +446,14 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
 // ── Language Tab ─────────────────────────────────────────────
 function LanguageTab() {
   const t = useT();
-  const [locale, setLocale] = useState(
-    typeof document !== "undefined"
-      ? document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1] || "en"
-      : "en"
-  );
+  const [locale, setLocale] = useState("en");
+
+  useEffect(() => {
+    const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
+    if (match && ["en", "es", "pt"].includes(match[1])) {
+      setLocale(match[1]);
+    }
+  }, []);
 
   const LANGS = [
     { code: "en", label: "English" },
