@@ -141,8 +141,16 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
   const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
+    const nextColor = org.primary_color || "#5C6AC4";
+    console.log("[sprintal-debug] OrgTab sync from org prop", {
+      orgId: org.id,
+      orgName: org.name,
+      primary_color: org.primary_color,
+      appliedColor: nextColor,
+      at: new Date().toISOString(),
+    });
     setName(org.name);
-    setColor(org.primary_color || "#5C6AC4");
+    setColor(nextColor);
   }, [org.id, org.name, org.primary_color]);
 
   async function save() {

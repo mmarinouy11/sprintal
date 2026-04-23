@@ -56,6 +56,13 @@ export default function OrgLayout({
       }
 
       setOrg(orgData);
+      console.log("[sprintal-debug] layout after setOrg(orgData)", {
+        source: "/api/org/data",
+        id: orgData.id,
+        slug: orgData.slug,
+        primary_color: orgData.primary_color,
+        at: new Date().toISOString(),
+      });
       setRootPlan(rootPlan || orgData.plan);
       setCurrentRole(role);
 
