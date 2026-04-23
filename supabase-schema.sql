@@ -105,9 +105,12 @@ create policy "org members can view org" on organizations
     id in (select org_id from org_members where user_id = auth.uid())
   );
 
+-- Allow each user to read their own membership row without a self-referential
+-- subquery (invited users otherwise may get zero rows on / and be sent to login).
 create policy "org members can view members" on org_members
   for select using (
-    org_id in (select org_id from org_members where user_id = auth.uid())
+    user_id = auth.uid()
+    or org_id in (select om.org_id from org_members om where om.user_id = auth.uid())
   );
 
 create policy "org members full access sprints" on sprints
