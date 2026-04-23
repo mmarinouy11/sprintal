@@ -57,8 +57,8 @@ export async function POST(req: NextRequest) {
     }
 
     // Check usage limits
-    const plan = org.plan as Plan;
-    const limits = COACH_LIMITS[plan];
+    const plan = (org.plan || "trial") as Plan;
+    const limits = COACH_LIMITS[plan] || COACH_LIMITS["trial"];
     const limit = coachType === "syntactic" ? limits.syntactic : limits.semantic;
 
     if (limit === 0) {

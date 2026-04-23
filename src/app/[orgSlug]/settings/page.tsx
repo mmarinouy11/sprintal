@@ -252,8 +252,8 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
 // ── Coach Tab ────────────────────────────────────────────────
 function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isAdmin: boolean }) {
   const t = useT();
-  const plan = org.plan as Plan;
-  const limits = COACH_LIMITS[plan];
+  const plan = (org.plan || "trial") as Plan;
+  const limits = COACH_LIMITS[plan] || COACH_LIMITS["trial"];
   const [usage, setUsage] = useState<CoachUsage | null>(null);
   const [areaUsage, setAreaUsage] = useState<Record<string, CoachUsage>>({});
   const [toggling, setToggling] = useState<string | null>(null);
