@@ -148,6 +148,36 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
   async function save() {
     setSaving(true);
     setSaveError("");
+
+    const { data: { session } } = await supabase.auth.getSession();
+    const userId = session?.user?.id;
+    if (!userId) {
+      setSaveError(t("settings.saveError"));
+      setSaving(false);
+      return;
+    }
+
+    const { data: membership, error: membershipError } = await supabase
+      .from("org_members")
+      .select("role")
+      .eq("org_id", org.id)
+      .eq("user_id", userId)
+      .limit(1)
+      .maybeSingle();
+
+    console.log("settings org save membership:", {
+      orgId: org.id,
+      userId,
+      membership,
+      membershipError,
+    });
+
+    if (membershipError || !membership || !["owner", "admin"].includes(membership.role)) {
+      setSaveError(t("settings.saveError"));
+      setSaving(false);
+      return;
+    }
+
     const { data, error } = await supabase.from("organizations")
       .update({ name, primary_color: color })
       .eq("id", org.id)
@@ -155,18 +185,30 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
       .limit(1)
       .maybeSingle();
 
+    console.log("settings org save response:", {
+      orgId: org.id,
+      payload: { name, primary_color: color },
+      data,
+      error,
+    });
+
     if (error) {
       console.error("settings org save error:", { orgId: org.id, error });
-      setSaveError(t("settings.inviteError"));
+      setSaveError(t("settings.saveError"));
       setSaving(false);
       return;
     }
 
-    if (data) {
-      updateOrg({ name: data.name, primary_color: data.primary_color });
-      setSaved(true);
-      setTimeout(() => setSaved(false), 2000);
+    if (!data) {
+      console.error("settings org save returned no row:", { orgId: org.id, color });
+      setSaveError(t("settings.saveError"));
+      setSaving(false);
+      return;
     }
+
+    updateOrg({ name: data.name, primary_color: data.primary_color });
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
 
     setSaving(false);
   }
@@ -192,7 +234,7 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
       {isAdmin && (
         <>
           <button onClick={save} disabled={saving} className="btn-primary">
-            {saving ? t("common.loading") : saved ? "✓ Saved" : t("settings.save")}
+            {saving ? t("common.loading") : saved ? `✓ ${t("settings.saved")}` : t("settings.save")}
           </button>
           {saveError && (
             <p style={{ fontSize: "0.8125rem", marginTop: 8, color: "var(--killed)" }}>

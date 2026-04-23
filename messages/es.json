@@ -411,6 +411,8 @@
     "orgName": "Nombre de la Organización",
     "brandColor": "Color de Marca",
     "save": "Guardar Cambios",
+    "saved": "Guardado",
+    "saveError": "Error al guardar los cambios.",
     "inviteMember": "Invitar Miembro",
     "emailPlaceholder": "colega@empresa.com",
     "invite": "Enviar Invitación",
