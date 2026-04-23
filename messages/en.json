@@ -268,6 +268,12 @@
     "errorCreating": "Error creating. Please try again.",
     "connectionError": "Connection error. Please try again.",
     "sessionExpired": "Session expired. Please sign in again.",
+    "coachSectionTitle": "AI coach (this area)",
+    "coachSyntactic": "Syntactic coach",
+    "coachSyntacticHint": "Surface-level clarity checks on text fields.",
+    "coachSemantic": "Semantic coach",
+    "coachSemanticHint": "Deeper coaching on meaning and alignment.",
+    "coachSemanticTrialBadge": "Available in Solo →",
     "sidebar": {
       "sprintTitle": "Sprint Definition",
       "sprintHeading": "Define the Sprint",

@@ -2,6 +2,18 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { sanitizeText, sanitizeColor, sanitizeInt } from "@/lib/sanitize";
+import { COACH_LIMITS, type Plan } from "@/types";
+
+function planSupportsSemantic(planVal: string): boolean {
+  const lim = COACH_LIMITS[planVal as Plan];
+  return !!lim && (lim.semantic > 0 || lim.semantic === -1);
+}
+
+function readBool(v: unknown, defaultVal: boolean): boolean {
+  if (v === true || v === "true") return true;
+  if (v === false || v === "false") return false;
+  return defaultVal;
+}
 
 function slugify(s: string) {
   return s.toLowerCase().trim()
@@ -32,10 +44,16 @@ export async function POST(req: NextRequest) {
     const parentArea = body.parentArea ? sanitizeText(body.parentArea, 100) : null;
     const levelName = sanitizeText(body.levelName || "area", 50);
     const childLevel = sanitizeInt(body.childLevel, 1, 4, 2);
-    const plan = body.plan || "trial"; // inherit from parent, default trial
+    const plan = (body.plan || "trial") as string; // inherit from parent, default trial
     const primaryColor = sanitizeColor(body.primaryColor);
-    const trialEndsAt = body.trialEndsAt;
+    const trialEndsAtBody = body.trialEndsAt;
     const fromOnboarding = !!body.fromOnboarding;
+
+    const coachSyntacticEnabled = readBool(body.coachSyntacticEnabled, true);
+    let coachSemanticEnabled = readBool(body.coachSemanticEnabled, false);
+    if (!planSupportsSemantic(plan)) {
+      coachSemanticEnabled = false;
+    }
 
     if (!name || !parentOrgId) {
       return NextResponse.json({ error: "Nombre y org padre son requeridos." }, { status: 400 });
@@ -97,6 +115,19 @@ export async function POST(req: NextRequest) {
       .from("organizations").select("id").eq("slug", slug).maybeSingle();
     if (existing) slug = `${slug}-${Math.random().toString(36).slice(2, 6)}`;
 
+    let resolvedTrialEndsAt: string | null = null;
+    if (typeof trialEndsAtBody === "string" && trialEndsAtBody.trim()) {
+      resolvedTrialEndsAt = trialEndsAtBody.trim();
+    } else if (plan === "trial") {
+      const { data: parentRow } = await supabaseAdmin
+        .from("organizations")
+        .select("trial_ends_at")
+        .eq("id", parentOrgId)
+        .limit(1)
+        .maybeSingle();
+      resolvedTrialEndsAt = parentRow?.trial_ends_at ?? null;
+    }
+
     // Create sub-org
     const { data: newOrg, error: orgError } = await supabaseAdmin
       .from("organizations").insert({
@@ -107,8 +138,10 @@ export async function POST(req: NextRequest) {
         parent_area:         parentArea || null,
         primary_color:       primaryColor,
         plan,
-        trial_ends_at:       trialEndsAt,
+        trial_ends_at:       resolvedTrialEndsAt,
         onboarding_complete: true,
+        coach_syntactic_enabled: coachSyntacticEnabled,
+        coach_semantic_enabled:  coachSemanticEnabled,
       }).select().limit(1).then(r => ({ data: r.data?.[0] ?? null, error: r.error }));
 
     if (orgError || !newOrg) {

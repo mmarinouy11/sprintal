@@ -268,6 +268,12 @@
     "errorCreating": "Erro ao criar. Tente novamente.",
     "connectionError": "Erro de conexão. Tente novamente.",
     "sessionExpired": "Sessão expirada. Faça login novamente.",
+    "coachSectionTitle": "Coach de IA (esta área)",
+    "coachSyntactic": "Coach sintático",
+    "coachSyntacticHint": "Checagens de clareza em campos de texto.",
+    "coachSemantic": "Coach semântico",
+    "coachSemanticHint": "Coach mais profundo sobre significado e alinhamento.",
+    "coachSemanticTrialBadge": "Disponível no Solo →",
     "sidebar": {
       "sprintTitle": "Definição do Sprint",
       "sprintHeading": "Defina o Sprint",

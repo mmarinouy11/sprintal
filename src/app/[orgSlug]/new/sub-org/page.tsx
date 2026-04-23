@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter, useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
+import { COACH_LIMITS, type Plan } from "@/types";
 import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 
 export default function NewSubOrgPage() {
@@ -16,6 +17,12 @@ export default function NewSubOrgPage() {
   const [name, setName] = useState("");
   const [parentArea, setParentArea] = useState("");
   const [localAreas, setLocalAreas] = useState<{ id: string; name: string; cascade_level: number }[]>([]);
+  const [coachSyntacticEnabled, setCoachSyntacticEnabled] = useState(true);
+  const [coachSemanticEnabled, setCoachSemanticEnabled] = useState(false);
+
+  const semanticAllowed =
+    (COACH_LIMITS[(rootPlan || "trial") as Plan]?.semantic ?? 0) > 0 ||
+    COACH_LIMITS[(rootPlan || "trial") as Plan]?.semantic === -1;
 
   // Load child orgs as area options
   useEffect(() => {
@@ -64,7 +71,12 @@ export default function NewSubOrgPage() {
           plan:          org.plan,
           parentOrgPlan: rootPlan,
           primaryColor:  org.primary_color,
-          trialEndsAt:   new Date(Date.now() + 90*86400000).toISOString(),
+          trialEndsAt:
+            rootPlan === "trial" || org.plan === "trial"
+              ? org.trial_ends_at
+              : null,
+          coachSyntacticEnabled,
+          coachSemanticEnabled: semanticAllowed ? coachSemanticEnabled : false,
         }),
       });
 
@@ -198,6 +210,65 @@ export default function NewSubOrgPage() {
               : "No depende de un área específica — opera en forma transversal."}
           </div>
         </Field>
+
+        <div className="mb-6 p-4 rounded-lg" style={{ background: "var(--sidebar)", border: "1px solid var(--border)" }}>
+          <div className="t-label mb-3">{t("coachSectionTitle")}</div>
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <div>
+              <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)" }}>{t("coachSyntactic")}</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--t2)" }}>{t("coachSyntacticHint")}</div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setCoachSyntacticEnabled(!coachSyntacticEnabled)}
+              style={{
+                width: 40, height: 22, borderRadius: 11, border: "none", cursor: "pointer",
+                background: coachSyntacticEnabled ? "var(--brand)" : "var(--raised)",
+                position: "relative", transition: "background 0.2s", flexShrink: 0,
+              }}>
+              <div style={{
+                width: 16, height: 16, borderRadius: "50%", background: "#fff",
+                position: "absolute", top: 3, left: coachSyntacticEnabled ? 21 : 3, transition: "left 0.2s",
+                boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+              }} />
+            </button>
+          </div>
+          <div className="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div style={{ fontSize: "0.875rem", fontWeight: 500, color: "var(--text)" }}>{t("coachSemantic")}</div>
+              <div style={{ fontSize: "0.75rem", color: "var(--t2)" }}>{t("coachSemanticHint")}</div>
+            </div>
+            <div className="flex items-center gap-2">
+              {!semanticAllowed && (
+                <span style={{
+                  fontSize: "0.75rem", padding: "2px 8px", borderRadius: 10,
+                  background: "color-mix(in srgb, var(--unclear) 12%, transparent)",
+                  color: "var(--unclear)", border: "1px solid color-mix(in srgb, var(--unclear) 25%, transparent)",
+                  whiteSpace: "nowrap",
+                }}>
+                  {t("coachSemanticTrialBadge")}
+                </span>
+              )}
+              <button
+                type="button"
+                disabled={!semanticAllowed}
+                onClick={() => semanticAllowed && setCoachSemanticEnabled(!coachSemanticEnabled)}
+                style={{
+                  width: 40, height: 22, borderRadius: 11, border: "none",
+                  cursor: semanticAllowed ? "pointer" : "default",
+                  background: coachSemanticEnabled ? "var(--brand)" : "var(--raised)",
+                  position: "relative", transition: "background 0.2s", flexShrink: 0,
+                  opacity: semanticAllowed ? 1 : 0.5,
+                }}>
+                <div style={{
+                  width: 16, height: 16, borderRadius: "50%", background: "#fff",
+                  position: "absolute", top: 3, left: coachSemanticEnabled ? 21 : 3, transition: "left 0.2s",
+                  boxShadow: "0 1px 3px rgba(0,0,0,0.2)",
+                }} />
+              </button>
+            </div>
+          </div>
+        </div>
 
         {error && (
           <div style={{ padding:"10px 14px", borderRadius:"var(--rs)", marginBottom:8,
