@@ -193,11 +193,8 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
 });
 
 // ── Main panel ────────────────────────────────────────────────────────────
-const BetDetailPanel = React.memo(function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, onClose }: Props) {
-  const updateBet = useStore(s => s.updateBet);
-  const betAlignments = useStore(s => s.betAlignments);
-  const allBets = useStore(s => s.bets);
-  const childOrgs = useStore(s => s.childOrgs);
+function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, onClose }: Props) {
+  const { updateBet, betAlignments, bets: allBets, childOrgs } = useStore();
   const areas = childOrgs.map(a => a.name);
   const [bet, setBet] = useState(initialBet);
   const t = useT("betDetail");
@@ -286,7 +283,6 @@ const BetDetailPanel = React.memo(function BetDetailPanel({ bet: initialBet, evi
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button onClick={() => setEditing(!editing)}
-                tabIndex={-1}
                 className="px-3 py-1 rounded text-xs font-medium transition-colors"
                 style={{
                   fontFamily:"var(--font-mono)",
@@ -523,17 +519,6 @@ const BetDetailPanel = React.memo(function BetDetailPanel({ bet: initialBet, evi
       <style>{`@keyframes slideInRight{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
     </>
   );
-});
+}
 
-export default React.memo(BetDetailPanel, (prev, next) => {
-  // Don't re-render if only evidence/signalChecks reference changed
-  // but bet id and editing-relevant data is the same
-  return (
-    prev.bet.id === next.bet.id &&
-    prev.bet.status === next.bet.status &&
-    prev.sprintName === next.sprintName &&
-    prev.onClose === next.onClose &&
-    prev.evidence.length === next.evidence.length &&
-    prev.signalChecks.length === next.signalChecks.length
-  );
-});
+export default BetDetailPanel;
