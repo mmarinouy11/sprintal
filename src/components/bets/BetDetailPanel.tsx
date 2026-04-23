@@ -119,7 +119,7 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
     setSaving(true);
     const indicators = form.indicators.split(",").map(s=>s.trim()).filter(Boolean).slice(0,3);
     const updates = { ...form, indicators };
-    const { data } = await supabase.from("bets").update(updates).eq("id", bet.id).select().single();
+    const { data } = await supabase.from("bets").update(updates).eq("id", bet.id).select().limit(1).maybeSingle();
     if (data) onSave({ ...bet, ...updates });
     setSaving(false);
   }

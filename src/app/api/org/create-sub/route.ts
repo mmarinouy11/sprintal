@@ -69,9 +69,9 @@ export async function POST(req: NextRequest) {
 
     if (!member) {
       // Allow if user has ANY membership (new org during onboarding)
-      const { data: anyMember } = await supabaseAdmin
+      const { data: fallbackMember } = await supabaseAdmin
         .from("org_members").select("role").eq("user_id", userId).maybeSingle();
-      if (!anyMember) {
+      if (!fallbackMember) {
         return NextResponse.json({ error: "No tenés membresía en esta organización." }, { status: 403 });
       }
     }

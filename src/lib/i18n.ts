@@ -10,8 +10,21 @@ const VALID_LOCALES: Locale[] = ["en", "es", "pt"];
 
 function detectLocale(): Locale {
   if (typeof document === "undefined") return "en";
-  const match = document.cookie.match(/NEXT_LOCALE=([^;]+)/);
-  if (match && VALID_LOCALES.includes(match[1] as Locale)) return match[1] as Locale;
+  const cookies = document.cookie || "";
+  const directMatch = cookies.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
+  const directRaw = directMatch?.[1]?.trim().toLowerCase();
+  if (directRaw && VALID_LOCALES.includes(directRaw as Locale)) return directRaw as Locale;
+
+  const encodedMatch = cookies.match(/NEXT_LOCALE%3D([^;]+)/i);
+  const encodedRaw = encodedMatch?.[1] || "";
+  let decoded = "";
+  try {
+    decoded = decodeURIComponent(encodedRaw).trim().toLowerCase();
+  } catch {
+    decoded = encodedRaw.trim().toLowerCase();
+  }
+  if (decoded && VALID_LOCALES.includes(decoded as Locale)) return decoded as Locale;
+
   const lang = navigator.language?.slice(0, 2);
   if (lang === "es") return "es";
   if (lang === "pt") return "pt";
@@ -53,6 +66,19 @@ type Messages = typeof en;
 type DeepValue<T, K extends string> = K extends `${infer Head}.${infer Tail}`
   ? Head extends keyof T ? DeepValue<T[Head], Tail> : string
   : K extends keyof T ? T[K] : string;
+
+/** Same locale source as `useT` — use for UI that must match translations (e.g. Settings language radios). */
+export function useLocale(): Locale {
+  const locale = useSyncExternalStore(
+    subscribeLocale,
+    getClientLocaleSnapshot,
+    getServerLocaleSnapshot
+  );
+  useEffect(() => {
+    ensureLocaleInitialized();
+  }, []);
+  return locale;
+}
 
 export function useT(namespace?: string) {
   const locale = useSyncExternalStore(

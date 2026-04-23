@@ -108,7 +108,7 @@ export default function NewSprintPage() {
     if (!org) return;
     setSaving(true);
     const { data } = await supabase.from("sprints")
-      .insert({ ...form, org_id: org.id }).select().single();
+      .insert({ ...form, org_id: org.id }).select().limit(1).maybeSingle();
     if (data) { addSprint(data); router.push(`/${params.orgSlug}/sprints`); }
     setSaving(false);
   }

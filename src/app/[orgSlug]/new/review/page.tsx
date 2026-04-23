@@ -89,7 +89,7 @@ export default function StrategicReviewPage() {
       const date = new Date().toISOString().split("T")[0];
       const { data: ev } = await supabase.from("evidence").insert({
         org_id: org.id, bet_id: betId, date, actual, insight, new_status: outcome, action
-      }).select().single();
+      }).select().limit(1).maybeSingle();
       if (ev) addEvidence(ev);
 
       const updatedBet = {
@@ -115,7 +115,7 @@ export default function StrategicReviewPage() {
           revenue: bet.revenue, margin: bet.margin, importance: bet.importance,
           is_draft: true, source_bet_id: bet.id,
           last_note: `Draft from ${outcome} of ${bet.name}`,
-        }).select().single();
+        }).select().limit(1).maybeSingle();
         if (draft) addBet(draft);
       }
 

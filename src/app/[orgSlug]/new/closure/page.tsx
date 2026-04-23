@@ -100,7 +100,7 @@ export default function SprintClosurePage() {
           revenue:b.revenue, margin:b.margin, importance:b.importance,
           is_draft:true, source_bet_id:b.id,
           last_note:`Draft from ${outcome} of ${b.name}`,
-        }).select().single();
+        }).select().limit(1).maybeSingle();
         if (draft) addBet(draft);
       }
     }

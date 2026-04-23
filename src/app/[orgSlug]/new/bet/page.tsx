@@ -130,7 +130,7 @@ export default function NewBetPage() {
         signal:"Unclear", is_draft:false, status:"Active",
         bet_type: isEnabler ? "enabler" : "strategic",
         parent_alert: false,
-      }).select().single();
+      }).select().limit(1).maybeSingle();
 
       if (!bet) { setError(t("errorCreating")); setSaving(false); return; }
       addBet(bet);
@@ -139,7 +139,7 @@ export default function NewBetPage() {
       for (const parentId of parentBetIds) {
         const { data: aln } = await supabase.from("bet_alignments").insert({
           child_bet_id: bet.id, parent_bet_id: parentId,
-        }).select().single();
+        }).select().limit(1).maybeSingle();
         if (aln) addBetAlignment(aln);
       }
 

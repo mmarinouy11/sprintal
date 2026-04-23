@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
-import { useT } from "@/lib/i18n";
+import { useT, useLocale, setLocale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { writePendingPrimary } from "@/lib/orgPendingPrimary";
 import { COACH_LIMITS } from "@/types";
@@ -492,37 +492,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
 // ── Language Tab ─────────────────────────────────────────────
 function LanguageTab() {
   const t = useT();
-  const [locale, setLocale] = useState("en");
-
-  useEffect(() => {
-    const cookies = document.cookie || "";
-    const directMatch = cookies.match(/(?:^|;\s*)NEXT_LOCALE=([^;]+)/);
-    const directLocale = directMatch?.[1]?.trim().toLowerCase();
-    if (directLocale && ["en", "es", "pt"].includes(directLocale)) {
-      setLocale(directLocale);
-      return;
-    }
-
-    // Defensive fallback for URL-encoded cookie keys/values.
-    const encodedMatch = cookies.match(/NEXT_LOCALE%3D([^;]+)/i);
-    const encodedRaw = encodedMatch?.[1] || "";
-    let decoded = "";
-    try {
-      decoded = decodeURIComponent(encodedRaw).trim().toLowerCase();
-    } catch {
-      decoded = encodedRaw.trim().toLowerCase();
-    }
-
-    if (decoded && ["en", "es", "pt"].includes(decoded)) {
-      setLocale(decoded);
-      return;
-    }
-
-    const navLocale = navigator.language?.slice(0, 2).toLowerCase();
-    if (navLocale === "es" || navLocale === "pt") {
-      setLocale(navLocale);
-    }
-  }, []);
+  const locale = useLocale();
 
   const LANGS = [
     { code: "en", label: "English" },
@@ -531,9 +501,7 @@ function LanguageTab() {
   ];
 
   function setLanguage(code: string) {
-    document.cookie = `NEXT_LOCALE=${code};path=/;max-age=31536000`;
     setLocale(code);
-    window.location.reload();
   }
 
   return (

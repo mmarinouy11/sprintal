@@ -60,7 +60,7 @@ export default function SignalCheckPage() {
     const date = new Date().toISOString().split("T")[0];
     const { data: sc } = await supabase.from("signal_checks").insert({
       org_id:org.id, bet_id:betId, date, prev_signal:bet.signal, signal, note,
-    }).select().single();
+    }).select().limit(1).maybeSingle();
     if (sc) addSignalCheck(sc);
     const { error: updateError } = await supabase.from("bets").update({ signal }).eq("id", betId);
     if (!updateError) updateBet({ ...bet, signal });

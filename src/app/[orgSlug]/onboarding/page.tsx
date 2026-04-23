@@ -129,7 +129,7 @@ export default function OnboardingPage() {
     }
     const { data } = await supabase.from("organizations")
       .update({ primary_color: brandColor, logo_url })
-      .eq("id", org.id).select().single();
+      .eq("id", org.id).select().limit(1).maybeSingle();
     if (data) updateOrg(data);
     setSaving(false);
     setStep(2);
@@ -156,7 +156,7 @@ export default function OnboardingPage() {
 
     const { data } = await supabase.from("sprints").insert({
       ...sprint, org_id: org.id, status: "Active",
-    }).select().single();
+    }).select().limit(1).maybeSingle();
     if (data) { addSprint(data); setSprintId(data.id); }
     setSaving(false);
     setStep(4);
@@ -184,12 +184,12 @@ export default function OnboardingPage() {
         margin: "Medium",
         importance: "Medium",
         is_draft: false,
-      }).select().single();
+      }).select().limit(1).maybeSingle();
       if (data) addBet(data);
     }
     // Mark onboarding complete
     const { error: updateError } = await supabase.from("organizations")
-      .update({ onboarding_complete: true } as any)
+      .update({ onboarding_complete: true })
       .eq("id", org.id);
     
     if (updateError) {
