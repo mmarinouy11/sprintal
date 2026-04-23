@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
@@ -23,8 +22,36 @@ function decodeParam(value: string | null): string {
   }
 }
 
+/** Supabase may return errors in the hash (implicit) or query string (some redirects). */
+function readAuthErrors(): {
+  error: string | null;
+  errorCode: string | null;
+  errorDescription: string;
+} {
+  const hash = parseHashParams();
+  const q =
+    typeof window === "undefined"
+      ? new URLSearchParams()
+      : new URLSearchParams(window.location.search);
+  const error = hash.get("error") || q.get("error");
+  const errorCode = hash.get("error_code") || q.get("error_code");
+  const errorDescription = decodeParam(
+    hash.get("error_description") || q.get("error_description")
+  );
+  return { error, errorCode, errorDescription };
+}
+
+function stripAuthParamsFromUrl() {
+  const url = new URL(window.location.href);
+  url.hash = "";
+  url.searchParams.delete("code");
+  url.searchParams.delete("error");
+  url.searchParams.delete("error_code");
+  url.searchParams.delete("error_description");
+  window.history.replaceState(null, "", `${url.pathname}${url.search}`);
+}
+
 export default function AcceptInvitePage() {
-  const router = useRouter();
   const t = useT("auth");
   const tg = useT();
   const [phase, setPhase] = useState<"loading" | "error" | "redirecting">("loading");
@@ -34,17 +61,13 @@ export default function AcceptInvitePage() {
     let cancelled = false;
 
     async function processInvite() {
-      const params = parseHashParams();
+      const { error: hashOrQueryError, errorCode, errorDescription } = readAuthErrors();
 
-      const hashError = params.get("error");
-      const errorCode = params.get("error_code");
-      const errorDescription = decodeParam(params.get("error_description"));
-
-      if (hashError || errorCode) {
+      if (hashOrQueryError || errorCode) {
         let message = errorDescription;
         if (errorCode === "otp_expired") {
           message = t("inviteOtpExpired");
-        } else if (hashError === "access_denied") {
+        } else if (hashOrQueryError === "access_denied") {
           message = message || t("inviteAccessDenied");
         }
         if (!message) message = t("inviteErrorGeneric");
@@ -55,10 +78,51 @@ export default function AcceptInvitePage() {
         return;
       }
 
-      const access_token = params.get("access_token");
-      const refresh_token = params.get("refresh_token");
+      // @supabase/ssr browser client uses PKCE: tokens often arrive as ?code=... not in the hash.
+      let {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!access_token || !refresh_token) {
+      const searchParams = new URLSearchParams(window.location.search);
+      const code = searchParams.get("code");
+
+      if (!session && code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        ({
+          data: { session },
+        } = await supabase.auth.getSession());
+        if (!session && exchangeError) {
+          if (!cancelled) {
+            setErrorMessage(exchangeError.message || t("inviteSessionError"));
+            setPhase("error");
+          }
+          return;
+        }
+      }
+
+      if (!session) {
+        const params = parseHashParams();
+        const access_token = params.get("access_token");
+        const refresh_token = params.get("refresh_token");
+        if (access_token && refresh_token) {
+          const { error } = await supabase.auth.setSession({
+            access_token,
+            refresh_token,
+          });
+          if (error) {
+            if (!cancelled) {
+              setErrorMessage(error.message || t("inviteSessionError"));
+              setPhase("error");
+            }
+            return;
+          }
+          ({
+            data: { session },
+          } = await supabase.auth.getSession());
+        }
+      }
+
+      if (!session) {
         if (!cancelled) {
           setErrorMessage(t("inviteInvalidLink"));
           setPhase("error");
@@ -66,24 +130,11 @@ export default function AcceptInvitePage() {
         return;
       }
 
-      const { error } = await supabase.auth.setSession({
-        access_token,
-        refresh_token,
-      });
-
-      if (error) {
-        if (!cancelled) {
-          setErrorMessage(error.message || t("inviteSessionError"));
-          setPhase("error");
-        }
-        return;
-      }
-
       if (!cancelled) {
         setPhase("redirecting");
-        const path = window.location.pathname + window.location.search;
-        window.history.replaceState(null, "", path);
-        router.replace("/");
+        stripAuthParamsFromUrl();
+        // Full navigation so the server sees the session cookies set by the browser client.
+        window.location.replace("/");
       }
     }
 
@@ -91,7 +142,7 @@ export default function AcceptInvitePage() {
     return () => {
       cancelled = true;
     };
-  }, [router, t]);
+  }, [t]);
 
   return (
     <div className="min-h-screen flex" style={{ background: "var(--bg)" }}>
