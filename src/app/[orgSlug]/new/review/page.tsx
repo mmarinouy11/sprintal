@@ -155,14 +155,14 @@ export default function StrategicReviewPage() {
 
         <Field label={t("whatHappened")}>
           <textarea className="input" rows={3} value={actual} onChange={e => setActual(e.target.value)} required
-            onBlur={e => coach.check("actual", e.target.value)}
+            onBlur={e => coach.check("actual", e.target.value, org?.id)}
             placeholder={t("whatHappenedPlaceholder")} />
           <CoachObservation observation={coach.results["actual"]?.observation || null} loading={coach.results["actual"]?.loading || false} />
         </Field>
 
         <Field label={t("insight")}>
           <textarea className="input" rows={3} value={insight} onChange={e => setInsight(e.target.value)} required
-            onBlur={e => coach.check("review_insight", e.target.value)}
+            onBlur={e => coach.check("review_insight", e.target.value, org?.id)}
             placeholder={t("insightPlaceholder")} />
           <CoachObservation observation={coach.results["review_insight"]?.observation || null} loading={coach.results["review_insight"]?.loading || false} />
         </Field>

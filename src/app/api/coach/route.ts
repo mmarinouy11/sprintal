@@ -30,42 +30,50 @@ export async function POST(req: NextRequest) {
       value: string;
       sprintDays?: number;
       locale?: string;
-      orgId: string;
+      orgId?: string;
       coachType?: "syntactic" | "semantic";
     };
 
-    if (!field || !value || !FIELD_PROMPTS[field] || !orgId) {
+    if (!field || !value || !FIELD_PROMPTS[field]) {
       return NextResponse.json({ observation: null });
     }
 
-    // Get org plan and coach settings
-    const { data: org } = await supabaseAdmin
-      .from("organizations")
-      .select("plan, coach_syntactic_enabled, coach_semantic_enabled")
-      .eq("id", orgId)
-      .limit(1)
-      .single();
+    let org: {
+      plan: Plan | null;
+      coach_syntactic_enabled: boolean | null;
+      coach_semantic_enabled: boolean | null;
+    } | null = null;
 
-    if (!org) return NextResponse.json({ observation: null });
-
-    // Check if coach is enabled for this org
-    if (coachType === "syntactic" && !org.coach_syntactic_enabled) {
-      return NextResponse.json({ observation: null, disabled: true });
-    }
-    if (coachType === "semantic" && !org.coach_semantic_enabled) {
-      return NextResponse.json({ observation: null, disabled: true });
+    if (orgId) {
+      const { data } = await supabaseAdmin
+        .from("organizations")
+        .select("plan, coach_syntactic_enabled, coach_semantic_enabled")
+        .eq("id", orgId)
+        .limit(1)
+        .maybeSingle();
+      org = data || null;
     }
 
-    // Check usage limits
-    const plan = (org.plan || "trial") as Plan;
+    // Check coach toggles only when org context is available.
+    if (org) {
+      if (coachType === "syntactic" && !org.coach_syntactic_enabled) {
+        return NextResponse.json({ observation: null, disabled: true });
+      }
+      if (coachType === "semantic" && !org.coach_semantic_enabled) {
+        return NextResponse.json({ observation: null, disabled: true });
+      }
+    }
+
+    // Check usage limits only when org context is available.
+    const plan = ((org?.plan || "trial") as Plan);
     const limits = COACH_LIMITS[plan] || COACH_LIMITS["trial"];
-    const limit = coachType === "syntactic" ? limits.syntactic : limits.semantic;
+    const limit = org ? (coachType === "syntactic" ? limits.syntactic : limits.semantic) : -1;
 
     if (limit === 0) {
       return NextResponse.json({ observation: null, limitReached: true, upgradeRequired: true });
     }
 
-    if (limit > 0) { // -1 = unlimited
+    if (limit > 0 && orgId) { // -1 = unlimited
       const month = getMonth();
       const { data: usage } = await supabaseAdmin
         .from("coach_usage")
@@ -117,7 +125,7 @@ export async function POST(req: NextRequest) {
     const observation = text === "NULL" || text === "" ? null : text;
 
     // Record usage if we got a real response
-    if (observation !== null) {
+    if (observation !== null && orgId) {
       const month = getMonth();
       try {
         const { error } = await supabaseAdmin.rpc("increment_coach_usage", {

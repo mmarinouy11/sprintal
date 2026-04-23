@@ -2,6 +2,7 @@
 import { useState, useRef, useCallback } from "react";
 import { FIELD_PROMPTS } from "./prompts";
 import { supabase } from "@/lib/supabase";
+import { useStore } from "@/lib/store";
 
 export type CoachField = keyof typeof FIELD_PROMPTS;
 
@@ -18,6 +19,7 @@ const MIN_LENGTH = 15;
 export function useSyntacticCoach(sprintDays?: number) {
   const [results, setResults] = useState<Record<string, CoachResult>>({});
   const timers = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+  const storeOrgId = useStore((s) => s.org?.id);
 
   const check = useCallback(async (field: CoachField, value: string, orgId?: string) => {
     if (timers.current[field]) clearTimeout(timers.current[field]);
@@ -51,7 +53,7 @@ export function useSyntacticCoach(sprintDays?: number) {
             field,
             value: value.trim(),
             sprintDays,
-            orgId,
+            orgId: orgId || storeOrgId,
             coachType: "syntactic",
             locale: document.cookie.match(/NEXT_LOCALE=([^;]+)/)?.[1] || navigator.language?.slice(0, 2) || "en",
           }),
@@ -71,7 +73,7 @@ export function useSyntacticCoach(sprintDays?: number) {
         setResults(prev => ({ ...prev, [field]: { observation: null, loading: false } }));
       }
     }, DEBOUNCE_MS);
-  }, [sprintDays]);
+  }, [sprintDays, storeOrgId]);
 
   const clear = useCallback((field: CoachField) => {
     if (timers.current[field]) clearTimeout(timers.current[field]);

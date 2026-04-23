@@ -94,7 +94,7 @@ function F({ label, hint, children }: { label: string; hint?: string; children: 
 const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => void; onCancel: () => void }) {
   const t = useT("betDetail");
   const tg = useT();
-  const { childOrgs } = useStore();
+  const { childOrgs, org } = useStore();
   const areas = childOrgs.map(a => a.name);
   const [form, setForm] = useState({
     name:          bet.name || "",
@@ -146,30 +146,30 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
         </F>
       </div>
       <F label={t("strategicOutcome")}>
-        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.outcome} onChange={set("outcome")} onBlur={e => coach.check("outcome", e.target.value)} placeholder={t("outcomePlaceholder")} />
+        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.outcome} onChange={set("outcome")} onBlur={e => coach.check("outcome", e.target.value, org?.id)} placeholder={t("outcomePlaceholder")} />
         <CoachObservation observation={coach.results["outcome"]?.observation || null} loading={coach.results["outcome"]?.loading || false} />
       </F>
       <F label={t("whyNow")}>
-        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.why_now} onChange={set("why_now")} onBlur={e => coach.check("why_now", e.target.value)} placeholder={t("whyNowPlaceholder")} />
+        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.why_now} onChange={set("why_now")} onBlur={e => coach.check("why_now", e.target.value, org?.id)} placeholder={t("whyNowPlaceholder")} />
         <CoachObservation observation={coach.results["why_now"]?.observation || null} loading={coach.results["why_now"]?.loading || false} />
       </F>
       <F label={t("hypothesis")} hint={t("hypothesisHint")}>
         <textarea className={`${inputCls} ${focusStyle}`} style={{...inputStyle, resize:"none"}} rows={3}
-          onBlur={e => coach.check("hypothesis", e.target.value)}
+          onBlur={e => coach.check("hypothesis", e.target.value, org?.id)}
           value={form.hypothesis} onChange={set("hypothesis")} placeholder={t("hypothesisPlaceholder")} />
       </F>
       <div className="grid grid-cols-2 gap-3">
         <F label={t("killCriteria")}>
-          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.kill_criteria} onChange={set("kill_criteria")} onBlur={e => coach.check("kill_criteria", e.target.value)} placeholder={t("killPlaceholder")} />
+          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.kill_criteria} onChange={set("kill_criteria")} onBlur={e => coach.check("kill_criteria", e.target.value, org?.id)} placeholder={t("killPlaceholder")} />
           <CoachObservation observation={coach.results["kill_criteria"]?.observation || null} loading={coach.results["kill_criteria"]?.loading || false} />
         </F>
         <F label={t("scaleTrigger")}>
-          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.scale_trigger} onChange={set("scale_trigger")} onBlur={e => coach.check("scale_trigger", e.target.value)} placeholder={t("scalePlaceholder")} />
+          <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.scale_trigger} onChange={set("scale_trigger")} onBlur={e => coach.check("scale_trigger", e.target.value, org?.id)} placeholder={t("scalePlaceholder")} />
           <CoachObservation observation={coach.results["scale_trigger"]?.observation || null} loading={coach.results["scale_trigger"]?.loading || false} />
         </F>
       </div>
       <F label={t("leadingIndicators")} hint={t("indicatorsHint")}>
-        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.indicators} onChange={set("indicators")} onBlur={e => coach.check("indicators", e.target.value)} placeholder={t("indicatorsPlaceholder")} />
+        <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.indicators} onChange={set("indicators")} onBlur={e => coach.check("indicators", e.target.value, org?.id)} placeholder={t("indicatorsPlaceholder")} />
         <CoachObservation observation={coach.results["indicators"]?.observation || null} loading={coach.results["indicators"]?.loading || false} />
       </F>
       <div className="grid grid-cols-3 gap-3 mb-4">

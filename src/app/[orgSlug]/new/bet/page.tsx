@@ -250,13 +250,13 @@ export default function NewBetPage() {
         </Field>
         <Field label={t("outcome")}>
           <input className="input" value={form.outcome} onChange={set("outcome")}
-            onBlur={e => coach.check("outcome", e.target.value)}
+            onBlur={e => coach.check("outcome", e.target.value, org?.id)}
             placeholder={t("outcomePlaceholder")} required />
           <CoachObservation {...(coach.results["outcome"] || { observation: null, loading: false })} />
         </Field>
         <Field label={t("whyNow")}>
           <input className="input" value={form.why_now} onChange={set("why_now")}
-            onBlur={e => coach.check("why_now", e.target.value)}
+            onBlur={e => coach.check("why_now", e.target.value, org?.id)}
             placeholder={t("whyNowPlaceholder")} />
           <CoachObservation {...(coach.results["why_now"] || { observation: null, loading: false })} />
         </Field>
@@ -264,7 +264,7 @@ export default function NewBetPage() {
         {!isEnabler && (
           <Field label={t("hypothesis")} hint={t("hypothesisPlaceholderShort")}>
             <textarea className="input" rows={3} value={form.hypothesis} onChange={set("hypothesis")} required
-              onBlur={e => coach.check("hypothesis", e.target.value)}
+              onBlur={e => coach.check("hypothesis", e.target.value, org?.id)}
               placeholder={t("hypothesisPlaceholderShort")} />
             <CoachObservation {...(coach.results["hypothesis"] || { observation: null, loading: false })} />
           </Field>
@@ -273,13 +273,13 @@ export default function NewBetPage() {
         <FieldRow>
           <Field label={t("killCriteria")}>
             <input className="input" value={form.kill_criteria} onChange={set("kill_criteria")}
-              onBlur={e => coach.check("kill_criteria", e.target.value)}
+              onBlur={e => coach.check("kill_criteria", e.target.value, org?.id)}
               placeholder={t("killPlaceholderShort")} />
             <CoachObservation {...(coach.results["kill_criteria"] || { observation: null, loading: false })} />
           </Field>
           <Field label={t("scaleTrigger")}>
             <input className="input" value={form.scale_trigger} onChange={set("scale_trigger")}
-              onBlur={e => coach.check("scale_trigger", e.target.value)}
+              onBlur={e => coach.check("scale_trigger", e.target.value, org?.id)}
               placeholder={t("scalePlaceholderShort")} />
             <CoachObservation {...(coach.results["scale_trigger"] || { observation: null, loading: false })} />
           </Field>
@@ -287,7 +287,7 @@ export default function NewBetPage() {
 
         <Field label={t("indicators")} hint={t("indicatorsHint")}>
           <textarea className="input" rows={2} value={form.indicators} onChange={set("indicators")}
-            onBlur={e => coach.check("indicators", e.target.value)}
+            onBlur={e => coach.check("indicators", e.target.value, org?.id)}
             placeholder={t("indicatorsPlaceholder")} />
           <CoachObservation {...(coach.results["indicators"] || { observation: null, loading: false })} />
         </Field>

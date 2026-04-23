@@ -141,7 +141,7 @@ export default function SprintClosurePage() {
                   <input className="input" value={learnings[b.id]||""}
                     onChange={e=>setLearnings(l=>({...l,[b.id]:e.target.value}))}
                     placeholder={t("keyLearningPlaceholder")}
-                    onBlur={e => coach.check("key_learning", e.target.value)} />
+                    onBlur={e => coach.check("key_learning", e.target.value, org?.id)} />
                   <CoachObservation observation={coach.results["key_learning"]?.observation || null} loading={coach.results["key_learning"]?.loading || false} />
                 </Field>
               </FieldRow>
