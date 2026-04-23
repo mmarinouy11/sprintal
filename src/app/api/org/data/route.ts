@@ -29,27 +29,29 @@ export async function GET(req: NextRequest) {
     const slug = req.nextUrl.searchParams.get("slug");
     if (!slug) return NextResponse.json({ error: "slug requerido." }, { status: 400 });
 
-    // Load org rows by slug first (defensive against unexpected duplicates),
-    // then resolve the org through the authenticated user's memberships.
-    const { data: orgRows } = await supabaseAdmin
-      .from("organizations")
-      .select("*")
-      .eq("slug", slug)
-      .limit(10);
-    if (!orgRows?.length) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
-
-    const orgIds = orgRows.map((o: { id: string }) => o.id);
+    // Resolve memberships first, then filter org by slug within accessible org IDs.
     const { data: memberRows } = await supabaseAdmin
       .from("org_members")
       .select("org_id, role")
       .eq("user_id", user.id)
-      .in("org_id", orgIds);
+      .limit(200);
+    if (!memberRows?.length) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
 
-    const member = memberRows?.[0] ?? null;
-    if (!member) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
+    const memberByOrgId = new Map(memberRows.map((m: { org_id: string; role: string }) => [m.org_id, m.role]));
+    const accessibleOrgIds = Array.from(memberByOrgId.keys());
 
-    const org = orgRows.find((o: { id: string }) => o.id === member.org_id) ?? null;
+    const { data: orgRows } = await supabaseAdmin
+      .from("organizations")
+      .select("*")
+      .eq("slug", slug)
+      .in("id", accessibleOrgIds)
+      .order("created_at", { ascending: false })
+      .limit(1);
+
+    const org = orgRows?.[0] ?? null;
     if (!org) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
+    const role = memberByOrgId.get(org.id);
+    if (!role) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
 
     // Get root org plan (L1) — plan applies to entire org tree
     let rootPlan = org.plan;
@@ -89,7 +91,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       org,
       rootPlan,
-      role: member.role,
+      role,
       sprints: sprintsRes.data || [],
       bets,
       evidence: evidenceRes.data || [],
