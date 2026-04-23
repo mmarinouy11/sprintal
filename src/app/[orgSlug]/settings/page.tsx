@@ -229,8 +229,6 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
   const [inviteRole, setInviteRole] = useState<OrgRole>("editor");
   const [inviting, setInviting] = useState(false);
   const [inviteMsg, setInviteMsg] = useState("");
-  const [lastInviteRedirectTo, setLastInviteRedirectTo] = useState("");
-  const [lastInviteBaseSource, setLastInviteBaseSource] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -251,12 +249,8 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
     const data = await res.json();
     if (data.success) {
       setInviteMsg(t("settings.inviteSent"));
-      setLastInviteRedirectTo(typeof data.redirectTo === "string" ? data.redirectTo : "");
-      setLastInviteBaseSource(typeof data.inviteBaseSource === "string" ? data.inviteBaseSource : "");
       setInviteEmail("");
     } else {
-      setLastInviteRedirectTo("");
-      setLastInviteBaseSource("");
       setInviteMsg(data.error || t("settings.inviteError"));
     }
     setInviting(false);
@@ -296,17 +290,6 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
             </button>
           </div>
           {inviteMsg && <p style={{ fontSize: "0.875rem", marginTop: 8, color: inviteMsg.includes("error") || inviteMsg.includes("Error") ? "var(--killed)" : "var(--scaled)" }}>{inviteMsg}</p>}
-          {lastInviteRedirectTo && (
-            <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: "var(--rs)", background: "var(--raised)", border: "1px solid var(--border)" }}>
-              <div className="t-label" style={{ fontSize: "0.6875rem", marginBottom: 4 }}>{t("settings.inviteRedirectDebug")}</div>
-              <div className="t-mono" style={{ fontSize: "0.75rem", color: "var(--t2)", wordBreak: "break-all" }}>{lastInviteRedirectTo}</div>
-              {lastInviteBaseSource && (
-                <div className="t-mono" style={{ fontSize: "0.6875rem", color: "var(--t3)", marginTop: 6 }}>
-                  source: {lastInviteBaseSource}
-                </div>
-              )}
-            </div>
-          )}
         </div>
       )}
 
