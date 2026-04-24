@@ -346,10 +346,25 @@ export default function SemanticCoachPanel({
       : modelUsed === "claude-haiku-4-5-20251001"
         ? "Claude Haiku 4.5"
         : modelUsed;
+  useEffect(() => {
+    if (observation) {
+      // Temporary debug trace requested to validate bullet prefixes in raw model text.
+      console.log("raw observation text:", observation);
+    }
+  }, [observation]);
   const observationBlocks = (observation || "")
     .replace(/\r\n/g, "\n")
     .trim()
     .split(/\n\n+/)
+    .map((block) =>
+      block
+        .split("\n")
+        .map((line) => line.trimEnd())
+        .filter((line) => line.trim().length > 0)
+        .filter((line) => line.trim() !== ".")
+        .join("\n")
+        .trim()
+    )
     .filter(Boolean);
 
   if (dbSemanticEnabled === null) {
@@ -405,62 +420,6 @@ export default function SemanticCoachPanel({
     );
   }
 
-  if (loading) {
-    return (
-      <div
-        className={className}
-        style={{
-          marginTop: compact ? 0 : 12,
-          padding: compact ? "10px 0" : "14px 16px",
-          borderRadius: "var(--r)",
-          background: compact ? "transparent" : "rgba(92,106,196,0.06)",
-          border: compact ? "none" : "1px solid rgba(92,106,196,0.18)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-          <span
-            style={{
-              color: "var(--brand)",
-              fontSize: "1rem",
-              animation: "coachPulse 1.1s ease-in-out infinite",
-              transformOrigin: "center",
-              display: "inline-block",
-            }}
-          >
-            ✦
-          </span>
-          <span style={{ fontWeight: 700, fontSize: "0.9375rem", color: "var(--text)" }}>
-            {t("strategicAnalysis")}
-          </span>
-        </div>
-        <style>{`@keyframes coachPulse{0%{transform:scale(1);opacity:0.75}50%{transform:scale(1.14);opacity:1}100%{transform:scale(1);opacity:0.75}}`}</style>
-        <div style={{ marginBottom: 8 }}>
-          <div className="t-mono text-sm mb-2" style={{ color: "var(--brand)" }}>
-            {statusLabel}
-          </div>
-          <div
-            style={{
-              height: 8,
-              borderRadius: 4,
-              background: "var(--raised)",
-              overflow: "hidden",
-              border: "1px solid rgba(92,106,196,0.2)",
-            }}
-          >
-            <div
-              style={{
-                height: "100%",
-                width: `${progress}%`,
-                background: "var(--brand)",
-                transition: "width 0.3s ease",
-              }}
-            />
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div
       className={className}
@@ -490,7 +449,7 @@ export default function SemanticCoachPanel({
       </div>
       <style>{`@keyframes coachPulse{0%{transform:scale(1);opacity:0.75}50%{transform:scale(1.14);opacity:1}100%{transform:scale(1);opacity:0.75}}`}</style>
 
-      {mode === "bet" && !autoRun && (
+      {mode === "bet" && !autoRun && !loading && (
         <button
           type="button"
           onClick={() => runFetch()}
@@ -502,21 +461,47 @@ export default function SemanticCoachPanel({
         </button>
       )}
 
-      {limitReached && (
+      {loading && (
+        <div style={{ marginBottom: 8 }}>
+          <div className="t-mono text-sm mb-2" style={{ color: "var(--brand)" }}>
+            {statusLabel}
+          </div>
+          <div
+            style={{
+              height: 8,
+              borderRadius: 4,
+              background: "var(--raised)",
+              overflow: "hidden",
+              border: "1px solid rgba(92,106,196,0.2)",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${progress}%`,
+                background: "var(--brand)",
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+        </div>
+      )}
+
+      {!loading && limitReached && (
         <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--unclear)" }}>{t("limitReached")}</p>
       )}
 
-      {insufficientContext && (
+      {!loading && insufficientContext && (
         <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--t2)", lineHeight: 1.5 }}>
           {t("portfolioInsufficientContext")}
         </p>
       )}
 
-      {error && (
+      {!loading && error && (
         <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--killed)" }}>{t("analysisError")}</p>
       )}
 
-      {observation && (
+      {!loading && observation && (
         <>
           <div
             style={{
@@ -528,7 +513,10 @@ export default function SemanticCoachPanel({
           <div style={{ marginBottom: 12 }}>
             {observationBlocks.map((block, blockIdx) => {
               const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-              const bulletLines = lines.filter((line) => /^[-•]\s+/.test(line));
+              const bulletLines = lines.filter((line) => {
+                const ls = line.trimStart();
+                return ls.startsWith("- ") || ls.startsWith("• ");
+              });
               const isList = lines.length > 0 && bulletLines.length === lines.length;
 
               if (isList) {
@@ -546,7 +534,7 @@ export default function SemanticCoachPanel({
                   >
                     {lines.map((line, i) => (
                       <li key={`li-${i}`} style={{ marginBottom: 4 }}>
-                        {renderInlineBold(line.replace(/^[-•]\s+/, ""))}
+                        {renderInlineBold(line.trimStart().replace(/^[-•]\s+/, ""))}
                       </li>
                     ))}
                   </ul>

@@ -166,7 +166,13 @@ export function parseSemanticAssistantText(raw: string): {
     return { observation: normalized, sources: [] };
   }
 
-  const observation = lines.slice(0, splitLine).join("\n").trim();
+  const observation = lines
+    .slice(0, splitLine)
+    .join("\n")
+    .trim()
+    .replace(/\n[ \t]*\.[ \t]*$/g, "")
+    .replace(/[ \t]+$/g, "")
+    .trim();
   const sourceLines = lines.slice(splitLine);
   const sourcesPart = sourceLines.join("\n").replace(/^\s*SOURCES:\s*/i, "").trim();
   const sources: Array<{ title: string; url?: string }> = [];
