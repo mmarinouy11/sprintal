@@ -46,7 +46,7 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
 }
 
 function creditsUsed(usage?: CoachUsage | null): number {
-  return usage?.syntactic_calls || 0;
+  return (usage?.syntactic_calls || 0) + (usage?.semantic_calls || 0) * 5;
 }
 
 // ── Main page ────────────────────────────────────────────────
@@ -389,7 +389,10 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
   }
 
   const semanticAvailable = limits.semantic > 0 || limits.semantic === -1;
-  const unifiedUsed = creditsUsed(usage);
+  const syntacticUsed = usage?.syntactic_calls || 0;
+  const semanticUsed = usage?.semantic_calls || 0;
+  const semanticWeighted = semanticUsed * 5;
+  const unifiedUsed = syntacticUsed + semanticWeighted;
 
   function Toggle({ enabled, onClick, disabled }: { enabled: boolean; onClick: () => void; disabled?: boolean }) {
     return (
@@ -438,6 +441,11 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
         <div>
           <div className="t-label mb-2">{t("settings.coachCreditsUsedThisMonth")}</div>
           <UsageBar used={unifiedUsed} limit={limits.syntactic} />
+          <div className="mt-2" style={{ fontSize: "0.75rem", color: "var(--t2)" }}>
+            {t("settings.formulationChecks")}: {syntacticUsed} &nbsp;·&nbsp;{" "}
+            {t("settings.strategicAnalyses")}: {semanticUsed}{" "}
+            {t("settings.creditsWeight", { count: semanticWeighted })}
+          </div>
         </div>
       </div>
 

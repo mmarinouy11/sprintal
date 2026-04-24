@@ -476,6 +476,9 @@
     "availableIn": "Disponible en",
     "coachCreditsUsedThisMonth": "Créditos de Coach usados este mes",
     "creditsUsed": "Créditos usados",
+    "formulationChecks": "Chequeos de formulación",
+    "strategicAnalyses": "Análisis estratégicos",
+    "creditsWeight": "(×5 = {{count}} créditos)",
     "rootBadge": "raíz",
     "starterPlan": "Starter"
   }

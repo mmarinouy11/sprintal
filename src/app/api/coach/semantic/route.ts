@@ -39,17 +39,18 @@ function extractAnthropicText(payload: {
   return parts.join("\n\n").trim();
 }
 
-async function incrementSyntacticWeighted(
+async function incrementCoachUsage(
   supabaseAdmin: SupabaseClient,
   orgId: string,
   month: string,
-  delta: number
+  syntacticDelta: number,
+  semanticDelta: number
 ) {
   const { error } = await supabaseAdmin.rpc("increment_coach_usage", {
     p_org_id: orgId,
     p_month: month,
-    p_syntactic: delta,
-    p_semantic: 0,
+    p_syntactic: syntacticDelta,
+    p_semantic: semanticDelta,
   });
   if (error) {
     const { data: row } = await supabaseAdmin
@@ -63,8 +64,8 @@ async function incrementSyntacticWeighted(
       {
         org_id: orgId,
         month,
-        syntactic_calls: (row?.syntactic_calls ?? 0) + delta,
-        semantic_calls: row?.semantic_calls ?? 0,
+        syntactic_calls: (row?.syntactic_calls ?? 0) + syntacticDelta,
+        semantic_calls: (row?.semantic_calls ?? 0) + semanticDelta,
       },
       { onConflict: "org_id,month" }
     );
@@ -140,18 +141,21 @@ export async function POST(req: NextRequest) {
     }
 
     const month = getMonth();
-    let currentUsage = 0;
+    let currentSyntacticUsage = 0;
+    let currentSemanticUsage = 0;
     const unifiedLimit = limits.syntactic;
     if (limits.syntactic >= 0) {
       const { data: usage } = await supabaseAdmin
         .from("coach_usage")
-        .select("syntactic_calls")
+        .select("syntactic_calls, semantic_calls")
         .eq("org_id", orgId)
         .eq("month", month)
         .limit(1)
         .maybeSingle();
-      currentUsage = usage?.syntactic_calls ?? 0;
-      const remainingBudget = limits.syntactic - currentUsage;
+      currentSyntacticUsage = usage?.syntactic_calls ?? 0;
+      currentSemanticUsage = usage?.semantic_calls ?? 0;
+      const totalUsed = currentSyntacticUsage + currentSemanticUsage * 5;
+      const remainingBudget = limits.syntactic - totalUsed;
       if (remainingBudget < 5) {
         return NextResponse.json({
           observation: null,
@@ -276,12 +280,17 @@ export async function POST(req: NextRequest) {
       parsed.observation || text.replace(/\nSOURCES:[\s\S]*$/i, "").trim() || null;
 
     let creditsRemaining =
-      unifiedLimit === -1 ? -1 : Math.max(0, unifiedLimit - currentUsage);
+      unifiedLimit === -1
+        ? -1
+        : Math.max(
+            0,
+            unifiedLimit - (currentSyntacticUsage + currentSemanticUsage * 5)
+          );
     if (observation) {
-      await incrementSyntacticWeighted(supabaseAdmin, orgId, month, 5);
-      const updatedUsage = currentUsage + 5;
+      await incrementCoachUsage(supabaseAdmin, orgId, month, 0, 1);
+      const updatedTotal = currentSyntacticUsage + (currentSemanticUsage + 1) * 5;
       creditsRemaining =
-        unifiedLimit === -1 ? -1 : Math.max(0, unifiedLimit - updatedUsage);
+        unifiedLimit === -1 ? -1 : Math.max(0, unifiedLimit - updatedTotal);
     }
 
     return NextResponse.json({
