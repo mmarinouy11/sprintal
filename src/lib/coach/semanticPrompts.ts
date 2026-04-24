@@ -11,6 +11,8 @@ Output rules:
 - Maximum 4 sentences OR 4 bullet points in the observation body.
 - Cover internal coherence (hypothesis vs kill/scale vs indicators vs signal vs sprint timing vs duplication vs alignment vs portfolio balance) AND, when useful, external context from web search (trends, benchmarks, research).
 - If web search yields nothing relevant, rely on internal coherence only — do not apologize at length.
+- Do NOT insert citations inline within sentences.
+- Never use parenthetical citations like (McKinsey, 2024) inline.
 - Sources must always go at the end, prefixed with ↗ and separated from the observation body.
 - After the observation, output source lines exactly like:
 ↗ [Title](url)
@@ -150,21 +152,23 @@ export function parseSemanticAssistantText(raw: string): {
   observation: string;
   sources: Array<{ title: string; url?: string }>;
 } {
-  const trimmed = raw.trim();
-  const arrowIdx = trimmed.search(/\n↗\s*/);
-  const sourcesIdx = trimmed.search(/\nSOURCES:\s*/i);
-  const splitIdx =
-    arrowIdx >= 0 && sourcesIdx >= 0
-      ? Math.min(arrowIdx, sourcesIdx)
-      : arrowIdx >= 0
-        ? arrowIdx
-        : sourcesIdx;
-
-  if (splitIdx === -1) {
-    return { observation: trimmed, sources: [] };
+  const normalized = raw.replace(/\r\n/g, "\n").trim();
+  const lines = normalized.split("\n");
+  let splitLine = -1;
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+    if (line.startsWith("↗") || /^SOURCES:\s*/i.test(line)) {
+      splitLine = i;
+      break;
+    }
   }
-  const observation = trimmed.slice(0, splitIdx).trim();
-  const sourcesPart = trimmed.slice(splitIdx).replace(/^\s*SOURCES:\s*/i, "").trim();
+  if (splitLine === -1) {
+    return { observation: normalized, sources: [] };
+  }
+
+  const observation = lines.slice(0, splitLine).join("\n").trim();
+  const sourceLines = lines.slice(splitLine);
+  const sourcesPart = sourceLines.join("\n").replace(/^\s*SOURCES:\s*/i, "").trim();
   const sources: Array<{ title: string; url?: string }> = [];
   const linkRe = /\[([^\]]+)\]\(([^)]*)\)/g;
   let m: RegExpExecArray | null;

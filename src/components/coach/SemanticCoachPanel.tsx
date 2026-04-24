@@ -120,6 +120,11 @@ export default function SemanticCoachPanel({
   const [dbSemanticEnabled, setDbSemanticEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
+    // Temporary debug trace requested to verify loading transitions.
+    console.log("loading state:", loading);
+  }, [loading]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
@@ -400,6 +405,62 @@ export default function SemanticCoachPanel({
     );
   }
 
+  if (loading) {
+    return (
+      <div
+        className={className}
+        style={{
+          marginTop: compact ? 0 : 12,
+          padding: compact ? "10px 0" : "14px 16px",
+          borderRadius: "var(--r)",
+          background: compact ? "transparent" : "rgba(92,106,196,0.06)",
+          border: compact ? "none" : "1px solid rgba(92,106,196,0.18)",
+        }}
+      >
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+          <span
+            style={{
+              color: "var(--brand)",
+              fontSize: "1rem",
+              animation: "coachPulse 1.1s ease-in-out infinite",
+              transformOrigin: "center",
+              display: "inline-block",
+            }}
+          >
+            ✦
+          </span>
+          <span style={{ fontWeight: 700, fontSize: "0.9375rem", color: "var(--text)" }}>
+            {t("strategicAnalysis")}
+          </span>
+        </div>
+        <style>{`@keyframes coachPulse{0%{transform:scale(1);opacity:0.75}50%{transform:scale(1.14);opacity:1}100%{transform:scale(1);opacity:0.75}}`}</style>
+        <div style={{ marginBottom: 8 }}>
+          <div className="t-mono text-sm mb-2" style={{ color: "var(--brand)" }}>
+            {statusLabel}
+          </div>
+          <div
+            style={{
+              height: 8,
+              borderRadius: 4,
+              background: "var(--raised)",
+              overflow: "hidden",
+              border: "1px solid rgba(92,106,196,0.2)",
+            }}
+          >
+            <div
+              style={{
+                height: "100%",
+                width: `${progress}%`,
+                background: "var(--brand)",
+                transition: "width 0.3s ease",
+              }}
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className={className}
@@ -441,47 +502,21 @@ export default function SemanticCoachPanel({
         </button>
       )}
 
-      {loading && (
-        <div style={{ marginBottom: 8 }}>
-          <div className="t-mono text-sm mb-2" style={{ color: "var(--brand)" }}>
-            {statusLabel}
-          </div>
-          <div
-            style={{
-              height: 8,
-              borderRadius: 4,
-              background: "var(--raised)",
-              overflow: "hidden",
-              border: "1px solid rgba(92,106,196,0.2)",
-            }}
-          >
-            <div
-              style={{
-                height: "100%",
-                width: `${progress}%`,
-                background: "var(--brand)",
-                transition: "width 0.3s ease",
-              }}
-            />
-          </div>
-        </div>
-      )}
-
-      {limitReached && !loading && (
+      {limitReached && (
         <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--unclear)" }}>{t("limitReached")}</p>
       )}
 
-      {insufficientContext && !loading && (
+      {insufficientContext && (
         <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--t2)", lineHeight: 1.5 }}>
           {t("portfolioInsufficientContext")}
         </p>
       )}
 
-      {error && !loading && (
+      {error && (
         <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--killed)" }}>{t("analysisError")}</p>
       )}
 
-      {!loading && observation && (
+      {observation && (
         <>
           <div
             style={{
