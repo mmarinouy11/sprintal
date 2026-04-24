@@ -105,6 +105,7 @@ export default function SemanticCoachPanel({
   const [insufficientContext, setInsufficientContext] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [modelUsed, setModelUsed] = useState<string | null>(null);
+  const [creditsRemaining, setCreditsRemaining] = useState<number | null>(null);
   const [ts, setTs] = useState<string | null>(null);
   const [phase, setPhase] = useState(0);
   const [progress, setProgress] = useState(0);
@@ -160,6 +161,7 @@ export default function SemanticCoachPanel({
     setInsufficientContext(false);
     setError(null);
     setModelUsed(null);
+    setCreditsRemaining(null);
     setObservation(null);
     setSources([]);
     setPhase(0);
@@ -245,10 +247,14 @@ export default function SemanticCoachPanel({
         limitReached?: boolean;
         insufficientContext?: boolean;
         modelUsed?: string | null;
+        creditsRemaining?: number;
       };
 
       if (data.limitReached) {
         setLimitReached(true);
+        if (typeof data.creditsRemaining === "number") {
+          setCreditsRemaining(data.creditsRemaining);
+        }
         return;
       }
       if (data.insufficientContext) {
@@ -256,6 +262,9 @@ export default function SemanticCoachPanel({
         return;
       }
       setModelUsed(data.modelUsed || null);
+      if (typeof data.creditsRemaining === "number") {
+        setCreditsRemaining(data.creditsRemaining);
+      }
       setObservation(data.observation ?? null);
       setSources(data.sources || []);
       setTs(new Date().toLocaleString(locale === "en" ? "en-US" : locale === "es" ? "es" : "pt-BR"));
@@ -341,6 +350,15 @@ export default function SemanticCoachPanel({
       : modelUsed === "claude-haiku-4-5-20251001"
         ? "Claude Haiku 4.5"
         : modelUsed;
+  const creditsLabel = t("creditsUsedCount", { count: String(5) });
+  const remainingLabel =
+    creditsRemaining === -1
+      ? creditsLabel
+      : creditsRemaining === 0
+        ? `${creditsLabel} · ${t("creditsLimitReached")}`
+        : typeof creditsRemaining === "number"
+          ? `${creditsLabel} · ${t("creditsRemaining", { count: String(creditsRemaining) })}`
+          : null;
   const cleanedObservation = (observation || "")
     .replace(/\r\n/g, "\n")
     .replace(/\n\s*,/g, ",")
@@ -574,6 +592,17 @@ export default function SemanticCoachPanel({
             {ts && (
               <span className="t-mono" style={{ fontSize: "0.75rem", color: "var(--t3)" }}>
                 {ts}
+              </span>
+            )}
+            {remainingLabel && (
+              <span
+                className="t-mono"
+                style={{
+                  fontSize: "0.75rem",
+                  color: creditsRemaining === 0 ? "var(--killed)" : "var(--t2)",
+                }}
+              >
+                ✦ {remainingLabel}
               </span>
             )}
             {modelLabel && (

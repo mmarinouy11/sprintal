@@ -116,7 +116,10 @@
     "limitReached": "Monthly analysis limit reached.",
     "notEnabled": "Strategic analysis not enabled for this area.",
     "analysisError": "Could not load analysis. Try again.",
-    "modelUsed": "Model"
+    "modelUsed": "Model",
+    "creditsUsedCount": "{{count}} credits",
+    "creditsRemaining": "{{count}} remaining",
+    "creditsLimitReached": "limit reached"
   },
   "trial": {
     "expired": "Your trial has ended",

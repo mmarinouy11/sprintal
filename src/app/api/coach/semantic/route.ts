@@ -141,6 +141,7 @@ export async function POST(req: NextRequest) {
 
     const month = getMonth();
     let currentUsage = 0;
+    const unifiedLimit = limits.syntactic;
     if (limits.syntactic >= 0) {
       const { data: usage } = await supabaseAdmin
         .from("coach_usage")
@@ -152,7 +153,12 @@ export async function POST(req: NextRequest) {
       currentUsage = usage?.syntactic_calls ?? 0;
       const remainingBudget = limits.syntactic - currentUsage;
       if (remainingBudget < 5) {
-        return NextResponse.json({ observation: null, sources: [], limitReached: true });
+        return NextResponse.json({
+          observation: null,
+          sources: [],
+          limitReached: true,
+          creditsRemaining: 0,
+        });
       }
     }
 
@@ -269,14 +275,20 @@ export async function POST(req: NextRequest) {
     const observation =
       parsed.observation || text.replace(/\nSOURCES:[\s\S]*$/i, "").trim() || null;
 
+    let creditsRemaining =
+      unifiedLimit === -1 ? -1 : Math.max(0, unifiedLimit - currentUsage);
     if (observation) {
       await incrementSyntacticWeighted(supabaseAdmin, orgId, month, 5);
+      const updatedUsage = currentUsage + 5;
+      creditsRemaining =
+        unifiedLimit === -1 ? -1 : Math.max(0, unifiedLimit - updatedUsage);
     }
 
     return NextResponse.json({
       observation,
       sources: parsed.sources,
       modelUsed,
+      creditsRemaining,
     });
   } catch {
     return NextResponse.json({ observation: null, sources: [] });

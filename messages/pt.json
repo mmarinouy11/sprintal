@@ -116,7 +116,10 @@
     "limitReached": "Limite mensal de análises atingido.",
     "notEnabled": "Análise estratégica não habilitada para esta área.",
     "analysisError": "Não foi possível carregar a análise. Tente novamente.",
-    "modelUsed": "Modelo"
+    "modelUsed": "Modelo",
+    "creditsUsedCount": "{{count}} créditos",
+    "creditsRemaining": "{{count}} restantes",
+    "creditsLimitReached": "limite atingido"
   },
   "trial": {
     "expired": "Seu período de teste encerrou",

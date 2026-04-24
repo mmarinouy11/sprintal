@@ -45,6 +45,10 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
   );
 }
 
+function creditsUsed(usage?: CoachUsage | null): number {
+  return (usage?.syntactic_calls || 0) + (usage?.semantic_calls || 0) * 5;
+}
+
 // ── Main page ────────────────────────────────────────────────
 export default function SettingsPage() {
   const { org, role, childOrgs, updateOrg } = useStore();
@@ -385,6 +389,10 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
   }
 
   const semanticAvailable = limits.semantic > 0 || limits.semantic === -1;
+  const unifiedUsed = creditsUsed(usage);
+  const totalSemanticCalls = usage?.semantic_calls || 0;
+  const semanticWeighted = totalSemanticCalls * 5;
+  const syntacticCalls = usage?.syntactic_calls || 0;
 
   function Toggle({ enabled, onClick, disabled }: { enabled: boolean; onClick: () => void; disabled?: boolean }) {
     return (
@@ -430,17 +438,11 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <span style={{ fontWeight: 600, fontSize: "0.875rem", color: "var(--text)" }}>{t("settings.planUsage")}</span>
           <span style={{ fontSize: "0.75rem", color: "var(--t2)", fontFamily: "var(--font-mono)" }}>{month}</span>
         </div>
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <div className="t-label mb-2">{t("settings.syntacticCalls")}</div>
-            <UsageBar used={usage?.syntactic_calls || 0} limit={limits.syntactic} />
-          </div>
-          <div>
-            <div className="t-label mb-2">{t("settings.semanticCalls")}</div>
-            {semanticAvailable
-              ? <UsageBar used={usage?.semantic_calls || 0} limit={limits.semantic} />
-              : <UpgradeBadge nextPlan="Starter" />
-            }
+        <div>
+          <div className="t-label mb-2">Coach Credits Used This Month</div>
+          <UsageBar used={unifiedUsed} limit={limits.syntactic} />
+          <div className="mt-2" style={{ fontSize: "0.75rem", color: "var(--t2)" }}>
+            Formulation checks: {syntacticCalls} &nbsp;&nbsp; Strategic analyses: {totalSemanticCalls} (×5 = {semanticWeighted} credits)
           </div>
         </div>
       </div>
@@ -449,18 +451,18 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
       <div className="t-label mb-3">{t("settings.coachByArea")}</div>
       <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", overflow: "hidden" }}>
         {/* Header */}
-        <div className="grid px-5 py-2" style={{ gridTemplateColumns: "1fr 80px 80px 140px 140px", background: "var(--raised)", borderBottom: "1px solid var(--border)", fontSize: "0.75rem", fontWeight: 700, color: "var(--t2)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <div className="grid px-5 py-2" style={{ gridTemplateColumns: "1fr 80px 80px 180px", background: "var(--raised)", borderBottom: "1px solid var(--border)", fontSize: "0.75rem", fontWeight: 700, color: "var(--t2)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
           <div>{t("settings.area")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.syntactic")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.semantic")}</div>
-          <div>{t("settings.syntacticUsage")}</div>
-          <div>{t("settings.semanticUsage")}</div>
+          <div>Credits used</div>
         </div>
         {allOrgs.map((a, i) => {
           const u = a.isRoot ? usage : areaUsage[a.id];
+          const areaCreditsUsed = creditsUsed(u);
           return (
             <div key={a.id} className="grid items-center px-5 py-3"
-              style={{ gridTemplateColumns: "1fr 80px 80px 140px 140px", borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
+              style={{ gridTemplateColumns: "1fr 80px 80px 180px", borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
               <div>
                 <span style={{ fontSize: "0.875rem", color: "var(--text)", fontWeight: a.isRoot ? 600 : 400 }}>{a.name}</span>
                 {a.isRoot && <span className="badge ml-2" style={{ fontSize: "0.6rem" }}>root</span>}
@@ -479,13 +481,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
                     : <span style={{ fontSize: "0.8125rem", color: a.coach_semantic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_semantic_enabled ? "On" : "Off"}</span>
                 }
               </div>
-              <div><UsageBar used={u?.syntactic_calls || 0} limit={limits.syntactic} /></div>
-              <div>
-                {semanticAvailable
-                  ? <UsageBar used={u?.semantic_calls || 0} limit={limits.semantic} />
-                  : <span style={{ fontSize: "0.8125rem", color: "var(--t3)" }}>—</span>
-                }
-              </div>
+              <div><UsageBar used={areaCreditsUsed} limit={limits.syntactic} /></div>
             </div>
           );
         })}
