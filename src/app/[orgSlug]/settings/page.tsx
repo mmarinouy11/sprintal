@@ -332,6 +332,7 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
 // ── Coach Tab ────────────────────────────────────────────────
 function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isAdmin: boolean }) {
   const t = useT();
+  const { updateOrg } = useStore();
   const [localOrgs, setLocalOrgs] = useState<any[]>([]);
   const [usage, setUsage] = useState<CoachUsage | null>(null);
   const [areaUsage, setAreaUsage] = useState<Record<string, CoachUsage>>({});
@@ -373,8 +374,12 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
     setToggling(orgId + field);
     const { error } = await supabase.from("organizations").update({ [field]: !current }).eq("id", orgId);
     if (!error) {
-      // Update local state — no reload needed
-      setLocalOrgs(prev => prev.map(o => o.id === orgId ? { ...o, [field]: !current } : o));
+      const next = !current;
+      setLocalOrgs(prev => prev.map(o => o.id === orgId ? { ...o, [field]: next } : o));
+      // Keep Zustand org in sync so dashboard / coach panels see the new flags without a full reload
+      if (orgId === org.id) {
+        updateOrg({ [field]: next });
+      }
     }
     setToggling(null);
   }
