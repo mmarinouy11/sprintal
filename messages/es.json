@@ -110,6 +110,9 @@
     "availableIn": "Disponible en",
     "availableInStarter": "Disponible en Starter →",
     "portfolioAnalysis": "Análisis de portafolio",
+    "analyzePortfolioBtn": "✦ Analizar portafolio",
+    "portfolioAnalyzeTooltip": "Agregá al menos 3 apuestas activas con hipótesis para habilitar el análisis de portafolio.",
+    "portfolioInsufficientContext": "Todavía no hay datos suficientes. Completá al menos 3 hipótesis de apuestas para obtener un análisis de portafolio.",
     "limitReached": "Alcanzaste el límite mensual de análisis.",
     "notEnabled": "El análisis estratégico no está habilitado para esta área.",
     "analysisError": "No se pudo cargar el análisis. Probá de nuevo."

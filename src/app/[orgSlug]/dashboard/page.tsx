@@ -1,5 +1,5 @@
 "use client";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import MetricsBar from "@/components/dashboard/MetricsBar";
 import PortfolioDonut from "@/components/dashboard/PortfolioDonut";
@@ -11,6 +11,7 @@ import LoadingScreen from "@/components/ui/LoadingScreen";
 import { useT } from "@/lib/i18n";
 import RollupDashboard from "@/components/dashboard/RollupDashboard";
 import OwnedBetsSection from "@/components/dashboard/OwnedBetsSection";
+import PortfolioSemanticSlideover from "@/components/dashboard/PortfolioSemanticSlideover";
 import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
 import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
 import { COACH_LIMITS } from "@/types";
@@ -29,13 +30,28 @@ export default function DashboardPage() {
   const planForCoach = effectiveCoachPlan(rootPlan, org?.plan);
   const t = useT("dashboard");
   const tCoach = useT("coach");
+  const [portfolioSlideOpen, setPortfolioSlideOpen] = useState(false);
   const activeSprint = sprints.find((s) => s.status === "Active");
   const activeBets = useMemo(
     () => bets.filter((b) => b.sprint_id === activeSprint?.id && b.status === "Active"),
     [bets, activeSprint?.id]
   );
-  /** Always mount when there are active sprint bets so users see upgrade/settings hints instead of nothing */
-  const showPortfolioCoachSection = !!org && activeBets.length > 0;
+  const betsWithHypothesis = useMemo(
+    () => activeBets.filter((b) => (b.hypothesis || "").trim().length > 0),
+    [activeBets]
+  );
+  const portfolioEligible = betsWithHypothesis.length >= 3;
+  const semanticPlanOk = (COACH_LIMITS[planForCoach]?.semantic ?? 0) !== 0;
+  const showPortfolioRow = !!org && activeBets.length > 0;
+
+  const portfolioOpenDisabled = !semanticPlanOk || !portfolioEligible;
+
+  const portfolioOpenTitle = (() => {
+    if (!org) return undefined;
+    if (!semanticPlanOk) return tCoach("availableInStarter");
+    if (!portfolioEligible) return tCoach("portfolioAnalyzeTooltip");
+    return undefined;
+  })();
 
   if (loading) return <LoadingScreen />;
   return (
@@ -66,9 +82,28 @@ export default function DashboardPage() {
 
       <OwnedBetsSection />
       <Section label={t("activeBets")}><ActiveBetsTable /></Section>
-      {showPortfolioCoachSection && org && (
+      {showPortfolioRow && org && (
         <Section label={tCoach("portfolioAnalysis")}>
+          <button
+            type="button"
+            disabled={portfolioOpenDisabled}
+            title={portfolioOpenTitle}
+            onClick={() => setPortfolioSlideOpen(true)}
+            className="btn-primary py-2 px-3 text-sm"
+            style={{ fontFamily: "var(--font-body)" }}
+          >
+            {tCoach("analyzePortfolioBtn")}
+          </button>
+        </Section>
+      )}
+      {portfolioSlideOpen && org && semanticPlanOk && portfolioEligible && (
+        <PortfolioSemanticSlideover
+          open={portfolioSlideOpen}
+          onClose={() => setPortfolioSlideOpen(false)}
+          title={tCoach("portfolioAnalysis")}
+        >
           <SemanticCoachPanel
+            compact
             mode="portfolio"
             orgId={org.id}
             orgName={org.name}
@@ -76,9 +111,9 @@ export default function DashboardPage() {
             plan={planForCoach}
             portfolioBets={activeBets}
             sprint={activeSprint ?? null}
-            autoRun={(COACH_LIMITS[planForCoach]?.semantic ?? 0) !== 0}
+            autoRun={false}
           />
-        </Section>
+        </PortfolioSemanticSlideover>
       )}
       <Section label={t("decisionFocus")}><DecisionFocus /></Section>
       <Section label={t("overdueReview")}><PendingUpdates type="review" /></Section>

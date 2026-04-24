@@ -125,6 +125,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ observation: null, sources: [], limitReached: true });
     }
 
+    if (analysisType === "portfolio") {
+      const bets = body.allBets || [];
+      const withHypothesis = bets.filter(
+        (b) => typeof b.hypothesis === "string" && b.hypothesis.trim().length > 0
+      );
+      if (withHypothesis.length < 3) {
+        return NextResponse.json({
+          observation: null,
+          sources: [],
+          insufficientContext: true,
+        });
+      }
+    }
+
     const month = getMonth();
     let currentUsage = 0;
     if (limits.syntactic >= 0) {

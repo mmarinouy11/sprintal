@@ -55,6 +55,8 @@ export interface SemanticCoachPanelProps {
   autoRun?: boolean;
   reviewRunNonce?: number;
   className?: string;
+  /** Remove top margin when embedded (e.g. dashboard slide-over) */
+  compact?: boolean;
 }
 
 const PHASE_MS = 4000;
@@ -73,6 +75,7 @@ export default function SemanticCoachPanel({
   autoRun = false,
   reviewRunNonce = 0,
   className = "",
+  compact = false,
 }: SemanticCoachPanelProps) {
   const t = useT("coach");
   const locale = useLocale();
@@ -83,6 +86,7 @@ export default function SemanticCoachPanel({
   const [observation, setObservation] = useState<string | null>(null);
   const [sources, setSources] = useState<Array<{ title: string; url?: string }>>([]);
   const [limitReached, setLimitReached] = useState(false);
+  const [insufficientContext, setInsufficientContext] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ts, setTs] = useState<string | null>(null);
   const [phase, setPhase] = useState(0);
@@ -133,6 +137,7 @@ export default function SemanticCoachPanel({
     if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     setLoading(true);
     setLimitReached(false);
+    setInsufficientContext(false);
     setError(null);
     setObservation(null);
     setSources([]);
@@ -215,10 +220,15 @@ export default function SemanticCoachPanel({
         observation: string | null;
         sources?: Array<{ title: string; url?: string }>;
         limitReached?: boolean;
+        insufficientContext?: boolean;
       };
 
       if (data.limitReached) {
         setLimitReached(true);
+        return;
+      }
+      if (data.insufficientContext) {
+        setInsufficientContext(true);
         return;
       }
       setObservation(data.observation ?? null);
@@ -287,7 +297,7 @@ export default function SemanticCoachPanel({
       <div
         className={className}
         style={{
-          marginTop: 12,
+          marginTop: compact ? 0 : 12,
           padding: "12px 14px",
           borderRadius: "var(--r)",
           background: "rgba(92,106,196,0.06)",
@@ -304,7 +314,7 @@ export default function SemanticCoachPanel({
       <div
         className={className}
         style={{
-          marginTop: 12,
+          marginTop: compact ? 0 : 12,
           padding: "12px 14px",
           borderRadius: "var(--r)",
           background: "rgba(92,106,196,0.06)",
@@ -321,7 +331,7 @@ export default function SemanticCoachPanel({
       <div
         className={className}
         style={{
-          marginTop: 12,
+          marginTop: compact ? 0 : 12,
           padding: "10px 12px",
           borderRadius: "var(--r)",
           background: "var(--raised)",
@@ -339,11 +349,11 @@ export default function SemanticCoachPanel({
     <div
       className={className}
       style={{
-        marginTop: 12,
-        padding: "14px 16px",
+        marginTop: compact ? 0 : 12,
+        padding: compact ? "10px 0" : "14px 16px",
         borderRadius: "var(--r)",
-        background: "rgba(92,106,196,0.06)",
-        border: "1px solid rgba(92,106,196,0.18)",
+        background: compact ? "transparent" : "rgba(92,106,196,0.06)",
+        border: compact ? "none" : "1px solid rgba(92,106,196,0.18)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
@@ -362,6 +372,18 @@ export default function SemanticCoachPanel({
           style={{ fontFamily: "var(--font-body)" }}
         >
           {t("analyzeBtn")}
+        </button>
+      )}
+
+      {mode === "portfolio" && !autoRun && (
+        <button
+          type="button"
+          onClick={() => runFetch()}
+          disabled={loading}
+          className="btn-primary py-2 px-3 text-sm mb-3"
+          style={{ fontFamily: "var(--font-body)" }}
+        >
+          {t("analyzePortfolioBtn")}
         </button>
       )}
 
@@ -393,6 +415,12 @@ export default function SemanticCoachPanel({
 
       {limitReached && !loading && (
         <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--unclear)" }}>{t("limitReached")}</p>
+      )}
+
+      {insufficientContext && !loading && (
+        <p style={{ margin: 0, fontSize: "0.875rem", color: "var(--t2)", lineHeight: 1.5 }}>
+          {t("portfolioInsufficientContext")}
+        </p>
       )}
 
       {error && !loading && (
