@@ -12,6 +12,14 @@ export default function ActiveBetsTable() {
   const ab = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
   const [selectedBet, setSelectedBet] = useState<Bet|null>(null);
   const t = useT();
+  const openBetPanel = (bet: Bet) => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    const mainEl = document.querySelector("main");
+    if (mainEl instanceof HTMLElement) {
+      mainEl.scrollTo({ top: 0, behavior: "auto" });
+    }
+    setSelectedBet(bet);
+  };
 
   return (
     <>
@@ -31,7 +39,7 @@ export default function ActiveBetsTable() {
                     !betAlignments.some(a => a.child_bet_id === b.id);
                   const isEnabler = b.bet_type === "enabler";
                   return (
-                    <tr key={b.id} onClick={() => setSelectedBet(b)} style={{ cursor:"pointer" }}>
+                    <tr key={b.id} onClick={() => openBetPanel(b)} style={{ cursor:"pointer" }}>
                       <td>
                         <div style={{ display:"flex", alignItems:"center", gap:8 }}>
                           <span style={{ fontFamily:"var(--font-body)", fontWeight:500, color:"var(--text)" }}>{b.name}</span>

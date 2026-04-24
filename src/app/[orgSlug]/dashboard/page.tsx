@@ -54,6 +54,14 @@ export default function DashboardPage() {
     return undefined;
   })();
 
+  const scrollViewportToTop = () => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    const mainEl = document.querySelector("main");
+    if (mainEl instanceof HTMLElement) {
+      mainEl.scrollTo({ top: 0, behavior: "auto" });
+    }
+  };
+
   if (loading) return <LoadingScreen />;
   return (
     <div className="w-full px-10 py-8 fade-up">
@@ -90,6 +98,7 @@ export default function DashboardPage() {
             disabled={portfolioOpenDisabled}
             title={portfolioOpenTitle}
             onClick={() => {
+              scrollViewportToTop();
               setPortfolioSlideOpen(true);
               setPortfolioRunNonce((n) => n + 1);
             }}
