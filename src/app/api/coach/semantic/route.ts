@@ -233,7 +233,11 @@ export async function POST(req: NextRequest) {
       return { ok: true as const, data };
     };
 
-    const models = ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"] as const;
+    const models = [
+      "claude-sonnet-4-5-20251022",
+      "claude-sonnet-4-5",
+      "claude-haiku-4-5-20251001",
+    ] as const;
     let modelUsed: (typeof models)[number] | null = null;
     let text = "";
     for (const model of models) {
