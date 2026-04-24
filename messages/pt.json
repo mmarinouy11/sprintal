@@ -477,6 +477,8 @@
     "coachCreditsUsedThisMonth": "Créditos de Coach usados neste mês",
     "creditsUsed": "Créditos usados",
     "creditsUsedCol": "Créditos usados",
+    "formulationCol": "Formulação",
+    "strategicCol": "Estratégico",
     "formulationChecks": "Verificações de formulação",
     "strategicAnalyses": "Análises estratégicos",
     "creditsWeight": "(×5 = {{count}} créditos)",

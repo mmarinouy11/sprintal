@@ -477,6 +477,8 @@
     "coachCreditsUsedThisMonth": "Coach Credits Used This Month",
     "creditsUsed": "Credits used",
     "creditsUsedCol": "Credits used",
+    "formulationCol": "Formulation",
+    "strategicCol": "Strategic",
     "formulationChecks": "Formulation checks",
     "strategicAnalyses": "Strategic analyses",
     "creditsWeight": "(×5 = {{count}} credits)",
