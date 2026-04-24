@@ -5,13 +5,17 @@ You are neutral: you do not override business authority, but you give clear, evi
 Always respond in the user's language as specified in the request.
 
 Output rules:
-- Produce ONE integrated observation (no bullet lists, no numbered lists in the observation body).
-- Maximum 4 sentences in the observation body.
+- Produce ONE integrated observation.
+- Structure the observation for readability using clear paragraphs separated by double newlines.
+- You may use bullet points only when it improves clarity. If you use bullets, use "-" and maximum 4 bullet points.
+- Maximum 4 sentences OR 4 bullet points in the observation body.
 - Cover internal coherence (hypothesis vs kill/scale vs indicators vs signal vs sprint timing vs duplication vs alignment vs portfolio balance) AND, when useful, external context from web search (trends, benchmarks, research).
 - If web search yields nothing relevant, rely on internal coherence only — do not apologize at length.
-- After the observation, output a final line exactly in this format (sources are not part of the 4 sentences):
-SOURCES: [Title](url), [Title](url)
-Use real URLs only when web search returned them; otherwise use SOURCES: (empty) or omit titles with placeholder — prefer concise source titles.
+- Sources must always go at the end, prefixed with ↗ and separated from the observation body.
+- After the observation, output source lines exactly like:
+↗ [Title](url)
+↗ [Title](url)
+Use real URLs only when web search returned them; if there are no reliable sources, output exactly: ↗ (none)
 
 Infer industry/sector only from organization name and bet content — never ask the user questions.`;
 
@@ -147,17 +151,36 @@ export function parseSemanticAssistantText(raw: string): {
   sources: Array<{ title: string; url?: string }>;
 } {
   const trimmed = raw.trim();
-  const idx = trimmed.search(/\nSOURCES:\s*/i);
-  if (idx === -1) {
+  const arrowIdx = trimmed.search(/\n↗\s*/);
+  const sourcesIdx = trimmed.search(/\nSOURCES:\s*/i);
+  const splitIdx =
+    arrowIdx >= 0 && sourcesIdx >= 0
+      ? Math.min(arrowIdx, sourcesIdx)
+      : arrowIdx >= 0
+        ? arrowIdx
+        : sourcesIdx;
+
+  if (splitIdx === -1) {
     return { observation: trimmed, sources: [] };
   }
-  const observation = trimmed.slice(0, idx).trim();
-  const sourcesPart = trimmed.slice(idx).replace(/^\s*SOURCES:\s*/i, "").trim();
+  const observation = trimmed.slice(0, splitIdx).trim();
+  const sourcesPart = trimmed.slice(splitIdx).replace(/^\s*SOURCES:\s*/i, "").trim();
   const sources: Array<{ title: string; url?: string }> = [];
   const linkRe = /\[([^\]]+)\]\(([^)]*)\)/g;
   let m: RegExpExecArray | null;
   while ((m = linkRe.exec(sourcesPart)) !== null) {
     sources.push({ title: m[1].trim(), url: m[2]?.trim() || undefined });
+  }
+  if (sources.length === 0) {
+    const arrowLines = sourcesPart
+      .split("\n")
+      .map((line) => line.trim())
+      .filter((line) => line.startsWith("↗"))
+      .map((line) => line.replace(/^↗\s*/, "").trim())
+      .filter((line) => line && line.toLowerCase() !== "(none)");
+    for (const title of arrowLines) {
+      sources.push({ title });
+    }
   }
   return { observation, sources };
 }

@@ -62,6 +62,17 @@ export interface SemanticCoachPanelProps {
 }
 
 const PHASE_MS = 4000;
+const TOTAL_LOADING_MS = PHASE_MS * 3;
+
+function renderInlineBold(text: string) {
+  const parts = text.split(/(\*\*[^*]+\*\*)/g);
+  return parts.map((part, idx) => {
+    if (part.startsWith("**") && part.endsWith("**") && part.length > 4) {
+      return <strong key={idx}>{part.slice(2, -2)}</strong>;
+    }
+    return <span key={idx}>{part}</span>;
+  });
+}
 
 export default function SemanticCoachPanel({
   mode,
@@ -140,6 +151,8 @@ export default function SemanticCoachPanel({
     progressTimer.current = null;
   };
 
+  useEffect(() => clearTimers, []);
+
   const runFetch = useCallback(async () => {
     if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     setLoading(true);
@@ -150,14 +163,16 @@ export default function SemanticCoachPanel({
     setObservation(null);
     setSources([]);
     setPhase(0);
-    setProgress(8);
+    setProgress(0);
     clearTimers();
+    const startedAt = Date.now();
     phaseTimer.current = setInterval(() => {
       setPhase((p) => (p < 2 ? p + 1 : p));
     }, PHASE_MS);
     progressTimer.current = setInterval(() => {
-      setProgress((p) => Math.min(94, p + 2));
-    }, 350);
+      const elapsed = Date.now() - startedAt;
+      setProgress(Math.min(100, (elapsed / TOTAL_LOADING_MS) * 100));
+    }, 150);
 
     try {
       const {
@@ -321,11 +336,16 @@ export default function SemanticCoachPanel({
   const statusLabel =
     phase === 0 ? t("identifyingContext") : phase === 1 ? t("searchingTrends") : t("generatingAnalysis");
   const modelLabel =
-    modelUsed === "claude-sonnet-4-20250514"
-      ? "Claude Sonnet 4"
+    modelUsed === "claude-sonnet-4-5-20251022" || modelUsed === "claude-sonnet-4-5"
+      ? "Claude Sonnet 4.5"
       : modelUsed === "claude-haiku-4-5-20251001"
         ? "Claude Haiku 4.5"
         : modelUsed;
+  const observationBlocks = (observation || "")
+    .replace(/\r\n/g, "\n")
+    .trim()
+    .split(/\n\n+/)
+    .filter(Boolean);
 
   if (dbSemanticEnabled === null) {
     return (
@@ -392,11 +412,22 @@ export default function SemanticCoachPanel({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
-        <span style={{ color: "var(--brand)", fontSize: "1rem" }}>✦</span>
+        <span
+          style={{
+            color: "var(--brand)",
+            fontSize: "1rem",
+            animation: loading ? "coachPulse 1.1s ease-in-out infinite" : undefined,
+            transformOrigin: "center",
+            display: "inline-block",
+          }}
+        >
+          ✦
+        </span>
         <span style={{ fontWeight: 700, fontSize: "0.9375rem", color: "var(--text)" }}>
           {t("strategicAnalysis")}
         </span>
       </div>
+      <style>{`@keyframes coachPulse{0%{transform:scale(1);opacity:0.75}50%{transform:scale(1.14);opacity:1}100%{transform:scale(1);opacity:0.75}}`}</style>
 
       {mode === "bet" && !autoRun && (
         <button
@@ -459,17 +490,55 @@ export default function SemanticCoachPanel({
               paddingTop: 10,
             }}
           />
-          <p
-            style={{
-              margin: "0 0 12px 0",
-              fontSize: "0.9375rem",
-              lineHeight: 1.55,
-              color: "var(--text)",
-              fontFamily: "var(--font-body)",
-            }}
-          >
-            {observation}
-          </p>
+          <div style={{ marginBottom: 12 }}>
+            {observationBlocks.map((block, blockIdx) => {
+              const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
+              const bulletLines = lines.filter((line) => /^[-•]\s+/.test(line));
+              const isList = lines.length > 0 && bulletLines.length === lines.length;
+
+              if (isList) {
+                return (
+                  <ul
+                    key={`block-${blockIdx}`}
+                    style={{
+                      margin: "0 0 10px 18px",
+                      padding: 0,
+                      fontSize: "0.9375rem",
+                      lineHeight: 1.55,
+                      color: "var(--text)",
+                      fontFamily: "var(--font-body)",
+                    }}
+                  >
+                    {lines.map((line, i) => (
+                      <li key={`li-${i}`} style={{ marginBottom: 4 }}>
+                        {renderInlineBold(line.replace(/^[-•]\s+/, ""))}
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+
+              return (
+                <p
+                  key={`block-${blockIdx}`}
+                  style={{
+                    margin: "0 0 10px 0",
+                    fontSize: "0.9375rem",
+                    lineHeight: 1.55,
+                    color: "var(--text)",
+                    fontFamily: "var(--font-body)",
+                  }}
+                >
+                  {lines.map((line, i) => (
+                    <span key={`ln-${i}`}>
+                      {i > 0 ? <br /> : null}
+                      {renderInlineBold(line)}
+                    </span>
+                  ))}
+                </p>
+              );
+            })}
+          </div>
           {sources.length > 0 && (
             <div style={{ marginBottom: 10 }}>
               {sources.map((s, i) => (
