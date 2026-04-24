@@ -457,7 +457,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <div>{t("settings.area")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.syntactic")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.semantic")}</div>
-          <div>{t("settings.creditsUsed")}</div>
+          <div>{t("settings.creditsUsedCol")}</div>
         </div>
         {allOrgs.map((a, i) => {
           const u = a.isRoot ? usage : areaUsage[a.id];
@@ -483,7 +483,9 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
                     : <span style={{ fontSize: "0.8125rem", color: a.coach_semantic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_semantic_enabled ? t("common.on") : t("common.off")}</span>
                 }
               </div>
-              <div><UsageBar used={areaCreditsUsed} limit={limits.syntactic} /></div>
+              <div style={{ fontSize: "0.8125rem", color: "var(--t2)" }}>
+                {areaCreditsUsed > 0 ? areaCreditsUsed : "—"}
+              </div>
             </div>
           );
         })}
