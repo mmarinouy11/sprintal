@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import {
   Organization, Sprint, Bet, Evidence,
-  SignalCheck, OrgRole, OrgTreeNode, BetAlignment
+  SignalCheck, OrgRole, OrgTreeNode, BetAlignment, NotificationItem
 } from "@/types";
 
 interface Store {
@@ -19,6 +19,8 @@ interface Store {
   currentRole:  OrgRole | null;       // rol del usuario en la org actual
   childOrgs:    Organization[];       // sub-orgs directas del nivel actual
   betAlignments: BetAlignment[];       // cascade alignment links
+  notifications: NotificationItem[];
+  unreadCount: number;
 
   // ── Setters ──────────────────────────────────────────
   setOrg:          (org: Organization) => void;
@@ -36,6 +38,9 @@ interface Store {
   setBetAlignments:  (alignments: BetAlignment[]) => void;
   addBetAlignment:   (alignment: BetAlignment) => void;
   removeBetAlignment:(id: string) => void;
+  setNotifications: (items: NotificationItem[]) => void;
+  markRead: (ids: string[]) => void;
+  markAllRead: () => void;
 
   // ── Mutations ────────────────────────────────────────
   addSprint:      (sprint: Sprint) => void;
@@ -61,6 +66,8 @@ const initialState = {
   currentRole:  null,
   childOrgs:     [],
   betAlignments: [],
+  notifications: [],
+  unreadCount: 0,
 };
 
 export const useStore = create<Store>((set) => ({
@@ -82,6 +89,27 @@ export const useStore = create<Store>((set) => ({
   setBetAlignments:  (betAlignments) => set({ betAlignments }),
   addBetAlignment:   (a)  => set(s => ({ betAlignments: [...s.betAlignments, a] })),
   removeBetAlignment:(id) => set(s => ({ betAlignments: s.betAlignments.filter(a => a.id !== id) })),
+  setNotifications: (notifications) =>
+    set({
+      notifications,
+      unreadCount: notifications.filter((n) => !n.read).length,
+    }),
+  markRead: (ids) =>
+    set((s) => {
+      const setIds = new Set(ids);
+      const notifications = s.notifications.map((n) =>
+        setIds.has(n.id) ? { ...n, read: true } : n
+      );
+      return {
+        notifications,
+        unreadCount: notifications.filter((n) => !n.read).length,
+      };
+    }),
+  markAllRead: () =>
+    set((s) => {
+      const notifications = s.notifications.map((n) => ({ ...n, read: true }));
+      return { notifications, unreadCount: 0 };
+    }),
 
   // Mutations
   addSprint:      (sprint) => set(s => ({ sprints: [...s.sprints, sprint] })),

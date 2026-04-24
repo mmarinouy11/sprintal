@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Organization } from "@/types";
+import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 export default function TopBar({ orgSlug }: { orgSlug: string }) {
   const store = useStore();
@@ -13,8 +14,10 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
     const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [notifOpen, setNotifOpen] = useState(false);
   const [parentOrg, setParentOrg] = useState<Organization | null>(null);
   const [siblings, setSiblings] = useState<Organization[]>([]);
+  const unreadCount = store.unreadCount;
 
   // Mark children as navigable if they have sub-orgs
   // We use a simple heuristic: children are navigable by default
@@ -72,8 +75,56 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
         {org?.name || "—"}
       </div>
 
-      {/* Right — area switcher — fixed width */}
-      <div style={{ position: "relative" }}>
+      {/* Right controls */}
+      <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}>
+        <div style={{ position: "relative" }}>
+          <button
+            onClick={() => setNotifOpen((v) => !v)}
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 8,
+              border: "1px solid var(--border-mid)",
+              background: notifOpen ? "var(--brand-bg)" : "var(--raised)",
+              borderRadius: "var(--r)",
+              height: 34,
+              padding: "0 10px",
+              cursor: "pointer",
+              color: "var(--text)",
+            }}
+            aria-label="notifications"
+          >
+            <span style={{ fontSize: "0.875rem" }}>🔔</span>
+            {unreadCount > 0 && (
+              <span
+                style={{
+                  minWidth: 18,
+                  height: 18,
+                  borderRadius: 999,
+                  background: "var(--brand)",
+                  color: "#fff",
+                  fontSize: "0.6875rem",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  padding: "0 6px",
+                  fontWeight: 700,
+                }}
+              >
+                {unreadCount}
+              </span>
+            )}
+          </button>
+          {org && (
+            <NotificationPanel
+              open={notifOpen}
+              onClose={() => setNotifOpen(false)}
+              orgSlug={orgSlug}
+              orgId={org.id}
+            />
+          )}
+        </div>
+        <div style={{ position: "relative" }}>
         <button
           onClick={hasNav ? openDropdown : undefined}
           style={{
@@ -199,6 +250,7 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
             </div>
           </>
         )}
+        </div>
       </div>
     </div>
   );

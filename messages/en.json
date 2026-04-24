@@ -117,8 +117,8 @@
     "notEnabled": "Strategic analysis not enabled for this area.",
     "analysisError": "Could not load analysis. Try again.",
     "modelUsed": "Model",
-    "creditsUsedCount": "{{count}} credits",
-    "creditsRemaining": "{{count}} remaining",
+    "creditsUsedCount": "{count} credits",
+    "creditsRemaining": "{count} remaining",
     "creditsLimitReached": "limit reached"
   },
   "trial": {
@@ -481,8 +481,28 @@
     "strategicCol": "Strategic",
     "formulationChecks": "Formulation checks",
     "strategicAnalyses": "Strategic analyses",
-    "creditsWeight": "(×5 = {{count}} credits)",
+    "creditsWeight": "(×5 = {count} credits)",
     "rootBadge": "root",
     "starterPlan": "Starter"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAll": "Mark all as read",
+    "empty": "No new notifications",
+    "seeAll": "See all",
+    "draftIncomplete": "Incomplete bet draft",
+    "draftIncompleteBody": "\"{name}\" was created during onboarding but hasn't been completed.",
+    "signalCheckDue": "Signal check overdue",
+    "signalCheckDueBody": "\"{name}\" hasn't had a signal check in {days} days.",
+    "reviewDue": "Strategic review due",
+    "reviewDueBody": "{sprint} has reached {pct}% - a strategic review is due.",
+    "sprintExpiring": "Sprint ending soon",
+    "sprintExpiringBody": "\"{name}\" ends in {days} days.",
+    "weakBetNoDecision": "Weak signal - decision needed",
+    "weakBetNoDecisionBody": "\"{name}\" has been Weak for {days} days without a decision.",
+    "parentAlert": "Parent bet updated",
+    "parentAlertBody": "A parent bet for \"{name}\" was {status}. Review this bet.",
+    "inviteAccepted": "New member joined",
+    "inviteAcceptedBody": "{name} accepted the invitation and joined {org}."
   }
 }

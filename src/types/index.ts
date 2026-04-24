@@ -145,6 +145,29 @@ export interface CoachUsage {
 }
 
 export type CoachType = "syntactic" | "semantic";
+export type NotificationPriority = "urgent" | "important" | "info";
+export type NotificationType =
+  | "draft_incomplete"
+  | "signal_check_due"
+  | "review_due"
+  | "sprint_expiring"
+  | "weak_bet_no_decision"
+  | "parent_alert"
+  | "invite_accepted";
+
+export interface NotificationItem {
+  id: string;
+  org_id: string;
+  user_id: string | null;
+  type: NotificationType;
+  priority: NotificationPriority;
+  title: string;
+  body: string | null;
+  link: string | null;
+  read: boolean;
+  emailed: boolean;
+  created_at: string;
+}
 
 /** Unified monthly budget: syntactic coach costs 1 unit; semantic costs 5 (stored via syntactic_calls). */
 export const COACH_LIMITS: Record<Plan, { syntactic: number; semantic: number }> = {

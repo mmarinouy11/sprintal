@@ -117,8 +117,8 @@
     "notEnabled": "Análise estratégica não habilitada para esta área.",
     "analysisError": "Não foi possível carregar a análise. Tente novamente.",
     "modelUsed": "Modelo",
-    "creditsUsedCount": "{{count}} créditos",
-    "creditsRemaining": "{{count}} restantes",
+    "creditsUsedCount": "{count} créditos",
+    "creditsRemaining": "{count} restantes",
     "creditsLimitReached": "limite atingido"
   },
   "trial": {
@@ -481,8 +481,28 @@
     "strategicCol": "Estratégico",
     "formulationChecks": "Verificações de formulação",
     "strategicAnalyses": "Análises estratégicos",
-    "creditsWeight": "(×5 = {{count}} créditos)",
+    "creditsWeight": "(×5 = {count} créditos)",
     "rootBadge": "raiz",
     "starterPlan": "Starter"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "markAll": "Marcar todas como lidas",
+    "empty": "Sem notificações novas",
+    "seeAll": "Ver todas",
+    "draftIncomplete": "Rascunho de bet incompleto",
+    "draftIncompleteBody": "\"{name}\" foi criada no onboarding e ainda não foi concluída.",
+    "signalCheckDue": "Signal check atrasado",
+    "signalCheckDueBody": "\"{name}\" está há {days} dias sem signal check.",
+    "reviewDue": "Revisão estratégica pendente",
+    "reviewDueBody": "{sprint} atingiu {pct}% - uma revisão estratégica é necessária.",
+    "sprintExpiring": "Sprint terminando",
+    "sprintExpiringBody": "\"{name}\" termina em {days} dias.",
+    "weakBetNoDecision": "Sinal fraco - decisão necessária",
+    "weakBetNoDecisionBody": "\"{name}\" está em Weak há {days} dias sem decisão.",
+    "parentAlert": "Bet pai atualizada",
+    "parentAlertBody": "Uma bet pai de \"{name}\" foi {status}. Revise esta bet.",
+    "inviteAccepted": "Novo membro entrou",
+    "inviteAcceptedBody": "{name} aceitou o convite e entrou em {org}."
   }
 }

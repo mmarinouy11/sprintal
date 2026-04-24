@@ -33,7 +33,7 @@ export default function OrgLayout({
 }) {
   const {
     setOrg, setSprints, setBets, setEvidence, setSignalChecks,
-    setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, org,
+    setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, org, setNotifications,
   } = useStore();
   const router = useRouter();
   const pathname = usePathname();
@@ -145,6 +145,20 @@ export default function OrgLayout({
       setSignalChecks(signalChecks);
       setChildOrgs(children);
       setBetAlignments(betAlignments);
+
+      const notificationsRes = await fetch(
+        `/api/notifications?orgId=${encodeURIComponent(orgData.id)}`,
+        {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        }
+      );
+      if (notificationsRes.ok) {
+        const notificationsData = await notificationsRes.json().catch(() => ({ notifications: [] }));
+        setNotifications(notificationsData.notifications || []);
+      } else {
+        setNotifications([]);
+      }
+
       setLoading(false);
     }
     load();
