@@ -54,6 +54,7 @@ export interface SemanticCoachPanelProps {
   /** Manual bet: user clicks. Portfolio: true. Review: driven by reviewRunNonce */
   autoRun?: boolean;
   reviewRunNonce?: number;
+  portfolioRunNonce?: number;
   className?: string;
   /** Remove top margin when embedded (e.g. dashboard slide-over) */
   compact?: boolean;
@@ -74,6 +75,7 @@ export default function SemanticCoachPanel({
   reviewActual = "",
   autoRun = false,
   reviewRunNonce = 0,
+  portfolioRunNonce = 0,
   className = "",
   compact = false,
 }: SemanticCoachPanelProps) {
@@ -100,10 +102,6 @@ export default function SemanticCoachPanel({
 
   /** DB is source of truth — store.org often stale after SQL or Settings toggles */
   const [dbSemanticEnabled, setDbSemanticEnabled] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    console.log("SemanticCoachPanel mounted, mode:", mode);
-  }, [mode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -138,13 +136,6 @@ export default function SemanticCoachPanel({
   };
 
   const runFetch = useCallback(async () => {
-    console.log("SemanticCoachPanel runFetch", {
-      mode,
-      autoRun,
-      dbSemanticEnabled,
-      semanticAllowedByPlan,
-      portfolioBetCount: portfolioBets.length,
-    });
     if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     setLoading(true);
     setLimitReached(false);
@@ -284,6 +275,23 @@ export default function SemanticCoachPanel({
   ]);
 
   useEffect(() => {
+    if (mode !== "portfolio" || autoRun) return;
+    if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
+    if (portfolioRunNonce === 0) return;
+    if (portfolioBets.length === 0) return;
+    runFetch();
+  }, [
+    mode,
+    autoRun,
+    portfolioRunNonce,
+    dbSemanticEnabled,
+    semanticAllowedByPlan,
+    portfolioBetIds,
+    portfolioBets.length,
+    runFetch,
+  ]);
+
+  useEffect(() => {
     if (mode !== "review" || !autoRun) return;
     if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     if (reviewRunNonce === 0) return;
@@ -383,18 +391,6 @@ export default function SemanticCoachPanel({
           style={{ fontFamily: "var(--font-body)" }}
         >
           {t("analyzeBtn")}
-        </button>
-      )}
-
-      {mode === "portfolio" && !autoRun && (
-        <button
-          type="button"
-          onClick={() => runFetch()}
-          disabled={loading}
-          className="btn-primary py-2 px-3 text-sm mb-3"
-          style={{ fontFamily: "var(--font-body)" }}
-        >
-          {t("analyzePortfolioBtn")}
         </button>
       )}
 

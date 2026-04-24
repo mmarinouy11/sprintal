@@ -31,6 +31,7 @@ export default function DashboardPage() {
   const t = useT("dashboard");
   const tCoach = useT("coach");
   const [portfolioSlideOpen, setPortfolioSlideOpen] = useState(false);
+  const [portfolioRunNonce, setPortfolioRunNonce] = useState(0);
   const activeSprint = sprints.find((s) => s.status === "Active");
   const activeBets = useMemo(
     () => bets.filter((b) => b.sprint_id === activeSprint?.id && b.status === "Active"),
@@ -52,15 +53,6 @@ export default function DashboardPage() {
     if (!portfolioEligible) return tCoach("portfolioAnalyzeTooltip");
     return undefined;
   })();
-
-  console.log("Dashboard portfolio semantic", {
-    portfolioSlideOpen,
-    activeBets: activeBets.length,
-    betsWithHypothesis: betsWithHypothesis.length,
-    portfolioEligible,
-    semanticPlanOk,
-    orgId: org?.id,
-  });
 
   if (loading) return <LoadingScreen />;
   return (
@@ -97,7 +89,10 @@ export default function DashboardPage() {
             type="button"
             disabled={portfolioOpenDisabled}
             title={portfolioOpenTitle}
-            onClick={() => setPortfolioSlideOpen(true)}
+            onClick={() => {
+              setPortfolioSlideOpen(true);
+              setPortfolioRunNonce((n) => n + 1);
+            }}
             className="btn-primary py-2 px-3 text-sm"
             style={{ fontFamily: "var(--font-body)" }}
           >
@@ -121,6 +116,7 @@ export default function DashboardPage() {
             portfolioBets={activeBets}
             sprint={activeSprint ?? null}
             autoRun={false}
+            portfolioRunNonce={portfolioRunNonce}
           />
         </PortfolioSemanticSlideover>
       )}
