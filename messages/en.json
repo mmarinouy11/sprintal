@@ -169,7 +169,9 @@
     "loading": "Loading...",
     "noData": "—",
     "optional": "optional",
-    "pro": "Pro"
+    "pro": "Pro",
+    "on": "On",
+    "off": "Off"
   },
   "table": {
     "bet": "Bet",
@@ -471,6 +473,10 @@
     "semantic": "Semantic",
     "syntacticUsage": "Syntactic usage",
     "semanticUsage": "Semantic usage",
-    "availableIn": "Available in"
+    "availableIn": "Available in",
+    "coachCreditsUsedThisMonth": "Coach Credits Used This Month",
+    "creditsUsed": "Credits used",
+    "rootBadge": "root",
+    "starterPlan": "Starter"
   }
 }

@@ -46,7 +46,7 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
 }
 
 function creditsUsed(usage?: CoachUsage | null): number {
-  return (usage?.syntactic_calls || 0) + (usage?.semantic_calls || 0) * 5;
+  return usage?.syntactic_calls || 0;
 }
 
 // ── Main page ────────────────────────────────────────────────
@@ -390,9 +390,6 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
 
   const semanticAvailable = limits.semantic > 0 || limits.semantic === -1;
   const unifiedUsed = creditsUsed(usage);
-  const totalSemanticCalls = usage?.semantic_calls || 0;
-  const semanticWeighted = totalSemanticCalls * 5;
-  const syntacticCalls = usage?.syntactic_calls || 0;
 
   function Toggle({ enabled, onClick, disabled }: { enabled: boolean; onClick: () => void; disabled?: boolean }) {
     return (
@@ -439,11 +436,8 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <span style={{ fontSize: "0.75rem", color: "var(--t2)", fontFamily: "var(--font-mono)" }}>{month}</span>
         </div>
         <div>
-          <div className="t-label mb-2">Coach Credits Used This Month</div>
+          <div className="t-label mb-2">{t("settings.coachCreditsUsedThisMonth")}</div>
           <UsageBar used={unifiedUsed} limit={limits.syntactic} />
-          <div className="mt-2" style={{ fontSize: "0.75rem", color: "var(--t2)" }}>
-            Formulation checks: {syntacticCalls} &nbsp;&nbsp; Strategic analyses: {totalSemanticCalls} (×5 = {semanticWeighted} credits)
-          </div>
         </div>
       </div>
 
@@ -455,7 +449,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <div>{t("settings.area")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.syntactic")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.semantic")}</div>
-          <div>Credits used</div>
+          <div>{t("settings.creditsUsed")}</div>
         </div>
         {allOrgs.map((a, i) => {
           const u = a.isRoot ? usage : areaUsage[a.id];
@@ -465,20 +459,20 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
               style={{ gridTemplateColumns: "1fr 80px 80px 180px", borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
               <div>
                 <span style={{ fontSize: "0.875rem", color: "var(--text)", fontWeight: a.isRoot ? 600 : 400 }}>{a.name}</span>
-                {a.isRoot && <span className="badge ml-2" style={{ fontSize: "0.6rem" }}>root</span>}
+                {a.isRoot && <span className="badge ml-2" style={{ fontSize: "0.6rem" }}>{t("settings.rootBadge")}</span>}
               </div>
               <div style={{ display: "flex", justifyContent: "center" }}>
                 {isAdmin
                   ? <Toggle enabled={a.coach_syntactic_enabled} disabled={toggling === a.id + "coach_syntactic_enabled"} onClick={() => toggleCoach(a.id, "coach_syntactic_enabled", a.coach_syntactic_enabled)} />
-                  : <span style={{ fontSize: "0.8125rem", color: a.coach_syntactic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_syntactic_enabled ? "On" : "Off"}</span>
+                  : <span style={{ fontSize: "0.8125rem", color: a.coach_syntactic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_syntactic_enabled ? t("common.on") : t("common.off")}</span>
                 }
               </div>
               <div style={{ display: "flex", justifyContent: "center" }}>
                 {!semanticAvailable
-                  ? <UpgradeBadge nextPlan="Starter" />
+                  ? <UpgradeBadge nextPlan={t("settings.starterPlan")} />
                   : isAdmin
                     ? <Toggle enabled={a.coach_semantic_enabled} disabled={toggling === a.id + "coach_semantic_enabled"} onClick={() => toggleCoach(a.id, "coach_semantic_enabled", a.coach_semantic_enabled)} />
-                    : <span style={{ fontSize: "0.8125rem", color: a.coach_semantic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_semantic_enabled ? "On" : "Off"}</span>
+                    : <span style={{ fontSize: "0.8125rem", color: a.coach_semantic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_semantic_enabled ? t("common.on") : t("common.off")}</span>
                 }
               </div>
               <div><UsageBar used={areaCreditsUsed} limit={limits.syntactic} /></div>

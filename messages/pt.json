@@ -169,7 +169,9 @@
     "loading": "Carregando...",
     "noData": "—",
     "optional": "opcional",
-    "pro": "Pro"
+    "pro": "Pro",
+    "on": "Ativado",
+    "off": "Desativado"
   },
   "table": {
     "bet": "Bet",
@@ -471,6 +473,10 @@
     "semantic": "Semântico",
     "syntacticUsage": "Uso sintático",
     "semanticUsage": "Uso semântico",
-    "availableIn": "Disponível em"
+    "availableIn": "Disponível em",
+    "coachCreditsUsedThisMonth": "Créditos de Coach usados neste mês",
+    "creditsUsed": "Créditos usados",
+    "rootBadge": "raiz",
+    "starterPlan": "Starter"
   }
 }
