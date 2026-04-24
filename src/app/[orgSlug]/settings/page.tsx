@@ -444,7 +444,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <div className="mt-2" style={{ fontSize: "0.75rem", color: "var(--t2)" }}>
             {t("settings.formulationChecks")}: {syntacticUsed} &nbsp;·&nbsp;{" "}
             {t("settings.strategicAnalyses")}: {semanticUsed}{" "}
-            {t("settings.creditsWeight", { count: semanticWeighted })}
+            {t("settings.creditsWeight", { count: String(semanticWeighted) })}
           </div>
         </div>
       </div>
@@ -453,7 +453,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
       <div className="t-label mb-3">{t("settings.coachByArea")}</div>
       <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", overflow: "hidden" }}>
         {/* Header */}
-        <div className="grid px-5 py-2" style={{ gridTemplateColumns: "1fr 80px 80px 90px 90px", background: "var(--raised)", borderBottom: "1px solid var(--border)", fontSize: "0.75rem", fontWeight: 700, color: "var(--t2)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+        <div className="grid px-5 py-2" style={{ gridTemplateColumns: "1fr 100px 100px 100px 110px", background: "var(--raised)", borderBottom: "1px solid var(--border)", fontSize: "0.75rem", fontWeight: 700, color: "var(--t2)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
           <div>{t("settings.area")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.syntactic")}</div>
           <div style={{ textAlign: "center" }}>{t("settings.semantic")}</div>
@@ -466,7 +466,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           const areaSemanticUsed = u?.semantic_calls || 0;
           return (
             <div key={a.id} className="grid items-center px-5 py-3"
-              style={{ gridTemplateColumns: "1fr 80px 80px 90px 90px", borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
+              style={{ gridTemplateColumns: "1fr 100px 100px 100px 110px", borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
               <div>
                 <span style={{ fontSize: "0.875rem", color: "var(--text)", fontWeight: a.isRoot ? 600 : 400 }}>{a.name}</span>
                 {a.isRoot && <span className="badge ml-2" style={{ fontSize: "0.6rem" }}>{t("settings.rootBadge")}</span>}
@@ -488,9 +488,14 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
               <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
                 {areaSyntacticUsed > 0 ? areaSyntacticUsed : "—"}
               </div>
-              <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
-                {areaSemanticUsed > 0 ? areaSemanticUsed : "—"}
-              </div>
+              {areaSemanticUsed > 0 ? (
+                <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
+                  <span style={{ color: "var(--text)" }}>{areaSemanticUsed}</span>
+                  <span style={{ color: "var(--t3)", marginLeft: 6 }}>({areaSemanticUsed * 5} cr)</span>
+                </div>
+              ) : (
+                <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>—</div>
+              )}
             </div>
           );
         })}
