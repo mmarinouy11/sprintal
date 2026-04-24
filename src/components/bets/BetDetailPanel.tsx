@@ -7,6 +7,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Bet, Evidence, SignalCheck } from "@/types";
 import { StatusBadge, SignalBadge, AreaTag } from "@/components/ui/Badge";
 import { useStore } from "@/lib/store";
+import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
 import { supabase } from "@/lib/supabase";
 
 
@@ -195,7 +196,8 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
 
 // ── Main panel ────────────────────────────────────────────────────────────
 function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, onClose }: Props) {
-  const { updateBet, betAlignments, bets: allBets, childOrgs, org, sprints } = useStore();
+  const { updateBet, betAlignments, bets: allBets, childOrgs, org, sprints, rootPlan } = useStore();
+  const planForCoach = effectiveCoachPlan(rootPlan, org?.plan);
   const areas = childOrgs.map(a => a.name);
   const [bet, setBet] = useState(initialBet);
   const t = useT("betDetail");
@@ -410,7 +412,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
                   orgId={org.id}
                   orgName={org.name}
                   coachSemanticEnabled={org.coach_semantic_enabled}
-                  plan={org.plan}
+                  plan={planForCoach}
                   bet={bet}
                   sprint={sprintForBet}
                   siblingBets={siblingBetsInSprint}

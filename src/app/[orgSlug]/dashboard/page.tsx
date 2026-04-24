@@ -12,6 +12,7 @@ import { useT } from "@/lib/i18n";
 import RollupDashboard from "@/components/dashboard/RollupDashboard";
 import OwnedBetsSection from "@/components/dashboard/OwnedBetsSection";
 import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
+import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
 import { COACH_LIMITS } from "@/types";
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -24,7 +25,8 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 export default function DashboardPage() {
-  const { loading, org, bets, sprints } = useStore();
+  const { loading, org, bets, sprints, rootPlan } = useStore();
+  const planForCoach = effectiveCoachPlan(rootPlan, org?.plan);
   const t = useT("dashboard");
   const tCoach = useT("coach");
   const activeSprint = sprints.find((s) => s.status === "Active");
@@ -71,13 +73,10 @@ export default function DashboardPage() {
             orgId={org.id}
             orgName={org.name}
             coachSemanticEnabled={org.coach_semantic_enabled}
-            plan={org.plan}
+            plan={planForCoach}
             portfolioBets={activeBets}
             sprint={activeSprint ?? null}
-            autoRun={
-              !!org.coach_semantic_enabled &&
-              (COACH_LIMITS[org.plan]?.semantic ?? 0) !== 0
-            }
+            autoRun={(COACH_LIMITS[planForCoach]?.semantic ?? 0) !== 0}
           />
         </Section>
       )}

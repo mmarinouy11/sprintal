@@ -10,6 +10,7 @@ import { useStore } from "@/lib/store";
 import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
 import type { BetStatus } from "@/types";
 import { COACH_LIMITS } from "@/types";
+import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
 
 
 
@@ -69,7 +70,8 @@ export default function StrategicReviewPage() {
   ];
   const router = useRouter();
   const params = useParams();
-  const { org, sprints, bets, addEvidence, updateBet, addBet } = useStore();
+  const { org, sprints, bets, addEvidence, updateBet, addBet, rootPlan } = useStore();
+  const planForCoach = effectiveCoachPlan(rootPlan, org?.plan);
   const active = sprints.find(s => s.status === "Active");
   const activeBets = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
   const [betId, setBetId] = useState(activeBets[0]?.id || "");
@@ -175,13 +177,13 @@ export default function StrategicReviewPage() {
           <CoachObservation observation={coach.results["review_insight"]?.observation || null} loading={coach.results["review_insight"]?.loading || false} />
         </Field>
 
-        {bet && org && org.coach_semantic_enabled && (COACH_LIMITS[org.plan]?.semantic ?? 0) !== 0 && (
+        {bet && org && (COACH_LIMITS[planForCoach]?.semantic ?? 0) !== 0 && (
           <SemanticCoachPanel
             mode="review"
             orgId={org.id}
             orgName={org.name}
             coachSemanticEnabled={org.coach_semantic_enabled}
-            plan={org.plan}
+            plan={planForCoach}
             bet={bet}
             sprint={active ?? null}
             siblingBets={activeBets.filter((b) => b.id !== bet.id)}

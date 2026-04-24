@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n";
 import type { Bet, Sprint } from "@/types";
 import { COACH_LIMITS } from "@/types";
 import type { Plan } from "@/types";
+import { useStore } from "@/lib/store";
 
 type Mode = "bet" | "portfolio" | "review";
 
@@ -93,6 +94,34 @@ export default function SemanticCoachPanel({
     [portfolioBets]
   );
 
+  /** DB is source of truth — store.org often stale after SQL or Settings toggles */
+  const [dbSemanticEnabled, setDbSemanticEnabled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const { data, error } = await supabase
+        .from("organizations")
+        .select("coach_semantic_enabled")
+        .eq("id", orgId)
+        .maybeSingle();
+      if (cancelled) return;
+      if (error || !data) {
+        setDbSemanticEnabled(!!coachSemanticEnabled);
+        return;
+      }
+      const on = !!data.coach_semantic_enabled;
+      setDbSemanticEnabled(on);
+      const { org: o, updateOrg } = useStore.getState();
+      if (o?.id === orgId && o.coach_semantic_enabled !== on) {
+        updateOrg({ coach_semantic_enabled: on });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
+
   const clearTimers = () => {
     if (phaseTimer.current) clearInterval(phaseTimer.current);
     if (progressTimer.current) clearInterval(progressTimer.current);
@@ -101,7 +130,7 @@ export default function SemanticCoachPanel({
   };
 
   const runFetch = useCallback(async () => {
-    if (!coachSemanticEnabled || !semanticAllowedByPlan) return;
+    if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     setLoading(true);
     setLimitReached(false);
     setError(null);
@@ -204,7 +233,7 @@ export default function SemanticCoachPanel({
       setPhase(2);
     }
   }, [
-    coachSemanticEnabled,
+    dbSemanticEnabled,
     semanticAllowedByPlan,
     mode,
     locale,
@@ -219,7 +248,7 @@ export default function SemanticCoachPanel({
 
   useEffect(() => {
     if (mode !== "portfolio" || !autoRun) return;
-    if (!coachSemanticEnabled || !semanticAllowedByPlan) return;
+    if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     if (portfolioBets.length === 0) return;
     runFetch();
   }, [
@@ -227,7 +256,7 @@ export default function SemanticCoachPanel({
     autoRun,
     orgId,
     portfolioBetIds,
-    coachSemanticEnabled,
+    dbSemanticEnabled,
     semanticAllowedByPlan,
     runFetch,
     portfolioBets.length,
@@ -235,15 +264,42 @@ export default function SemanticCoachPanel({
 
   useEffect(() => {
     if (mode !== "review" || !autoRun) return;
+    if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     if (reviewRunNonce === 0) return;
     if (!bet || reviewActual.trim().length < 30) return;
     runFetch();
-  }, [reviewRunNonce, mode, autoRun, bet, reviewActual, runFetch]);
+  }, [
+    reviewRunNonce,
+    mode,
+    autoRun,
+    bet,
+    reviewActual,
+    runFetch,
+    dbSemanticEnabled,
+    semanticAllowedByPlan,
+  ]);
 
   const statusLabel =
     phase === 0 ? t("identifyingContext") : phase === 1 ? t("searchingTrends") : t("generatingAnalysis");
 
-  if (!coachSemanticEnabled) {
+  if (dbSemanticEnabled === null) {
+    return (
+      <div
+        className={className}
+        style={{
+          marginTop: 12,
+          padding: "12px 14px",
+          borderRadius: "var(--r)",
+          background: "rgba(92,106,196,0.06)",
+          border: "1px solid rgba(92,106,196,0.18)",
+        }}
+      >
+        <p style={{ margin: 0, fontSize: "0.8125rem", color: "var(--t3)" }}>{t("identifyingContext")}</p>
+      </div>
+    );
+  }
+
+  if (!dbSemanticEnabled) {
     return (
       <div
         className={className}
