@@ -103,6 +103,14 @@ export async function POST(req: NextRequest) {
     };
 
     const { analysisType, locale, orgId } = body;
+    console.log(
+      "semantic coach — type:",
+      analysisType,
+      "bets count:",
+      body.allBets?.length,
+      "orgId:",
+      orgId
+    );
     if (!orgId || !analysisType) {
       return NextResponse.json({ observation: null, sources: [] }, { status: 400 });
     }

@@ -53,6 +53,15 @@ export default function DashboardPage() {
     return undefined;
   })();
 
+  console.log("Dashboard portfolio semantic", {
+    portfolioSlideOpen,
+    activeBets: activeBets.length,
+    betsWithHypothesis: betsWithHypothesis.length,
+    portfolioEligible,
+    semanticPlanOk,
+    orgId: org?.id,
+  });
+
   if (loading) return <LoadingScreen />;
   return (
     <div className="w-full px-10 py-8 fade-up">

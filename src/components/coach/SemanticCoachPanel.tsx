@@ -102,6 +102,10 @@ export default function SemanticCoachPanel({
   const [dbSemanticEnabled, setDbSemanticEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
+    console.log("SemanticCoachPanel mounted, mode:", mode);
+  }, [mode]);
+
+  useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
@@ -134,6 +138,13 @@ export default function SemanticCoachPanel({
   };
 
   const runFetch = useCallback(async () => {
+    console.log("SemanticCoachPanel runFetch", {
+      mode,
+      autoRun,
+      dbSemanticEnabled,
+      semanticAllowedByPlan,
+      portfolioBetCount: portfolioBets.length,
+    });
     if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     setLoading(true);
     setLimitReached(false);
