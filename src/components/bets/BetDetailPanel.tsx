@@ -3,7 +3,7 @@ import { useT } from "@/lib/i18n";
 import { useSyntacticCoach } from "@/lib/coach/useSyntacticCoach";
 import CoachObservation from "@/components/coach/CoachObservation";
 import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { Bet, Evidence, SignalCheck } from "@/types";
 import { StatusBadge, SignalBadge, AreaTag } from "@/components/ui/Badge";
 import { useStore } from "@/lib/store";
@@ -209,6 +209,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
   const childAlignments  = betAlignments.filter(a => a.parent_bet_id === bet.id);
   const [externalParentBets, setExternalParentBets] = useState<Bet[]>([]);
   const [externalChildBets, setExternalChildBets] = useState<Bet[]>([]);
+  const bodyScrollRef = useRef<HTMLDivElement>(null);
 
   // Load cross-org bets from alignments (parent/child bets may be in different orgs)
   useEffect(() => {
@@ -259,6 +260,10 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
     document.addEventListener("keydown", handler);
     return () => document.removeEventListener("keydown", handler);
   }, [onClose]);
+
+  useEffect(() => {
+    bodyScrollRef.current?.scrollTo({ top: 0 });
+  }, [bet.id]);
 
   const handleSave = useCallback((updated: Bet) => {
     setBet(updated);
@@ -357,7 +362,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
         )}
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-6 py-5">
+        <div ref={bodyScrollRef} className="flex-1 overflow-y-auto px-6 py-5">
           {editing ? (
             <EditForm bet={bet} onSave={handleSave} onCancel={handleCancel} />
           ) : (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 type Props = {
   open: boolean;
@@ -10,6 +10,8 @@ type Props = {
 };
 
 export default function PortfolioSemanticSlideover({ open, onClose, title, children }: Props) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (!open) return;
     const prev = document.body.style.overflow;
@@ -17,6 +19,12 @@ export default function PortfolioSemanticSlideover({ open, onClose, title, child
     return () => {
       document.body.style.overflow = prev;
     };
+  }, [open]);
+
+  useEffect(() => {
+    if (open) {
+      scrollRef.current?.scrollTo({ top: 0 });
+    }
   }, [open]);
 
   if (!open) return null;
@@ -70,7 +78,7 @@ export default function PortfolioSemanticSlideover({ open, onClose, title, child
             ×
           </button>
         </div>
-        <div className="flex-1 overflow-y-auto px-4 pb-6 pt-2">{children}</div>
+        <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 pb-6 pt-2">{children}</div>
       </div>
     </>
   );

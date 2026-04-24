@@ -552,12 +552,7 @@ export default function SemanticCoachPanel({
                     fontFamily: "var(--font-body)",
                   }}
                 >
-                  {lines.map((line, i) => (
-                    <span key={`ln-${i}`}>
-                      {i > 0 ? <br /> : null}
-                      {renderInlineBold(line)}
-                    </span>
-                  ))}
+                  {renderInlineBold(lines.join(" "))}
                 </p>
               );
             })}
