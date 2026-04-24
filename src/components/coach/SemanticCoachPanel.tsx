@@ -120,11 +120,6 @@ export default function SemanticCoachPanel({
   const [dbSemanticEnabled, setDbSemanticEnabled] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Temporary debug trace requested to verify loading transitions.
-    console.log("loading state:", loading);
-  }, [loading]);
-
-  useEffect(() => {
     let cancelled = false;
     (async () => {
       const { data, error } = await supabase
@@ -346,26 +341,16 @@ export default function SemanticCoachPanel({
       : modelUsed === "claude-haiku-4-5-20251001"
         ? "Claude Haiku 4.5"
         : modelUsed;
-  useEffect(() => {
-    if (observation) {
-      // Temporary debug trace requested to validate bullet prefixes in raw model text.
-      console.log("raw observation text:", observation);
-    }
-  }, [observation]);
-  const observationBlocks = (observation || "")
+  const cleanedObservation = (observation || "")
     .replace(/\r\n/g, "\n")
+    .replace(/\n\s*,/g, ",")
+    .replace(/\n+/g, " ")
+    .replace(/\s+/g, " ")
     .trim()
-    .split(/\n\n+/)
-    .map((block) =>
-      block
-        .split("\n")
-        .map((line) => line.trimEnd())
-        .filter((line) => line.trim().length > 0)
-        .filter((line) => line.trim() !== ".")
-        .join("\n")
-        .trim()
-    )
-    .filter(Boolean);
+    .replace(/\s+\./g, ".");
+  const observationSentences = (cleanedObservation.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [])
+    .map((s) => s.trim().replace(/^,\s*/, ""))
+    .filter((s) => s.length > 0 && s !== ".");
 
   if (dbSemanticEnabled === null) {
     return (
@@ -511,51 +496,36 @@ export default function SemanticCoachPanel({
             }}
           />
           <div style={{ marginBottom: 12 }}>
-            {observationBlocks.map((block, blockIdx) => {
-              const lines = block.split("\n").map((line) => line.trim()).filter(Boolean);
-              const bulletLines = lines.filter((line) => {
-                const ls = line.trimStart();
-                return ls.startsWith("- ") || ls.startsWith("• ");
-              });
-              const isList = lines.length > 0 && bulletLines.length === lines.length;
-
-              if (isList) {
-                return (
-                  <ul
-                    key={`block-${blockIdx}`}
-                    style={{
-                      margin: "0 0 10px 18px",
-                      padding: 0,
-                      fontSize: "0.9375rem",
-                      lineHeight: 1.55,
-                      color: "var(--text)",
-                      fontFamily: "var(--font-body)",
-                    }}
-                  >
-                    {lines.map((line, i) => (
-                      <li key={`li-${i}`} style={{ marginBottom: 4 }}>
-                        {renderInlineBold(line.trimStart().replace(/^[-•]\s+/, ""))}
-                      </li>
-                    ))}
-                  </ul>
-                );
-              }
-
-              return (
-                <p
-                  key={`block-${blockIdx}`}
-                  style={{
-                    margin: "0 0 10px 0",
-                    fontSize: "0.9375rem",
-                    lineHeight: 1.55,
-                    color: "var(--text)",
-                    fontFamily: "var(--font-body)",
-                  }}
-                >
-                  {renderInlineBold(lines.join(" "))}
-                </p>
-              );
-            })}
+            {observationSentences.length > 1 ? (
+              <ul
+                style={{
+                  margin: "0 0 10px 18px",
+                  padding: 0,
+                  fontSize: "0.9375rem",
+                  lineHeight: 1.55,
+                  color: "var(--text)",
+                  fontFamily: "var(--font-body)",
+                }}
+              >
+                {observationSentences.map((sentence, i) => (
+                  <li key={`sentence-${i}`} style={{ marginBottom: 6 }}>
+                    {renderInlineBold(sentence)}
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p
+                style={{
+                  margin: "0 0 10px 0",
+                  fontSize: "0.9375rem",
+                  lineHeight: 1.55,
+                  color: "var(--text)",
+                  fontFamily: "var(--font-body)",
+                }}
+              >
+                {renderInlineBold(cleanedObservation)}
+              </p>
+            )}
           </div>
           {sources.length > 0 && (
             <div style={{ marginBottom: 10 }}>
