@@ -115,7 +115,8 @@
     "portfolioInsufficientContext": "Not enough data yet. Complete at least 3 bet hypotheses to get a portfolio analysis.",
     "limitReached": "Monthly analysis limit reached.",
     "notEnabled": "Strategic analysis not enabled for this area.",
-    "analysisError": "Could not load analysis. Try again."
+    "analysisError": "Could not load analysis. Try again.",
+    "modelUsed": "Model"
   },
   "trial": {
     "expired": "Your trial has ended",

@@ -115,7 +115,8 @@
     "portfolioInsufficientContext": "Todavía no hay datos suficientes. Completá al menos 3 hipótesis de apuestas para obtener un análisis de portafolio.",
     "limitReached": "Alcanzaste el límite mensual de análisis.",
     "notEnabled": "El análisis estratégico no está habilitado para esta área.",
-    "analysisError": "No se pudo cargar el análisis. Probá de nuevo."
+    "analysisError": "No se pudo cargar el análisis. Probá de nuevo.",
+    "modelUsed": "Modelo"
   },
   "trial": {
     "expired": "Tu período de prueba finalizó",

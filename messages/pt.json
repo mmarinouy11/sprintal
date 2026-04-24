@@ -115,7 +115,8 @@
     "portfolioInsufficientContext": "Ainda não há dados suficientes. Complete pelo menos 3 hipóteses de apostas para obter uma análise de portfólio.",
     "limitReached": "Limite mensal de análises atingido.",
     "notEnabled": "Análise estratégica não habilitada para esta área.",
-    "analysisError": "Não foi possível carregar a análise. Tente novamente."
+    "analysisError": "Não foi possível carregar a análise. Tente novamente.",
+    "modelUsed": "Modelo"
   },
   "trial": {
     "expired": "Seu período de teste encerrou",

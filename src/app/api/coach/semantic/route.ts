@@ -197,7 +197,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ observation: null, sources: [] }, { status: 400 });
     }
 
-    const callOnce = async (withWebSearch: boolean) => {
+    const callOnce = async (withWebSearch: boolean, model: string) => {
       const res = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         headers: {
@@ -206,7 +206,7 @@ export async function POST(req: NextRequest) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
+          model,
           max_tokens: 1200,
           system: SEMANTIC_COACH_SYSTEM,
           messages: [{ role: "user", content: userPrompt }],
@@ -216,33 +216,45 @@ export async function POST(req: NextRequest) {
                   {
                     type: "web_search_20250305",
                     name: "web_search",
-                    max_uses: 5,
                   },
                 ],
               }
             : {}),
         }),
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        return { ok: false as const, error: data?.error?.message || res.statusText };
+        return {
+          ok: false as const,
+          status: res.status,
+          error: data?.error?.message || res.statusText,
+        };
       }
       return { ok: true as const, data };
     };
 
+    const models = ["claude-sonnet-4-20250514", "claude-haiku-4-5-20251001"] as const;
+    let modelUsed: (typeof models)[number] | null = null;
     let text = "";
-    let first = await callOnce(true);
-    if (!first.ok || !extractAnthropicText(first.data)) {
-      const second = await callOnce(false);
-      if (!second.ok) {
-        return NextResponse.json({
-          observation: null,
-          sources: [],
-        });
+    for (const model of models) {
+      const first = await callOnce(true, model);
+      if (first.ok && extractAnthropicText(first.data)) {
+        text = extractAnthropicText(first.data);
+        modelUsed = model;
+        break;
       }
-      text = extractAnthropicText(second.data);
-    } else {
-      text = extractAnthropicText(first.data);
+      const second = await callOnce(false, model);
+      if (second.ok && extractAnthropicText(second.data)) {
+        text = extractAnthropicText(second.data);
+        modelUsed = model;
+        break;
+      }
+      const firstModelNotFound = !first.ok && first.status === 404;
+      const secondModelNotFound = !second.ok && second.status === 404;
+      // If model not found/available, try next model.
+      if (!firstModelNotFound && !secondModelNotFound) {
+        break;
+      }
     }
 
     if (!text) {
@@ -260,6 +272,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       observation,
       sources: parsed.sources,
+      modelUsed,
     });
   } catch {
     return NextResponse.json({ observation: null, sources: [] });

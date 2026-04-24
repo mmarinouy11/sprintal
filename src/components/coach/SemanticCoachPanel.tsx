@@ -10,6 +10,7 @@ import type { Plan } from "@/types";
 import { useStore } from "@/lib/store";
 
 type Mode = "bet" | "portfolio" | "review";
+const EMPTY_BETS: Bet[] = [];
 
 function mapBetPayload(b: Bet) {
   return {
@@ -70,8 +71,8 @@ export default function SemanticCoachPanel({
   plan,
   bet,
   sprint,
-  siblingBets = [],
-  portfolioBets = [],
+  siblingBets,
+  portfolioBets,
   reviewActual = "",
   autoRun = false,
   reviewRunNonce = 0,
@@ -84,20 +85,24 @@ export default function SemanticCoachPanel({
   const limits = COACH_LIMITS[plan] || COACH_LIMITS.trial;
   const semanticAllowedByPlan = limits.semantic !== 0;
 
+  const safeSiblingBets = siblingBets ?? EMPTY_BETS;
+  const safePortfolioBets = portfolioBets ?? EMPTY_BETS;
   const [loading, setLoading] = useState(false);
   const [observation, setObservation] = useState<string | null>(null);
   const [sources, setSources] = useState<Array<{ title: string; url?: string }>>([]);
   const [limitReached, setLimitReached] = useState(false);
   const [insufficientContext, setInsufficientContext] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [modelUsed, setModelUsed] = useState<string | null>(null);
   const [ts, setTs] = useState<string | null>(null);
   const [phase, setPhase] = useState(0);
   const [progress, setProgress] = useState(0);
   const phaseTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lastPortfolioRunNonce = useRef(0);
   const portfolioBetIds = useMemo(
-    () => portfolioBets.map((b) => b.id).sort().join("|"),
-    [portfolioBets]
+    () => safePortfolioBets.map((b) => b.id).sort().join("|"),
+    [safePortfolioBets]
   );
 
   /** DB is source of truth — store.org often stale after SQL or Settings toggles */
@@ -141,6 +146,7 @@ export default function SemanticCoachPanel({
     setLimitReached(false);
     setInsufficientContext(false);
     setError(null);
+    setModelUsed(null);
     setObservation(null);
     setSources([]);
     setPhase(0);
@@ -173,7 +179,7 @@ export default function SemanticCoachPanel({
         body = {
           ...body,
           analysisType: "portfolio",
-          allBets: portfolioBets.map((b) => ({
+          allBets: safePortfolioBets.map((b) => ({
             name: b.name,
             outcome: b.outcome || "",
             hypothesis: b.hypothesis || "",
@@ -193,7 +199,7 @@ export default function SemanticCoachPanel({
           analysisType: "review",
           bet: mapBetPayload(bet),
           sprint: mapSprintPayload(sprint || null),
-          siblingBetSummaries: siblingBets.map((b) => `${b.name}: ${b.outcome?.slice(0, 80) || ""}`),
+          siblingBetSummaries: safeSiblingBets.map((b) => `${b.name}: ${b.outcome?.slice(0, 80) || ""}`),
           reviewWhatHappened: reviewActual.trim(),
         };
       } else if (mode === "bet" && bet) {
@@ -202,7 +208,7 @@ export default function SemanticCoachPanel({
           analysisType: "bet",
           bet: mapBetPayload(bet),
           sprint: mapSprintPayload(sprint || null),
-          siblingBetSummaries: siblingBets.map((b) => `${b.name}: ${b.outcome?.slice(0, 80) || ""}`),
+          siblingBetSummaries: safeSiblingBets.map((b) => `${b.name}: ${b.outcome?.slice(0, 80) || ""}`),
         };
       } else {
         setError("context");
@@ -223,6 +229,7 @@ export default function SemanticCoachPanel({
         sources?: Array<{ title: string; url?: string }>;
         limitReached?: boolean;
         insufficientContext?: boolean;
+        modelUsed?: string | null;
       };
 
       if (data.limitReached) {
@@ -233,6 +240,7 @@ export default function SemanticCoachPanel({
         setInsufficientContext(true);
         return;
       }
+      setModelUsed(data.modelUsed || null);
       setObservation(data.observation ?? null);
       setSources(data.sources || []);
       setTs(new Date().toLocaleString(locale === "en" ? "en-US" : locale === "es" ? "es" : "pt-BR"));
@@ -253,15 +261,15 @@ export default function SemanticCoachPanel({
     orgName,
     bet,
     sprint,
-    siblingBets,
-    portfolioBets,
+    safeSiblingBets,
+    safePortfolioBets,
     reviewActual,
   ]);
 
   useEffect(() => {
     if (mode !== "portfolio" || !autoRun) return;
     if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
-    if (portfolioBets.length === 0) return;
+    if (safePortfolioBets.length === 0) return;
     runFetch();
   }, [
     mode,
@@ -271,14 +279,16 @@ export default function SemanticCoachPanel({
     dbSemanticEnabled,
     semanticAllowedByPlan,
     runFetch,
-    portfolioBets.length,
+    safePortfolioBets.length,
   ]);
 
   useEffect(() => {
     if (mode !== "portfolio" || autoRun) return;
     if (dbSemanticEnabled !== true || !semanticAllowedByPlan) return;
     if (portfolioRunNonce === 0) return;
-    if (portfolioBets.length === 0) return;
+    if (lastPortfolioRunNonce.current === portfolioRunNonce) return;
+    if (safePortfolioBets.length === 0) return;
+    lastPortfolioRunNonce.current = portfolioRunNonce;
     runFetch();
   }, [
     mode,
@@ -287,7 +297,7 @@ export default function SemanticCoachPanel({
     dbSemanticEnabled,
     semanticAllowedByPlan,
     portfolioBetIds,
-    portfolioBets.length,
+    safePortfolioBets.length,
     runFetch,
   ]);
 
@@ -310,6 +320,12 @@ export default function SemanticCoachPanel({
 
   const statusLabel =
     phase === 0 ? t("identifyingContext") : phase === 1 ? t("searchingTrends") : t("generatingAnalysis");
+  const modelLabel =
+    modelUsed === "claude-sonnet-4-20250514"
+      ? "Claude Sonnet 4"
+      : modelUsed === "claude-haiku-4-5-20251001"
+        ? "Claude Haiku 4.5"
+        : modelUsed;
 
   if (dbSemanticEnabled === null) {
     return (
@@ -501,6 +517,11 @@ export default function SemanticCoachPanel({
             {ts && (
               <span className="t-mono" style={{ fontSize: "0.75rem", color: "var(--t3)" }}>
                 {ts}
+              </span>
+            )}
+            {modelLabel && (
+              <span className="t-mono" style={{ fontSize: "0.75rem", color: "var(--t3)" }}>
+                {t("modelUsed")}: {modelLabel}
               </span>
             )}
           </div>
