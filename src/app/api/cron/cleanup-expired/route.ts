@@ -5,6 +5,8 @@ import { addDays, parseISO } from "date-fns";
 export const dynamic = "force-dynamic";
 type Priority = "urgent" | "important" | "info";
 
+type OrgRecipient = { user_id: string; role: string; email: string | null };
+
 const DIGEST_OVERDUE_TYPES = new Set([
   "signal_check_due",
   "review_due",
@@ -42,6 +44,24 @@ export async function GET(req: NextRequest) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     { auth: { autoRefreshToken: false, persistSession: false } }
   );
+
+  /** org_members has no email column — resolve from Auth Admin API. */
+  async function fetchEmailsForUserIds(userIds: string[]): Promise<Map<string, string | null>> {
+    const map = new Map<string, string | null>();
+    const unique = Array.from(new Set(userIds.filter(Boolean)));
+    await Promise.all(
+      unique.map(async (uid) => {
+        const { data, error } = await supabaseAdmin.auth.admin.getUserById(uid);
+        if (error) {
+          console.log("notif — getUserById error:", uid, error.message ?? error);
+          map.set(uid, null);
+          return;
+        }
+        map.set(uid, data.user?.email ?? null);
+      })
+    );
+    return map;
+  }
 
   async function sendEmail(to: string, subject: string, html: string) {
     try {
@@ -301,13 +321,36 @@ export async function GET(req: NextRequest) {
     console.log("notif — orgs to process:", orgs.length);
 
     for (const org of orgs) {
-      const { data: members } = await supabaseAdmin
+      const membersResult = await supabaseAdmin
         .from("org_members")
-        .select("user_id,role,email")
+        .select("user_id, role")
         .eq("org_id", org.id)
         .in("role", ["owner", "admin"]);
-      console.log("notif — members for org", org.id, ":", (members ?? []).length);
-      const recipients = (members ?? []).filter((m: { user_id: string }) => Boolean(m.user_id));
+      console.log(
+        "notif — members raw:",
+        JSON.stringify({
+          data: membersResult.data,
+          error: membersResult.error
+            ? {
+                message: membersResult.error.message,
+                code: membersResult.error.code,
+                details: membersResult.error.details,
+              }
+            : null,
+        })
+      );
+      const memberRows = membersResult.data ?? [];
+      const emailByUserId = await fetchEmailsForUserIds(
+        memberRows.map((m: { user_id: string }) => m.user_id)
+      );
+      const recipients: OrgRecipient[] = memberRows
+        .filter((m: { user_id: string }) => Boolean(m.user_id))
+        .map((m: { user_id: string; role: string }) => ({
+          user_id: m.user_id,
+          role: m.role,
+          email: emailByUserId.get(m.user_id) ?? null,
+        }));
+      console.log("notif — members for org", org.id, ":", recipients.length);
       if (!recipients.length) continue;
 
       const [betsRes, sprintsRes, signalChecksRes, evidenceRes] = await Promise.all([
@@ -493,10 +536,15 @@ export async function GET(req: NextRequest) {
       const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data: newMembers } = await supabaseAdmin
         .from("org_members")
-        .select("user_id,email,created_at")
+        .select("user_id,created_at")
         .eq("org_id", org.id)
         .gte("created_at", oneDayAgo);
+      const newMemberIds = (newMembers ?? [])
+        .map((nm: { user_id: string }) => nm.user_id)
+        .filter(Boolean);
+      const inviteEmailByUserId = await fetchEmailsForUserIds(newMemberIds);
       for (const nm of newMembers ?? []) {
+        const nmEmail = inviteEmailByUserId.get(nm.user_id) ?? null;
         for (const r of recipients) {
           if (r.user_id === nm.user_id) continue;
           await createNotification({
@@ -505,7 +553,7 @@ export async function GET(req: NextRequest) {
             type: "invite_accepted",
             priority: "info",
             title: "New member joined",
-            body: `${nm.email || "A new user"} accepted the invitation and joined ${org.name}.`,
+            body: `${nmEmail || "A new user"} accepted the invitation and joined ${org.name}.`,
             link: `/${org.slug}/settings`,
           });
         }
@@ -516,15 +564,21 @@ export async function GET(req: NextRequest) {
     if (new Date().getUTCDay() === 1) {
       const { data: memberRows } = await supabaseAdmin
         .from("org_members")
-        .select("user_id,email")
-        .not("email", "is", null)
+        .select("user_id")
         .not("user_id", "is", null)
         .limit(8000);
+      const digestUserIds = Array.from(
+        new Set(
+          (memberRows ?? [])
+            .map((r: { user_id: string }) => r.user_id)
+            .filter(Boolean)
+        )
+      );
+      const digestEmailByUserId = await fetchEmailsForUserIds(digestUserIds);
       const userEmail = new Map<string, string>();
-      for (const row of memberRows ?? []) {
-        if (row.user_id && row.email && !userEmail.has(row.user_id)) {
-          userEmail.set(row.user_id, row.email);
-        }
+      for (const uid of digestUserIds) {
+        const em = digestEmailByUserId.get(uid);
+        if (em) userEmail.set(uid, em);
       }
       for (const [userId, email] of Array.from(userEmail.entries())) {
         try {
