@@ -53,7 +53,7 @@ export async function GET(req: NextRequest) {
       unique.map(async (uid) => {
         const { data, error } = await supabaseAdmin.auth.admin.getUserById(uid);
         if (error) {
-          console.log("notif — getUserById error:", uid, error.message ?? error);
+          console.error("notifications cron: getUserById failed", uid, error.message ?? error);
           map.set(uid, null);
           return;
         }
@@ -161,16 +161,10 @@ export async function GET(req: NextRequest) {
         input.link,
         input.dedupeRecentDays
       );
-      if (recent) {
-        console.log("notif — createNotification result:", { skipped: "dedupeRecentDays" });
-        return;
-      }
+      if (recent) return;
     }
     const exists = await notificationExists(input.orgId, input.userId, input.type, input.link);
-    if (exists) {
-      console.log("notif — createNotification result:", { skipped: "unreadDuplicate" });
-      return;
-    }
+    if (exists) return;
     const { data: created, error: insertError } = await supabaseAdmin
       .from("notifications")
       .insert({
@@ -186,12 +180,8 @@ export async function GET(req: NextRequest) {
       .limit(1)
       .maybeSingle();
     if (insertError) {
-      console.log("notif — insert error:", insertError);
+      console.error("notifications cron: insert failed", insertError);
     }
-    console.log("notif — createNotification result:", {
-      id: created?.id ?? null,
-      insertError: insertError ?? null,
-    });
     if (created?.id && input.email) {
       const sent = await sendEmail(
         input.email,
@@ -318,7 +308,6 @@ export async function GET(req: NextRequest) {
       .or(`plan.neq.trial,and(plan.eq.trial,trial_ends_at.gt.${nowIso})`);
 
     const orgs = activeOrgs ?? [];
-    console.log("notif — orgs to process:", orgs.length);
 
     for (const org of orgs) {
       const membersResult = await supabaseAdmin
@@ -326,19 +315,9 @@ export async function GET(req: NextRequest) {
         .select("user_id, role")
         .eq("org_id", org.id)
         .in("role", ["owner", "admin"]);
-      console.log(
-        "notif — members raw:",
-        JSON.stringify({
-          data: membersResult.data,
-          error: membersResult.error
-            ? {
-                message: membersResult.error.message,
-                code: membersResult.error.code,
-                details: membersResult.error.details,
-              }
-            : null,
-        })
-      );
+      if (membersResult.error) {
+        console.error("notifications cron: org_members query failed", org.id, membersResult.error);
+      }
       const memberRows = membersResult.data ?? [];
       const emailByUserId = await fetchEmailsForUserIds(
         memberRows.map((m: { user_id: string }) => m.user_id)
@@ -350,7 +329,6 @@ export async function GET(req: NextRequest) {
           role: m.role,
           email: emailByUserId.get(m.user_id) ?? null,
         }));
-      console.log("notif — members for org", org.id, ":", recipients.length);
       if (!recipients.length) continue;
 
       const [betsRes, sprintsRes, signalChecksRes, evidenceRes] = await Promise.all([
@@ -407,20 +385,6 @@ export async function GET(req: NextRequest) {
           const daysNoCheck = lastCheck
             ? daysBetween(lastCheck.created_at, nowIso)
             : daysBetween(bet.created_at, nowIso);
-          const thresholdDays = signalInterval;
-          const daysSince = daysNoCheck;
-          console.log(
-            "notif — bet",
-            bet.name,
-            "lastCheck:",
-            lastCheck ?? null,
-            "threshold:",
-            thresholdDays,
-            "daysSince:",
-            daysSince,
-            "shouldNotify:",
-            daysSince >= thresholdDays
-          );
           if (daysNoCheck >= signalInterval) {
             for (const r of recipients) {
               await createNotification({
@@ -716,7 +680,6 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
-      testMode,
       sprintsClosed,
       cleanupOrgCount: cleanupOrgIds.length,
       notifications: true,
