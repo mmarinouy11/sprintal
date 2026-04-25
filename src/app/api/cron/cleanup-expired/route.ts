@@ -141,11 +141,17 @@ export async function GET(req: NextRequest) {
         input.link,
         input.dedupeRecentDays
       );
-      if (recent) return;
+      if (recent) {
+        console.log("notif — createNotification result:", { skipped: "dedupeRecentDays" });
+        return;
+      }
     }
     const exists = await notificationExists(input.orgId, input.userId, input.type, input.link);
-    if (exists) return;
-    const { data: created } = await supabaseAdmin
+    if (exists) {
+      console.log("notif — createNotification result:", { skipped: "unreadDuplicate" });
+      return;
+    }
+    const { data: created, error: insertError } = await supabaseAdmin
       .from("notifications")
       .insert({
         org_id: input.orgId,
@@ -159,6 +165,13 @@ export async function GET(req: NextRequest) {
       .select("id")
       .limit(1)
       .maybeSingle();
+    if (insertError) {
+      console.log("notif — insert error:", insertError);
+    }
+    console.log("notif — createNotification result:", {
+      id: created?.id ?? null,
+      insertError: insertError ?? null,
+    });
     if (created?.id && input.email) {
       const sent = await sendEmail(
         input.email,
@@ -284,12 +297,16 @@ export async function GET(req: NextRequest) {
       .select("id,slug,name,plan,trial_ends_at")
       .or(`plan.neq.trial,and(plan.eq.trial,trial_ends_at.gt.${nowIso})`);
 
-    for (const org of activeOrgs ?? []) {
+    const orgs = activeOrgs ?? [];
+    console.log("notif — orgs to process:", orgs.length);
+
+    for (const org of orgs) {
       const { data: members } = await supabaseAdmin
         .from("org_members")
         .select("user_id,role,email")
         .eq("org_id", org.id)
         .in("role", ["owner", "admin"]);
+      console.log("notif — members for org", org.id, ":", (members ?? []).length);
       const recipients = (members ?? []).filter((m: { user_id: string }) => Boolean(m.user_id));
       if (!recipients.length) continue;
 
@@ -347,6 +364,20 @@ export async function GET(req: NextRequest) {
           const daysNoCheck = lastCheck
             ? daysBetween(lastCheck.created_at, nowIso)
             : daysBetween(bet.created_at, nowIso);
+          const thresholdDays = signalInterval;
+          const daysSince = daysNoCheck;
+          console.log(
+            "notif — bet",
+            bet.name,
+            "lastCheck:",
+            lastCheck ?? null,
+            "threshold:",
+            thresholdDays,
+            "daysSince:",
+            daysSince,
+            "shouldNotify:",
+            daysSince >= thresholdDays
+          );
           if (daysNoCheck >= signalInterval) {
             for (const r of recipients) {
               await createNotification({
