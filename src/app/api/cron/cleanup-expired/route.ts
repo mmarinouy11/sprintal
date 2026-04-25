@@ -26,6 +26,16 @@ export async function GET(req: NextRequest) {
   if (auth !== `Bearer ${secret}`) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
+  const requestedTestMode = req.nextUrl.searchParams.get("test") === "true";
+  const isProduction = process.env.VERCEL_ENV === "production";
+  const hasExplicitTestHeader = req.headers.get("x-test-mode") === "true";
+  if (requestedTestMode && isProduction && !hasExplicitTestHeader) {
+    return NextResponse.json(
+      { error: "Test mode is blocked in production without X-Test-Mode: true." },
+      { status: 403 }
+    );
+  }
+  const testMode = requestedTestMode && (!isProduction || hasExplicitTestHeader);
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -317,7 +327,7 @@ export async function GET(req: NextRequest) {
       const now = new Date();
       for (const sprint of activeSprints) {
         const durationDays = Math.max(1, daysBetween(sprint.start_date, sprint.end_date));
-        const signalInterval = Math.max(1, Math.floor(durationDays / 6));
+        const signalInterval = testMode ? 1 : Math.max(1, Math.floor(durationDays / 6));
         const sprintStart = parseISO(sprint.start_date);
         const sprintEnd = parseISO(sprint.end_date);
         const sprintToEnd = Math.max(0, daysBetween(nowIso, sprint.end_date));
@@ -359,7 +369,9 @@ export async function GET(req: NextRequest) {
           const dayAt = Math.floor((durationDays * pct) / 100);
           const windowOpen = addDays(sprintStart, Math.max(0, dayAt - 2));
           const milestoneInstant = addDays(sprintStart, dayAt);
-          if (now < windowOpen || now > sprintEnd) continue;
+          const isFirstMilestone = pct === 33;
+          const bypassWindowForTest = testMode && isFirstMilestone;
+          if (!bypassWindowForTest && (now < windowOpen || now > sprintEnd)) continue;
           const reviewed = hasStrategicReviewAfterMilestone({
             evidence,
             sprintBetIds,
@@ -381,7 +393,8 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        if (sprintToEnd <= 7 && sprintToEnd >= 0) {
+        const sprintExpiringThresholdDays = testMode ? 30 : 7;
+        if (sprintToEnd <= sprintExpiringThresholdDays && sprintToEnd >= 0) {
           const expiringLink = `/${org.slug}/sprints?sprint=${sprint.id}`;
           for (const r of recipients) {
             await createNotification({
@@ -398,7 +411,7 @@ export async function GET(req: NextRequest) {
           }
         }
 
-        const weakThreshold = Math.max(1, Math.floor(durationDays / 3));
+        const weakThreshold = testMode ? 1 : Math.max(1, Math.floor(durationDays / 3));
         const weakBets = sprintBets.filter((b: { signal: string }) => b.signal === "Weak");
         for (const bet of weakBets) {
           const weakChecks = signalChecks
@@ -618,6 +631,7 @@ export async function GET(req: NextRequest) {
 
     return NextResponse.json({
       ok: true,
+      testMode,
       sprintsClosed,
       cleanupOrgCount: cleanupOrgIds.length,
       notifications: true,
