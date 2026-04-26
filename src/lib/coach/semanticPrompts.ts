@@ -15,6 +15,7 @@ Output rules:
 - Maximum 4 sentences OR 4 bullet points in the observation body.
 - Cover internal coherence (hypothesis vs kill/scale vs indicators vs signal vs sprint timing vs duplication vs alignment vs portfolio balance) AND, when useful, external context from web search (trends, benchmarks, research).
 - If web search yields nothing relevant, rely on internal coherence only — do not apologize at length.
+- When using web_search: run maximum 1-2 targeted searches. Use short, specific queries (4-6 words). Do not search for general background — only search for specific market data relevant to the bet outcome.
 - Do NOT insert citations inline within sentences.
 - Never use parenthetical citations like (McKinsey, 2024) inline.
 - Sources must always go at the end, prefixed with ↗ and separated from the observation body.
@@ -81,12 +82,46 @@ export type SemanticReviewContext = SemanticBetContext & {
   reviewWhatHappened: string;
 };
 
+export function trunc(s: string | null | undefined, max = 200): string {
+  if (!s) return "—";
+  return s.length > max ? s.slice(0, max) + "[...]" : s;
+}
+
+function formatBetForPrompt(bet: SemanticBetContext["bet"]): string {
+  const ind = bet.indicators?.length ? bet.indicators.join(", ") : "—";
+  return [
+    `Bet: ${bet.name}`,
+    `Outcome: ${bet.outcome || "—"}`,
+    `Hypothesis: ${trunc(bet.hypothesis, 200)}`,
+    `Kill if: ${trunc(bet.kill_criteria, 200)}`,
+    `Scale when: ${trunc(bet.scale_trigger, 200)}`,
+    `Indicators: ${ind}`,
+    `Signal: ${bet.signal} | Status: ${bet.status} | Type: ${bet.bet_type}`,
+    `Impact: Revenue=${bet.revenue} Margin=${bet.margin} Importance=${bet.importance}`,
+  ].join("\n");
+}
+
+function formatSprintForPrompt(
+  sprint: SemanticBetContext["sprint"] | null
+): string {
+  if (!sprint) return "Sprint: (none)";
+  return [
+    `Sprint: ${sprint.name} | ${sprint.start_date} → ${sprint.end_date} | ${sprint.status}`,
+    `Focus: ${trunc(sprint.focus, 150)}`,
+    `Signals: ${trunc(sprint.signals, 150)}`,
+  ].join("\n");
+}
+
+function formatPortfolioBetLine(
+  bet: SemanticPortfolioContext["bets"][number]
+): string {
+  return `- ${bet.name} | ${bet.signal} | ${bet.status} | ${bet.bet_type} | Owner: ${bet.owner_area} | Revenue=${bet.revenue}`;
+}
 
 export function SEMANTIC_BET_USER_PROMPT(
   localeLabel: string,
   ctx: SemanticBetContext
 ): string {
-  const sprintJson = ctx.sprint ? JSON.stringify(ctx.sprint, null, 2) : "null";
   const siblings =
     ctx.siblingBetSummaries.length > 0
       ? ctx.siblingBetSummaries.join(" | ")
@@ -100,40 +135,30 @@ export function SEMANTIC_BET_USER_PROMPT(
 
 Organization: ${ctx.orgName}
 
-Bet (JSON):
-${JSON.stringify(ctx.bet, null, 2)}
+${formatBetForPrompt(ctx.bet)}
 
-Active sprint context (JSON):
-${sprintJson}
+${formatSprintForPrompt(ctx.sprint)}
 
 Other bets in this sprint (for duplication / alignment): ${siblings}
 
-Approximate sprint time elapsed (if inferred from dates): ${elapsed}
-
-Use web_search when it helps find market trends, benchmarks, or research relevant to this bet's outcome and sector (inferred from org + bet text only).
-
-Deliver one integrated observation (max 4 sentences), then the SOURCES line as specified in the system message.`;
+Approximate sprint time elapsed (if inferred from dates): ${elapsed}`;
 }
 
 export function SEMANTIC_PORTFOLIO_USER_PROMPT(
   localeLabel: string,
   ctx: SemanticPortfolioContext
 ): string {
-  const sprintJson = ctx.sprint ? JSON.stringify(ctx.sprint, null, 2) : "null";
+  const betLines = ctx.bets.map(formatPortfolioBetLine).join("\n");
   return `Language: ${localeLabel}
 
 Organization: ${ctx.orgName}
 
-Active sprint (JSON):
-${sprintJson}
+${formatSprintForPrompt(ctx.sprint)}
 
-Active bets in portfolio (JSON array):
-${JSON.stringify(ctx.bets, null, 2)}
+Active bets:
+${betLines || "—"}
 
-Analyze portfolio balance (revenue / margin / capability mix, risk distribution), coherence with sprint strategic focus, and duplication across bets.
-Use web_search for sector-level trends only when it strengthens the observation.
-
-One integrated observation (max 4 sentences), then SOURCES line.`;
+Analyze portfolio balance (revenue / margin / capability mix, risk distribution), coherence with sprint strategic focus, and duplication across bets.`;
 }
 
 export function SEMANTIC_REVIEW_USER_PROMPT(
@@ -143,12 +168,10 @@ export function SEMANTIC_REVIEW_USER_PROMPT(
   const base = SEMANTIC_BET_USER_PROMPT(localeLabel, ctx);
   return `${base}
 
-Strategic review — "What happened" (evidence the user entered):
+Strategic review — "What happened" (evidence):
 """
-${ctx.reviewWhatHappened}
-"""
-
-Weight this evidence heavily; relate it to hypothesis, kill/scale criteria, and signal. Then web_search only if it sharpens external context for this outcome.`;
+${trunc(ctx.reviewWhatHappened, 2500)}
+"""`;
 }
 
 /** Parse model output: body + trailing SOURCES: line with markdown links */
