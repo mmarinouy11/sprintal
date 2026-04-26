@@ -4,7 +4,7 @@ import { useStore } from "@/lib/store";
 import { useT, useLocale, setLocale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { writePendingPrimary } from "@/lib/orgPendingPrimary";
-import { COACH_LIMITS } from "@/types";
+import { COACH_LIMITS, SEMANTIC_CREDIT_WEIGHT, coachUnifiedCreditsUsed } from "@/types";
 import type { Plan, OrgRole, OrgMember, CoachUsage } from "@/types";
 
 // ── Tab navigation ───────────────────────────────────────────
@@ -43,10 +43,6 @@ function UsageBar({ used, limit }: { used: number; limit: number }) {
       <span style={{ fontSize: "0.8125rem", color: "var(--t2)", minWidth: 60 }}>{used} / {limit}</span>
     </div>
   );
-}
-
-function creditsUsed(usage?: CoachUsage | null): number {
-  return (usage?.syntactic_calls || 0) + (usage?.semantic_calls || 0) * 5;
 }
 
 // ── Main page ────────────────────────────────────────────────
@@ -389,10 +385,9 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
   }
 
   const semanticAvailable = limits.semantic > 0 || limits.semantic === -1;
-  const syntacticUsed = usage?.syntactic_calls || 0;
   const semanticUsed = usage?.semantic_calls || 0;
-  const semanticWeighted = semanticUsed * 5;
-  const unifiedUsed = syntacticUsed + semanticWeighted;
+  const unifiedUsed = coachUnifiedCreditsUsed(usage);
+  const strategicCreditsDisplay = semanticUsed * SEMANTIC_CREDIT_WEIGHT;
 
   function Toggle({ enabled, onClick, disabled }: { enabled: boolean; onClick: () => void; disabled?: boolean }) {
     return (
@@ -440,11 +435,13 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
         </div>
         <div>
           <div className="t-label mb-2">{t("settings.coachCreditsUsedThisMonth")}</div>
-          <UsageBar used={unifiedUsed} limit={limits.syntactic} />
+          <UsageBar used={unifiedUsed} limit={limits.totalCredits} />
           <div className="mt-2" style={{ fontSize: "0.75rem", color: "var(--t2)" }}>
-            {t("settings.formulationChecks")}: {syntacticUsed} &nbsp;·&nbsp;{" "}
             {t("settings.strategicAnalyses")}: {semanticUsed}{" "}
-            {t("settings.creditsWeight", { count: String(semanticWeighted) })}
+            {t("settings.creditsWeight", {
+              weight: String(SEMANTIC_CREDIT_WEIGHT),
+              count: String(strategicCreditsDisplay),
+            })}
           </div>
         </div>
       </div>
@@ -462,7 +459,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
         </div>
         {allOrgs.map((a, i) => {
           const u = a.isRoot ? usage : areaUsage[a.id];
-          const areaSyntacticUsed = u?.syntactic_calls || 0;
+          const areaUnifiedUsed = coachUnifiedCreditsUsed(u ?? null);
           const areaSemanticUsed = u?.semantic_calls || 0;
           return (
             <div key={a.id} className="grid items-center px-5 py-3"
@@ -486,12 +483,14 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
                 }
               </div>
               <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
-                {areaSyntacticUsed > 0 ? areaSyntacticUsed : "—"}
+                {areaUnifiedUsed > 0 ? areaUnifiedUsed : "—"}
               </div>
               {areaSemanticUsed > 0 ? (
                 <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
                   <span style={{ color: "var(--text)" }}>{areaSemanticUsed}</span>
-                  <span style={{ color: "var(--t3)", marginLeft: 6 }}>({areaSemanticUsed * 5} cr)</span>
+                  <span style={{ color: "var(--t3)", marginLeft: 6 }}>
+                    ({areaSemanticUsed * SEMANTIC_CREDIT_WEIGHT} cr)
+                  </span>
                 </div>
               ) : (
                 <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>—</div>

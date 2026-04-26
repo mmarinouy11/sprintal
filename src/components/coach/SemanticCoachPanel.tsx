@@ -5,7 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useLocale } from "@/lib/i18n";
 import { useT } from "@/lib/i18n";
 import type { Bet, Sprint } from "@/types";
-import { COACH_LIMITS } from "@/types";
+import { COACH_LIMITS, SEMANTIC_CREDIT_WEIGHT } from "@/types";
 import type { Plan } from "@/types";
 import { useStore } from "@/lib/store";
 
@@ -350,7 +350,9 @@ export default function SemanticCoachPanel({
       : modelUsed === "claude-haiku-4-5-20251001"
         ? "Claude Haiku 4.5"
         : modelUsed;
-  const creditsLabel = t("creditsUsedCount", { count: String(5) });
+  const creditsLabel = t("creditsUsedCount", {
+    count: String(SEMANTIC_CREDIT_WEIGHT),
+  });
   const remainingLabel =
     creditsRemaining === -1
       ? creditsLabel

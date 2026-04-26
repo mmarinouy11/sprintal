@@ -67,13 +67,14 @@ export async function POST(req: NextRequest) {
     // Check usage limits only when org context is available.
     const plan = ((org?.plan || "trial") as Plan);
     const limits = COACH_LIMITS[plan] || COACH_LIMITS["trial"];
-    const limit = org ? (coachType === "syntactic" ? limits.syntactic : limits.semantic) : -1;
+    const totalCap = limits.totalCredits;
+    const semanticCap = limits.semantic;
 
-    if (limit === 0) {
+    if (coachType === "semantic" && semanticCap === 0) {
       return NextResponse.json({ observation: null, limitReached: true, upgradeRequired: true });
     }
 
-    if (limit > 0 && orgId) { // -1 = unlimited
+    if (orgId) {
       const month = getMonth();
       const { data: usage } = await supabaseAdmin
         .from("coach_usage")
@@ -83,16 +84,37 @@ export async function POST(req: NextRequest) {
         .limit(1)
         .maybeSingle();
 
-      const currentCalls = coachType === "syntactic"
-        ? (usage?.syntactic_calls || 0)
-        : (usage?.semantic_calls || 0);
+      const unifiedUsed = usage?.syntactic_calls ?? 0;
+      const semanticUsed = usage?.semantic_calls ?? 0;
 
-      if (currentCalls >= limit) {
+      if (coachType === "syntactic" && totalCap >= 0 && unifiedUsed >= totalCap) {
         return NextResponse.json({
           observation: null,
           limitReached: true,
-          used: currentCalls,
-          limit,
+          used: unifiedUsed,
+          limit: totalCap,
+          plan,
+        });
+      }
+      if (
+        coachType === "semantic" &&
+        semanticCap > 0 &&
+        semanticUsed >= semanticCap
+      ) {
+        return NextResponse.json({
+          observation: null,
+          limitReached: true,
+          used: semanticUsed,
+          limit: semanticCap,
+          plan,
+        });
+      }
+      if (coachType === "semantic" && totalCap >= 0 && unifiedUsed + 1 > totalCap) {
+        return NextResponse.json({
+          observation: null,
+          limitReached: true,
+          used: unifiedUsed,
+          limit: totalCap,
           plan,
         });
       }
@@ -144,7 +166,7 @@ export async function POST(req: NextRequest) {
         const { error } = await supabaseAdmin.rpc("increment_coach_usage", {
           p_org_id: orgId,
           p_month: month,
-          p_syntactic: coachType === "syntactic" ? 1 : 0,
+          p_syntactic: coachType === "syntactic" ? 1 : coachType === "semantic" ? 1 : 0,
           p_semantic: coachType === "semantic" ? 1 : 0,
         });
         if (error) {
@@ -152,7 +174,7 @@ export async function POST(req: NextRequest) {
           await supabaseAdmin.from("coach_usage").upsert({
             org_id: orgId,
             month,
-            syntactic_calls: coachType === "syntactic" ? 1 : 0,
+            syntactic_calls: coachType === "syntactic" ? 1 : coachType === "semantic" ? 1 : 0,
             semantic_calls: coachType === "semantic" ? 1 : 0,
           }, { onConflict: "org_id,month" });
         }

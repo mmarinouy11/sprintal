@@ -481,7 +481,7 @@
     "strategicCol": "Strategic",
     "formulationChecks": "Formulation checks",
     "strategicAnalyses": "Strategic analyses",
-    "creditsWeight": "(×5 = {count} credits)",
+    "creditsWeight": "(×{weight} = {count} credits)",
     "rootBadge": "root",
     "starterPlan": "Starter"
   },

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import { COACH_LIMITS } from "@/types";
+import { COACH_LIMITS, SEMANTIC_CREDIT_WEIGHT } from "@/types";
 import type { Plan } from "@/types";
 import {
   SEMANTIC_COACH_SYSTEM,
@@ -143,8 +143,13 @@ export async function POST(req: NextRequest) {
     const month = getMonth();
     let currentSyntacticUsage = 0;
     let currentSemanticUsage = 0;
-    const unifiedLimit = limits.syntactic;
-    if (limits.syntactic >= 0) {
+    const totalCap = limits.totalCredits;
+    const semanticCap = limits.semantic;
+
+    if (
+      orgId &&
+      (totalCap >= 0 || (semanticCap >= 0 && semanticCap > 0))
+    ) {
       const { data: usage } = await supabaseAdmin
         .from("coach_usage")
         .select("syntactic_calls, semantic_calls")
@@ -154,16 +159,25 @@ export async function POST(req: NextRequest) {
         .maybeSingle();
       currentSyntacticUsage = usage?.syntactic_calls ?? 0;
       currentSemanticUsage = usage?.semantic_calls ?? 0;
-      const totalUsed = currentSyntacticUsage + currentSemanticUsage * 5;
-      const remainingBudget = limits.syntactic - totalUsed;
-      if (remainingBudget < 5) {
-        return NextResponse.json({
-          observation: null,
-          sources: [],
-          limitReached: true,
-          creditsRemaining: 0,
-        });
-      }
+    }
+
+    if (semanticCap >= 0 && semanticCap > 0 && currentSemanticUsage >= semanticCap) {
+      return NextResponse.json({
+        observation: null,
+        sources: [],
+        limitReached: true,
+        creditsRemaining:
+          totalCap < 0 ? -1 : Math.max(0, totalCap - currentSyntacticUsage),
+      });
+    }
+
+    if (totalCap >= 0 && currentSyntacticUsage + SEMANTIC_CREDIT_WEIGHT > totalCap) {
+      return NextResponse.json({
+        observation: null,
+        sources: [],
+        limitReached: true,
+        creditsRemaining: 0,
+      });
     }
 
     const orgName = body.orgName?.trim() || orgRow.name || "Organization";
@@ -302,17 +316,20 @@ export async function POST(req: NextRequest) {
     );
 
     let creditsRemaining =
-      unifiedLimit === -1
+      totalCap < 0
         ? -1
-        : Math.max(
-            0,
-            unifiedLimit - (currentSyntacticUsage + currentSemanticUsage * 5)
-          );
+        : Math.max(0, totalCap - currentSyntacticUsage);
     if (observation) {
-      await incrementCoachUsage(supabaseAdmin, orgId, month, 0, 1);
-      const updatedTotal = currentSyntacticUsage + (currentSemanticUsage + 1) * 5;
+      await incrementCoachUsage(
+        supabaseAdmin,
+        orgId,
+        month,
+        SEMANTIC_CREDIT_WEIGHT,
+        1
+      );
+      const updatedUnified = currentSyntacticUsage + SEMANTIC_CREDIT_WEIGHT;
       creditsRemaining =
-        unifiedLimit === -1 ? -1 : Math.max(0, unifiedLimit - updatedTotal);
+        totalCap < 0 ? -1 : Math.max(0, totalCap - updatedUnified);
     }
 
     return NextResponse.json({

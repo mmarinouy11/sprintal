@@ -140,7 +140,9 @@ export interface CoachUsage {
   id:               string;
   org_id:           string;
   month:            string; // 'YYYY-MM'
+  /** Unified monthly credits consumed (1 per formulation check; +SEMANTIC_CREDIT_WEIGHT per strategic analysis). */
   syntactic_calls:  number;
+  /** Count of strategic analyses this month (plan cap); field-level coach calls may also increment this. */
   semantic_calls:   number;
 }
 
@@ -169,11 +171,32 @@ export interface NotificationItem {
   created_at: string;
 }
 
-/** Unified monthly budget: syntactic coach costs 1 unit; semantic costs 5 (stored via syntactic_calls). */
-export const COACH_LIMITS: Record<Plan, { syntactic: number; semantic: number }> = {
-  trial:   { syntactic: 30,  semantic: 0   },
-  solo:    { syntactic: 100, semantic: 50  },
-  starter: { syntactic: 300, semantic: 150 },
-  growth:  { syntactic: 800, semantic: 400 },
-  scale:   { syntactic: -1,  semantic: -1  },
+// ─────────────────────────────────────────────────────────────
+// Coach credit configuration
+// 1 formulation check = 1 credit (increment syntactic_calls by 1)
+// 1 strategic analysis = SEMANTIC_CREDIT_WEIGHT credits (increment syntactic_calls)
+// All limits are in unified credits (formulation-equivalent)
+// ─────────────────────────────────────────────────────────────
+
+export const SEMANTIC_CREDIT_WEIGHT = 10; // 1 semantic = 10 formulation credits
+
+export const COACH_LIMITS: Record<
+  Plan,
+  {
+    totalCredits: number; // unified monthly budget (-1 = unlimited)
+    semantic: number; // max strategic analyses (-1 = unlimited)
+  }
+> = {
+  trial: { totalCredits: 50, semantic: 0 },
+  solo: { totalCredits: 300, semantic: 30 },
+  starter: { totalCredits: 600, semantic: 60 },
+  growth: { totalCredits: 1200, semantic: 120 },
+  scale: { totalCredits: 3000, semantic: 300 },
 };
+
+/** Total unified credits consumed this month (authoritative: syntactic_calls column). */
+export function coachUnifiedCreditsUsed(
+  u: Pick<CoachUsage, "syntactic_calls" | "semantic_calls"> | null | undefined
+): number {
+  return u?.syntactic_calls ?? 0;
+}
