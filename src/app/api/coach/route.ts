@@ -121,8 +121,21 @@ export async function POST(req: NextRequest) {
     });
 
     const data = await res.json();
+    console.log("anthropic usage object:", JSON.stringify(data.usage));
     const text = data.content?.[0]?.text?.trim() || "";
     const observation = text === "NULL" || text === "" ? null : text;
+    const usage = data.usage;
+    console.log(
+      JSON.stringify({
+        coach: "formulation",
+        field,
+        model: "claude-haiku-4-5-20251001",
+        input_tokens: usage?.input_tokens ?? null,
+        output_tokens: usage?.output_tokens ?? null,
+        org_id: orgId,
+        had_observation: observation !== null,
+      })
+    );
 
     // Record usage if we got a real response
     if (observation !== null && orgId) {

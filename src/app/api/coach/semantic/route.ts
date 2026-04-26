@@ -250,16 +250,25 @@ export async function POST(req: NextRequest) {
     ] as const;
     let modelUsed: (typeof models)[number] | null = null;
     let text = "";
+    let usageData: {
+      input_tokens?: number;
+      output_tokens?: number;
+      cache_read_input_tokens?: number;
+    } | null = null;
     for (const model of models) {
       const first = await callOnce(true, model);
       if (first.ok && extractAnthropicText(first.data)) {
+        console.log("anthropic usage object:", JSON.stringify(first.data?.usage));
         text = extractAnthropicText(first.data);
+        usageData = first.data?.usage ?? null;
         modelUsed = model;
         break;
       }
       const second = await callOnce(false, model);
       if (second.ok && extractAnthropicText(second.data)) {
+        console.log("anthropic usage object:", JSON.stringify(second.data?.usage));
         text = extractAnthropicText(second.data);
+        usageData = second.data?.usage ?? null;
         modelUsed = model;
         break;
       }
@@ -278,6 +287,19 @@ export async function POST(req: NextRequest) {
     const parsed = parseSemanticAssistantText(text);
     const observation =
       parsed.observation || text.replace(/\nSOURCES:[\s\S]*$/i, "").trim() || null;
+    const usage = usageData;
+    console.log(
+      JSON.stringify({
+        coach: "semantic",
+        analysis_type: analysisType,
+        model: modelUsed,
+        input_tokens: usage?.input_tokens ?? null,
+        output_tokens: usage?.output_tokens ?? null,
+        org_id: orgId,
+        had_observation: observation !== null,
+        sources_count: parsed.sources.length,
+      })
+    );
 
     let creditsRemaining =
       unifiedLimit === -1
