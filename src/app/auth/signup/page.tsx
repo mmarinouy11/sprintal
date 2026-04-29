@@ -58,6 +58,16 @@ export default function SignupPage() {
       // 3. If session exists immediately (email confirmation disabled), go to onboarding
       // If no session, email confirmation is required — go to verify page
       if (authData.session) {
+        const params = new URLSearchParams(window.location.search);
+        const requestedPlan = params.get("plan");
+        const requestedPeriod = params.get("period");
+        if (requestedPlan) {
+          const qs = new URLSearchParams();
+          qs.set("plan", requestedPlan);
+          if (requestedPeriod) qs.set("period", requestedPeriod);
+          router.push(`/pricing?${qs.toString()}`);
+          return;
+        }
         router.push(`/onboarding/${data.slug}`);
       } else {
         router.push(`/auth/verify?email=${encodeURIComponent(form.email)}`);
