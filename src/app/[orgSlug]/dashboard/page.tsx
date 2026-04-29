@@ -1,5 +1,6 @@
 "use client";
 import { useMemo, useState } from "react";
+import { useEffect } from "react";
 import { useStore } from "@/lib/store";
 import MetricsBar from "@/components/dashboard/MetricsBar";
 import PortfolioDonut from "@/components/dashboard/PortfolioDonut";
@@ -15,6 +16,8 @@ import PortfolioSemanticSlideover from "@/components/dashboard/PortfolioSemantic
 import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
 import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
 import { COACH_LIMITS } from "@/types";
+import { useSearchParams } from "next/navigation";
+import { formatPlanName } from "@/lib/billing";
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -32,6 +35,8 @@ export default function DashboardPage() {
   const tCoach = useT("coach");
   const [portfolioSlideOpen, setPortfolioSlideOpen] = useState(false);
   const [portfolioRunNonce, setPortfolioRunNonce] = useState(0);
+  const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
+  const searchParams = useSearchParams();
   const activeSprint = sprints.find((s) => s.status === "Active");
   const activeBets = useMemo(
     () => bets.filter((b) => b.sprint_id === activeSprint?.id && b.status === "Active"),
@@ -46,6 +51,17 @@ export default function DashboardPage() {
   const showPortfolioRow = !!org && activeBets.length > 0;
 
   const portfolioOpenDisabled = !semanticPlanOk || !portfolioEligible;
+  const upgradedParam = searchParams.get("upgraded");
+
+  useEffect(() => {
+    if (upgradedParam !== "true") return;
+    setShowUpgradeBanner(true);
+    const timeout = setTimeout(() => setShowUpgradeBanner(false), 5000);
+    const next = new URL(window.location.href);
+    next.searchParams.delete("upgraded");
+    window.history.replaceState({}, "", next.toString());
+    return () => clearTimeout(timeout);
+  }, [upgradedParam]);
 
   const portfolioOpenTitle = (() => {
     if (!org) return undefined;
@@ -69,6 +85,22 @@ export default function DashboardPage() {
         <div className="ph-title">{t("title")}</div>
         <div className="ph-sub">{t("subtitle")}</div>
       </div>
+      {showUpgradeBanner && org && (
+        <button
+          type="button"
+          onClick={() => setShowUpgradeBanner(false)}
+          className="w-full text-left mb-4"
+          style={{
+            border: "1px solid color-mix(in srgb, var(--scaled) 35%, transparent)",
+            background: "color-mix(in srgb, var(--scaled) 10%, transparent)",
+            color: "var(--scaled)",
+            borderRadius: "var(--r)",
+            padding: "10px 14px",
+          }}
+        >
+          {t("upgradeSuccess", { plan: formatPlanName(org.plan) })}
+        </button>
+      )}
 
       {/* Top section — left grows, right is fixed 420px, both stretch to same height */}
       <div className="dashboard-grid" style={{

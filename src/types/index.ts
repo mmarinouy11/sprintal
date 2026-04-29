@@ -25,6 +25,11 @@ export interface Organization {
   created_at:           string;
   coach_syntactic_enabled: boolean;
   coach_semantic_enabled:  boolean;
+  paddle_customer_id?: string | null;
+  paddle_subscription_id?: string | null;
+  paddle_subscription_status?: string | null;
+  plan_period?: "monthly" | "annual" | null;
+  plan_expires_at?: string | null;
 }
 
 export interface OrgMember {
@@ -155,7 +160,8 @@ export type NotificationType =
   | "sprint_expiring"
   | "weak_bet_no_decision"
   | "parent_alert"
-  | "invite_accepted";
+  | "invite_accepted"
+  | "billing_past_due";
 
 export interface NotificationItem {
   id: string;

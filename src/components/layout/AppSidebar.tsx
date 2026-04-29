@@ -183,6 +183,11 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
                 color:"var(--t3)", textDecoration:"none" }}>
               ⚙ {t("nav.settings")}
             </Link>
+            <Link href={`${base}/billing`}
+              style={{ display:"block", fontSize:"0.8125rem", fontFamily:"var(--font-body)",
+                color:"var(--t3)", textDecoration:"none" }}>
+              $ {t("nav.billing")}
+            </Link>
             <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
               style={{ fontSize:"0.8125rem", fontFamily:"var(--font-body)", color:"var(--t3)",
                 background:"none", border:"none", cursor:"pointer", padding:0 }}>
@@ -193,6 +198,8 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
           <>
             <Link href={`${base}/settings`} title="Settings"
               style={{ color:"var(--t3)", textDecoration:"none", fontSize:"1rem" }}>{t("nav.settings")}</Link>
+            <Link href={`${base}/billing`} title="Billing"
+              style={{ color:"var(--t3)", textDecoration:"none", fontSize:"1rem" }}>$</Link>
             <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
               title="Sign out"
               style={{ color:"var(--t3)", background:"none", border:"none", cursor:"pointer",

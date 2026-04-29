@@ -6,6 +6,7 @@ import { useRouter, useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { COACH_LIMITS, type Plan } from "@/types";
 import Modal, { Field, ModalFooter } from "@/components/ui/Modal";
+import UpgradeModal from "@/components/ui/UpgradeModal";
 
 export default function NewSubOrgPage() {
   const t = useT("form");
@@ -147,29 +148,7 @@ export default function NewSubOrgPage() {
 
   if (isTrialOrg) {
     return (
-      <Modal title={t("proFeature")} subtitle={t("subAreasUnavailable")}>
-        <div style={{ textAlign:"center", padding:"24px 0 16px" }}>
-          <div style={{ fontSize:"3rem", marginBottom:16 }}>🔒</div>
-          <div style={{ fontFamily:"var(--font-display)", fontWeight:700, fontSize:"1.25rem",
-            color:"var(--text)", marginBottom:12 }}>
-            Las sub-áreas son una función Pro
-          </div>
-          <p style={{ fontFamily:"var(--font-body)", fontSize:"0.9375rem", color:"var(--t2)",
-            lineHeight:1.7, marginBottom:32 }}>
-            El plan trial incluye una sola organización sin jerarquía. Activá Pro para crear una estructura multinivel con áreas, sub-equipos y cascade de bets.
-          </p>
-          <a href="mailto:hello@sprintal.com?subject=Activar plan Pro"
-            style={{ display:"inline-block", padding:"12px 28px",
-              background:"var(--brand)", color:"#fff", borderRadius:"var(--r)",
-              fontFamily:"var(--font-body)", fontWeight:600, fontSize:"0.9375rem",
-              textDecoration:"none", marginBottom:12 }}>
-            Contactar para activar Pro →
-          </a>
-        </div>
-        <ModalFooter>
-          <button onClick={() => router.back()} className="btn-ghost flex-1">Volver</button>
-        </ModalFooter>
-      </Modal>
+      <UpgradeModal requiredPlan="starter" featureName={t("newArea")} onClose={() => router.back()} />
     );
   }
 

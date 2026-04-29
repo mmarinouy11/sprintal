@@ -7,6 +7,7 @@ import { useRouter, useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import Modal, { Field, FieldRow, ModalFooter } from "@/components/ui/Modal";
+import UpgradeModal from "@/components/ui/UpgradeModal";
 import type { BetStatus } from "@/types";
 
 const OUTCOMES: BetStatus[] = ["Scaled","Pivoted","Done","Killed"];
@@ -55,7 +56,7 @@ export default function SprintClosurePage() {
 
   const router = useRouter();
   const params = useParams();
-  const { org, sprints, bets, updateSprint, updateBet, addBet } = useStore();
+  const { org, sprints, bets, updateSprint, updateBet, addBet, rootPlan } = useStore();
   const active = sprints.find(s=>s.status==="Active");
   const sprintBets = bets.filter(b=>b.sprint_id===active?.id && b.status==="Active");
   const nextSprint = sprints.find(s=>s.status==="Planned");
@@ -71,6 +72,10 @@ export default function SprintClosurePage() {
       <p className="t-mono" style={{color:"var(--t3)"}}>No active sprint found.</p>
     </Modal>
   );
+
+  if (rootPlan === "trial") {
+    return <UpgradeModal requiredPlan="starter" featureName={t("closeSprint")} onClose={() => router.back()} />;
+  }
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
