@@ -497,7 +497,7 @@
     "getStarted": "Comenzar",
     "billedAnnually": "facturado anualmente",
     "perMonth": "/mes",
-    "upgradeSuccess": "¡Bienvenido a {plan}! Tu plan se actualizó correctamente.",
+    "upgradeSuccess": "¡Bienvenido a {plan}! Estamos sincronizando tu suscripción con Facturación; si aún ves el plan anterior, espera unos segundos y vuelve a abrir Facturación.",
     "upgradeTitle": "Actualiza para desbloquear esta función",
     "upgradeBody": "Esta función requiere {plan} o superior.",
     "viewPricing": "Ver precios",

@@ -497,7 +497,7 @@
     "getStarted": "Get started",
     "billedAnnually": "billed annually",
     "perMonth": "/mo",
-    "upgradeSuccess": "Welcome to {plan}! Your plan has been upgraded successfully.",
+    "upgradeSuccess": "Welcome to {plan}! We are syncing your subscription with billing—if the menu still shows an old plan, wait a few seconds and open Billing again.",
     "upgradeTitle": "Upgrade to unlock this feature",
     "upgradeBody": "This feature requires {plan} or higher.",
     "viewPricing": "View pricing",

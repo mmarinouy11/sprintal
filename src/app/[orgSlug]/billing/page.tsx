@@ -1,18 +1,46 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
 import { formatPlanName } from "@/lib/billing";
+import type { Plan } from "@/types";
 
 export default function OrgBillingPage() {
   const t = useT("billing");
-  const { org } = useStore();
+  const params = useParams<{ orgSlug: string }>();
+  const { org, rootPlan, setOrg, setRootPlan } = useStore();
   const [openingPortal, setOpeningPortal] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function refreshOrgRow() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const slug = params.orgSlug;
+      if (!token || !slug || cancelled) return;
+      const res = await fetch(
+        `/api/org/data?slug=${encodeURIComponent(slug)}&_ts=${Date.now()}`,
+        { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok || cancelled) return;
+      const data = await res.json().catch(() => null);
+      if (!data?.org || cancelled) return;
+      setOrg(data.org);
+      setRootPlan(data.rootPlan || data.org.plan);
+    }
+    void refreshOrgRow();
+    return () => {
+      cancelled = true;
+    };
+  }, [params.orgSlug, setOrg, setRootPlan]);
 
   if (!org) return null;
   const orgId = org.id;
+  /** Subscription tier follows the L1 org; child rows may have a stale `plan` column. */
+  const billingPlan = (rootPlan as Plan) || org.plan;
 
   async function openPortal() {
     setOpeningPortal(true);
@@ -45,7 +73,7 @@ export default function OrgBillingPage() {
 
       <div className="card p-5 mb-4">
         <div className="t-label mb-2">{t("currentPlan")}</div>
-        <div className="text-section">{formatPlanName(org.plan)}</div>
+        <div className="text-section">{formatPlanName(billingPlan)}</div>
       </div>
 
       <div className="card p-5 mb-4">

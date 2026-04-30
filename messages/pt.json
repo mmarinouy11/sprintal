@@ -497,7 +497,7 @@
     "getStarted": "Comecar",
     "billedAnnually": "cobrado anualmente",
     "perMonth": "/mes",
-    "upgradeSuccess": "Bem-vindo ao {plan}! Seu plano foi atualizado com sucesso.",
+    "upgradeSuccess": "Bem-vindo ao {plan}! Estamos sincronizando sua assinatura com Cobrança; se ainda vir o plano antigo, aguarde alguns segundos e abra Cobrança novamente.",
     "upgradeTitle": "Atualize para desbloquear este recurso",
     "upgradeBody": "Este recurso exige {plan} ou superior.",
     "viewPricing": "Ver precos",

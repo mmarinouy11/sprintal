@@ -15,7 +15,7 @@ import OwnedBetsSection from "@/components/dashboard/OwnedBetsSection";
 import PortfolioSemanticSlideover from "@/components/dashboard/PortfolioSemanticSlideover";
 import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
 import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
-import { COACH_LIMITS } from "@/types";
+import { COACH_LIMITS, type Plan } from "@/types";
 import { useSearchParams } from "next/navigation";
 import { formatPlanName } from "@/lib/billing";
 
@@ -30,6 +30,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 export default function DashboardPage() {
   const { loading, org, bets, sprints, rootPlan } = useStore();
+  const displayPlanForBanner = (rootPlan as Plan) || org?.plan;
   const planForCoach = effectiveCoachPlan(rootPlan, org?.plan);
   const t = useT("dashboard");
   const tCoach = useT("coach");
@@ -98,7 +99,7 @@ export default function DashboardPage() {
             padding: "10px 14px",
           }}
         >
-          {t("upgradeSuccess", { plan: formatPlanName(org.plan) })}
+          {t("upgradeSuccess", { plan: formatPlanName(displayPlanForBanner) })}
         </button>
       )}
 

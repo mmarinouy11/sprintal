@@ -99,6 +99,37 @@ export default function OrgLayout({
         }
       }
 
+      // Paddle webhook can arrive a few seconds after redirect; poll until DB reflects the purchase.
+      const upgraded =
+        typeof window !== "undefined" &&
+        new URLSearchParams(window.location.search).get("upgraded") === "true";
+      if (upgraded) {
+        const initialPlan = orgData.plan;
+        const initialSubId = orgData.paddle_subscription_id ?? null;
+        for (let i = 0; i < 16; i++) {
+          await new Promise((r) => setTimeout(r, 450));
+          const again = await fetchOrgDataBundle(session.access_token, params.orgSlug);
+          if (!again.ok) break;
+          data = again.data;
+          orgData = data.org;
+          rootPlan = data.rootPlan;
+          role = data.role;
+          sprints = data.sprints;
+          bets = data.bets;
+          evidence = data.evidence;
+          signalChecks = data.signalChecks;
+          children = data.children;
+          betAlignments = data.betAlignments;
+          const subNow = orgData.paddle_subscription_id ?? null;
+          if (
+            orgData.plan !== initialPlan ||
+            (subNow && subNow !== initialSubId)
+          ) {
+            break;
+          }
+        }
+      }
+
       // Reset store if switching orgs
       if (orgData.id !== org?.id) {
         setChildOrgs([]);
