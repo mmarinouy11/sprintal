@@ -2,6 +2,9 @@ import PricingPageClient from "@/components/billing/PricingPageClient";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import type { Plan } from "@/types";
 
+/** Session is read from cookies; avoid caching a shell with isAuthenticated=false for everyone. */
+export const dynamic = "force-dynamic";
+
 export default async function PricingPage() {
   const supabase = await createSupabaseServer();
   const { data: authData } = await supabase.auth.getUser();

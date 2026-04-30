@@ -1,11 +1,12 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Plan } from "@/types";
 import { useT } from "@/lib/i18n";
 import { getPaddle } from "@/lib/paddle";
+import { supabase } from "@/lib/supabase";
 
 type Period = "monthly" | "annual";
 
@@ -79,6 +80,22 @@ export default function PricingPageClient(props: PricingPageClientProps) {
   const [period, setPeriod] = useState<Period>("monthly");
   const [loadingPlan, setLoadingPlan] = useState<Exclude<Plan, "trial"> | null>(null);
 
+  /**
+   * `isAuthenticated` comes from the server RSC (`getUser()` + cookies at request time).
+   * The browser session can be valid even when that prop is false (navigation timing, cookie
+   * sync, or a cached static payload). Checkout must use `getSession()` at interaction time.
+   */
+  useEffect(() => {
+    if (process.env.NODE_ENV !== "development") return;
+    void supabase.auth.getSession().then(({ data }) => {
+      console.debug("[pricing] render auth snapshot", {
+        propIsAuthenticated: isAuthenticated,
+        clientHasSession: !!data.session,
+        userId: data.session?.user?.id ?? null,
+      });
+    });
+  }, [isAuthenticated]);
+
   const cards = useMemo(
     () =>
       PLAN_CARDS.map((card) => {
@@ -94,7 +111,19 @@ export default function PricingPageClient(props: PricingPageClientProps) {
   );
 
   async function openCheckout(plan: Exclude<Plan, "trial">, priceId: string) {
-    if (!isAuthenticated) {
+    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const session = sessionData.session;
+
+    if (process.env.NODE_ENV === "development") {
+      console.debug("[pricing] checkout click auth", {
+        propIsAuthenticated: isAuthenticated,
+        clientHasSession: !!session,
+        sessionError: sessionError?.message ?? null,
+        userId: session?.user?.id ?? null,
+      });
+    }
+
+    if (!session) {
       router.push(`/auth/signup?plan=${encodeURIComponent(plan)}&period=${encodeURIComponent(period)}`);
       return;
     }
