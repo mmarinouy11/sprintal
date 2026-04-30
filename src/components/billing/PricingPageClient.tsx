@@ -128,6 +128,11 @@ export default function PricingPageClient(props: PricingPageClientProps) {
       return;
     }
 
+    if (!priceId?.startsWith("pri_")) {
+      console.error("[pricing] Invalid or missing Paddle priceId — check env PADDLE_PRICE_* vars", { plan, priceId });
+      return;
+    }
+
     setLoadingPlan(plan);
     try {
       const paddle = await getPaddle();
@@ -135,11 +140,27 @@ export default function PricingPageClient(props: PricingPageClientProps) {
       const successUrl = orgSlug
         ? `${window.location.origin}/${orgSlug}/dashboard?upgraded=true`
         : `${window.location.origin}/`;
-      paddle.Checkout.open({
+
+      // Paddle rejects invalid customData; omit unless we have a real org id for webhooks.
+      // Overlay: set displayMode + one-page variant per Paddle Billing docs.
+      const payload: Parameters<typeof paddle.Checkout.open>[0] = {
         items: [{ priceId, quantity: 1 }],
-        customData: { orgId: orgId || "" },
-        settings: { successUrl },
-      });
+        settings: {
+          displayMode: "overlay",
+          variant: "one-page",
+          successUrl,
+        },
+      };
+      if (orgId) {
+        payload.customData = { orgId };
+      } else if (process.env.NODE_ENV === "development") {
+        console.warn("[pricing] No orgId — checkout will open but webhook cannot match org until user has membership");
+      }
+      const email = session.user.email?.trim();
+      if (email) {
+        payload.customer = { email };
+      }
+      paddle.Checkout.open(payload);
     } finally {
       setLoadingPlan(null);
     }
