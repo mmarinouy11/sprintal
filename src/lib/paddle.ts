@@ -50,6 +50,19 @@ function paddleEventCallback(event: PaddleEventData) {
       data: event.data,
       raw: event,
     });
+    if (
+      name === "checkout.error" &&
+      "detail" in event &&
+      event.detail === "transaction_default_checkout_url_not_set"
+    ) {
+      // eslint-disable-next-line no-console -- intentional diagnostics
+      console.error(
+        "[Paddle] Set Default payment link in seller dashboard (required for checkout). " +
+          "Sandbox: https://sandbox-vendors.paddle.com/checkout-settings — " +
+          "Live: https://vendors.paddle.com/checkout-settings — " +
+          "Docs: https://developer.paddle.com/errors/transactions/transaction_default_checkout_url_not_set"
+      );
+    }
   }
 }
 
