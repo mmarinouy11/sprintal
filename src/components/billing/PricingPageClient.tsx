@@ -133,12 +133,35 @@ export default function PricingPageClient(props: PricingPageClientProps) {
       return;
     }
 
+    let checkoutOrgId = orgId;
+    let checkoutOrgSlug = orgSlug;
+    if (!checkoutOrgId && session.user.id) {
+      const { data: memberRow } = await supabase
+        .from("org_members")
+        .select("org_id")
+        .eq("user_id", session.user.id)
+        .limit(1)
+        .maybeSingle();
+      if (memberRow?.org_id) {
+        checkoutOrgId = memberRow.org_id;
+        if (!checkoutOrgSlug) {
+          const { data: orgRow } = await supabase
+            .from("organizations")
+            .select("slug")
+            .eq("id", memberRow.org_id)
+            .limit(1)
+            .maybeSingle();
+          checkoutOrgSlug = orgRow?.slug ?? null;
+        }
+      }
+    }
+
     setLoadingPlan(plan);
     try {
       const paddle = await getPaddle();
       if (!paddle) return;
-      const successUrl = orgSlug
-        ? `${window.location.origin}/${orgSlug}/dashboard?upgraded=true`
+      const successUrl = checkoutOrgSlug
+        ? `${window.location.origin}/${checkoutOrgSlug}/dashboard?upgraded=true`
         : `${window.location.origin}/`;
 
       // Paddle rejects invalid customData; omit unless we have a real org id for webhooks.
@@ -151,8 +174,8 @@ export default function PricingPageClient(props: PricingPageClientProps) {
           successUrl,
         },
       };
-      if (orgId) {
-        payload.customData = { orgId };
+      if (checkoutOrgId) {
+        payload.customData = { orgId: checkoutOrgId };
       } else if (process.env.NODE_ENV === "development") {
         console.warn("[pricing] No orgId — checkout will open but webhook cannot match org until user has membership");
       }
@@ -167,8 +190,8 @@ export default function PricingPageClient(props: PricingPageClientProps) {
         plan,
         period,
         priceIdPrefix: `${priceId.slice(0, 16)}…`,
-        hasOrgId: !!orgId,
-        orgSlug,
+        hasOrgId: !!checkoutOrgId,
+        orgSlug: checkoutOrgSlug,
         successUrl,
         hasCustomerEmail: !!email,
         NEXT_PUBLIC_PADDLE_DEBUG: process.env.NEXT_PUBLIC_PADDLE_DEBUG ?? "(unset)",

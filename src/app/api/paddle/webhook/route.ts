@@ -38,6 +38,45 @@ function extractOrgId(data: any): string | null {
   );
 }
 
+/** Subscription id for org lookup / storage — never use transaction ids (`txn_`). */
+function extractSubscriptionId(eventType: string | undefined, data: any): string | null {
+  const id = data?.id;
+  const subField = data?.subscription_id;
+  if (eventType?.startsWith("subscription.")) {
+    if (typeof id === "string" && id.startsWith("sub_")) return id;
+    if (typeof subField === "string" && subField.startsWith("sub_")) return subField;
+    return null;
+  }
+  if (eventType?.startsWith("transaction.")) {
+    if (typeof subField === "string" && subField.startsWith("sub_")) return subField;
+    return null;
+  }
+  if (typeof id === "string" && id.startsWith("sub_")) return id;
+  if (typeof subField === "string" && subField.startsWith("sub_")) return subField;
+  return null;
+}
+
+function shouldProvisionFromSubscriptionEvent(
+  eventType: string | undefined,
+  status: string | null
+): boolean {
+  if (eventType === "subscription.activated") return true;
+  if (eventType === "subscription.created") {
+    return status === "active" || status === "trialing";
+  }
+  return false;
+}
+
+function paddleStatusForProvision(
+  eventType: string | undefined,
+  status: string | null
+): string {
+  if (eventType === "subscription.activated") return "active";
+  if (status === "trialing") return "trialing";
+  if (status === "active") return "active";
+  return "active";
+}
+
 export async function POST(req: NextRequest) {
   const secret = process.env.PADDLE_WEBHOOK_SECRET || "";
   const rawBody = await req.text();
@@ -69,7 +108,7 @@ export async function POST(req: NextRequest) {
     const plan = getPlanFromPriceId(priceId);
     const period = getPeriodFromPriceId(priceId);
     const customerId = data?.customer_id ?? data?.customer?.id ?? null;
-    const subscriptionId = data?.id ?? data?.subscription_id ?? null;
+    const subscriptionId = extractSubscriptionId(eventType, data);
     const status = data?.status ?? null;
     const orgIdFromCustomData = extractOrgId(data);
 
@@ -89,7 +128,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    if (eventType === "subscription.activated") {
+    // Paddle recommends subscription.created for provisioning; activated often follows but is not always subscribed.
+    if (shouldProvisionFromSubscriptionEvent(eventType, status)) {
+      if (!subscriptionId) {
+        console.error("paddle webhook: provision skipped — missing subscription id", eventType);
+      } else {
+        const paddleStatus = paddleStatusForProvision(eventType, status);
+        await supabaseAdmin.from("organizations").update({
+          ...(plan ? { plan } : {}),
+          ...(period ? { plan_period: period } : {}),
+          paddle_customer_id: customerId,
+          paddle_subscription_id: subscriptionId,
+          paddle_subscription_status: paddleStatus,
+          plan_expires_at: null,
+          trial_ends_at: null,
+        }).eq("id", orgId);
+      }
+    }
+
+    // Fallback when notifications include transaction.* but not subscription.* (custom_data is on the transaction).
+    if (
+      eventType === "transaction.completed" &&
+      orgIdFromCustomData &&
+      subscriptionId &&
+      (status === "completed" || status === "paid")
+    ) {
       await supabaseAdmin.from("organizations").update({
         ...(plan ? { plan } : {}),
         ...(period ? { plan_period: period } : {}),
@@ -98,7 +161,7 @@ export async function POST(req: NextRequest) {
         paddle_subscription_status: "active",
         plan_expires_at: null,
         trial_ends_at: null,
-      }).eq("id", orgId);
+      }).eq("id", orgIdFromCustomData);
     }
 
     if (eventType === "subscription.updated") {
