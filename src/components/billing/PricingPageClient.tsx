@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Plan } from "@/types";
 import { useT } from "@/lib/i18n";
-import { getPaddle } from "@/lib/paddle";
+import { getPaddle, getPaddleJsEnvironment } from "@/lib/paddle";
 import { supabase } from "@/lib/supabase";
 
 type Period = "monthly" | "annual";
@@ -160,6 +160,20 @@ export default function PricingPageClient(props: PricingPageClientProps) {
       if (email) {
         payload.customer = { email };
       }
+
+      // eslint-disable-next-line no-console -- intentional diagnostics (see NEXT_PUBLIC_PADDLE_DEBUG)
+      console.info("[pricing] Paddle.Checkout.open", {
+        environment: getPaddleJsEnvironment(),
+        plan,
+        period,
+        priceIdPrefix: `${priceId.slice(0, 16)}…`,
+        hasOrgId: !!orgId,
+        orgSlug,
+        successUrl,
+        hasCustomerEmail: !!email,
+        NEXT_PUBLIC_PADDLE_DEBUG: process.env.NEXT_PUBLIC_PADDLE_DEBUG ?? "(unset)",
+      });
+
       paddle.Checkout.open(payload);
     } finally {
       setLoadingPlan(null);
