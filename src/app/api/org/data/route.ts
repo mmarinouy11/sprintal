@@ -54,8 +54,13 @@ export async function GET(req: NextRequest) {
     const role = memberByOrgId.get(org.id);
     if (!role) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
 
-    const billingRoot = await getBillingRootOrgRow(supabaseAdmin, org.id);
-    const rootPlan = billingRoot?.plan ?? org.plan;
+    const billingRoot =
+      (await getBillingRootOrgRow(supabaseAdmin, org.id)) ?? {
+        id: org.id as string,
+        slug: org.slug as string,
+        plan: org.plan as string,
+      };
+    const rootPlan = billingRoot.plan;
 
     // Load everything in parallel
     const [sprintsRes, betsRes, evidenceRes, signalChecksRes, childrenRes] = await Promise.all([
@@ -78,6 +83,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       org,
       rootPlan,
+      billingRoot,
       role,
       sprints: sprintsRes.data || [],
       bets,

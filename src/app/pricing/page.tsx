@@ -1,3 +1,4 @@
+import { createClient } from "@supabase/supabase-js";
 import PricingPageClient from "@/components/billing/PricingPageClient";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getBillingRootOrgRow } from "@/lib/orgBillingRoot";
@@ -26,7 +27,17 @@ export default async function PricingPage({
   let currentPlan: Plan | null = null;
 
   if (user) {
-    const { data: memberRows } = await supabase
+    /**
+     * Walk to L1 must bypass RLS (same as /api/org/data). With the user-scoped client,
+     * parent rows are often unreadable → walk stops at child → wrong `plan` vs billing.
+     */
+    const admin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+
+    const { data: memberRows } = await admin
       .from("org_members")
       .select("org_id")
       .eq("user_id", user.id);
@@ -38,7 +49,7 @@ export default async function PricingPage({
     let chosen: { id: string; slug: string } | null = null;
 
     if (preferredSlug && orgIds.length) {
-      const { data: match } = await supabase
+      const { data: match } = await admin
         .from("organizations")
         .select("id, slug")
         .eq("slug", preferredSlug)
@@ -49,7 +60,7 @@ export default async function PricingPage({
     }
 
     if (!chosen && orgIds.length) {
-      const { data: orgs } = await supabase
+      const { data: orgs } = await admin
         .from("organizations")
         .select("id, slug")
         .in("id", orgIds)
@@ -59,7 +70,7 @@ export default async function PricingPage({
     }
 
     if (chosen) {
-      const billingRoot = await getBillingRootOrgRow(supabase, chosen.id);
+      const billingRoot = await getBillingRootOrgRow(admin, chosen.id);
       orgId = billingRoot?.id ?? chosen.id;
       orgSlug = chosen.slug;
       currentPlan = (billingRoot?.plan as Plan | undefined) ?? null;

@@ -11,8 +11,12 @@ import type { Plan } from "@/types";
 export default function OrgBillingPage() {
   const t = useT("billing");
   const params = useParams<{ orgSlug: string }>();
-  const { org, rootPlan, setOrg, setRootPlan } = useStore();
+  const { org, setOrg, setRootPlan } = useStore();
   const [openingPortal, setOpeningPortal] = useState(false);
+  /** Same source as API (`billingRoot.plan`); avoids stale zustand `rootPlan` on first paint. */
+  const [billingPlan, setBillingPlan] = useState<Plan | null>(null);
+  /** Paddle rows live on the billing root (L1), not necessarily on the org for this slug. */
+  const [paddleOrgId, setPaddleOrgId] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -28,6 +32,14 @@ export default function OrgBillingPage() {
       if (!res.ok || cancelled) return;
       const data = await res.json().catch(() => null);
       if (!data?.org || cancelled) return;
+      const root = data.billingRoot ?? {
+        id: data.org.id,
+        slug: data.org.slug,
+        plan: data.rootPlan ?? data.org.plan,
+      };
+      const plan = (root.plan ?? data.rootPlan ?? data.org.plan) as Plan;
+      setBillingPlan(plan);
+      setPaddleOrgId(root.id);
       setOrg(data.org);
       setRootPlan(data.rootPlan || data.org.plan);
     }
@@ -38,9 +50,8 @@ export default function OrgBillingPage() {
   }, [params.orgSlug, setOrg, setRootPlan]);
 
   if (!org) return null;
-  const orgId = org.id;
-  /** Subscription tier follows the L1 org; child rows may have a stale `plan` column. */
-  const billingPlan = (rootPlan as Plan) || org.plan;
+  const orgId = paddleOrgId ?? org.id;
+  const planLabel = billingPlan ?? (org.plan as Plan);
 
   async function openPortal() {
     setOpeningPortal(true);
@@ -73,7 +84,7 @@ export default function OrgBillingPage() {
 
       <div className="card p-5 mb-4">
         <div className="t-label mb-2">{t("currentPlan")}</div>
-        <div className="text-section">{formatPlanName(billingPlan)}</div>
+        <div className="text-section">{formatPlanName(planLabel)}</div>
       </div>
 
       <div className="card p-5 mb-4">
