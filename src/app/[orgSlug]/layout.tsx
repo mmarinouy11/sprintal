@@ -1,5 +1,5 @@
 "use client";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
@@ -37,10 +37,19 @@ export default function OrgLayout({
   } = useStore();
   const router = useRouter();
   const pathname = usePathname();
+  /** Slug changes → full-screen load; same org, new path (p. ej. vuelta desde /pricing) → refresh sin bloquear UI */
+  const lastLoadedSlugRef = useRef<string | null>(null);
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
+      const slugChanged =
+        lastLoadedSlugRef.current !== null && lastLoadedSlugRef.current !== params.orgSlug;
+      const isInitial = lastLoadedSlugRef.current === null;
+      lastLoadedSlugRef.current = params.orgSlug;
+
+      if (slugChanged || isInitial) {
+        setLoading(true);
+      }
 
       // Get session token to call API Route
       const { data: { session } } = await supabase.auth.getSession();
@@ -193,7 +202,41 @@ export default function OrgLayout({
       setLoading(false);
     }
     load();
-  }, [params.orgSlug]);
+  }, [params.orgSlug, pathname]);
+
+  // Misma org y misma ruta: p. ej. pricing en otra pestaña → volver aquí sin remount
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+
+    async function pullOrgBundle() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (!session) return;
+      const bundle = await fetchOrgDataBundle(session.access_token, params.orgSlug);
+      if (!bundle.ok || !("data" in bundle)) return;
+      const d = bundle.data;
+      setOrg(d.org);
+      setRootPlan(d.rootPlan || d.org.plan);
+      setCurrentRole(d.role);
+      setChildOrgs(d.children);
+    }
+
+    function scheduleRefresh() {
+      if (document.visibilityState !== "visible") return;
+      clearTimeout(t);
+      t = setTimeout(() => {
+        void pullOrgBundle();
+      }, 400);
+    }
+
+    window.addEventListener("focus", scheduleRefresh);
+    document.addEventListener("visibilitychange", scheduleRefresh);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener("focus", scheduleRefresh);
+      document.removeEventListener("visibilitychange", scheduleRefresh);
+    };
+  }, [params.orgSlug, setOrg, setRootPlan, setCurrentRole, setChildOrgs]);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
