@@ -148,7 +148,12 @@ export default function NewSubOrgPage() {
 
   if (isTrialOrg) {
     return (
-      <UpgradeModal requiredPlan="starter" featureName={t("newArea")} onClose={() => router.back()} />
+      <UpgradeModal
+        requiredPlan="starter"
+        featureName={t("newArea")}
+        orgSlug={typeof params.orgSlug === "string" ? params.orgSlug : undefined}
+        onClose={() => router.back()}
+      />
     );
   }
 

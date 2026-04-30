@@ -74,7 +74,14 @@ export default function SprintClosurePage() {
   );
 
   if (rootPlan === "trial") {
-    return <UpgradeModal requiredPlan="starter" featureName={t("closeSprint")} onClose={() => router.back()} />;
+    return (
+      <UpgradeModal
+        requiredPlan="starter"
+        featureName={t("closeSprint")}
+        orgSlug={typeof params.orgSlug === "string" ? params.orgSlug : undefined}
+        onClose={() => router.back()}
+      />
+    );
   }
 
   async function save(e: React.FormEvent) {

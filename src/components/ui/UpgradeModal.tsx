@@ -9,10 +9,15 @@ interface UpgradeModalProps {
   requiredPlan: Plan;
   featureName?: string;
   onClose?: () => void;
+  /** Current app org slug so /pricing shows the same plan + sends the correct Paddle org id */
+  orgSlug?: string | null;
 }
 
-export default function UpgradeModal({ requiredPlan, featureName, onClose }: UpgradeModalProps) {
+export default function UpgradeModal({ requiredPlan, featureName, onClose, orgSlug }: UpgradeModalProps) {
   const t = useT("billing");
+  const pricingHref = orgSlug?.trim()
+    ? `/pricing?org=${encodeURIComponent(orgSlug.trim())}`
+    : "/pricing";
 
   return (
     <Modal title={t("upgradeTitle")} subtitle={featureName} onClose={onClose}>
@@ -21,7 +26,7 @@ export default function UpgradeModal({ requiredPlan, featureName, onClose }: Upg
         <button
           type="button"
           className="btn-primary flex-1"
-          onClick={() => window.open("/pricing", "_blank", "noopener,noreferrer")}
+          onClick={() => window.open(pricingHref, "_blank", "noopener,noreferrer")}
         >
           {t("viewPricing")}
         </button>

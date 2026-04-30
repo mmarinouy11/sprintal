@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest, NextResponse } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { getBillingRootOrgRow } from "@/lib/orgBillingRoot";
 
 export const dynamic = "force-dynamic";
 
@@ -53,22 +54,8 @@ export async function GET(req: NextRequest) {
     const role = memberByOrgId.get(org.id);
     if (!role) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
 
-    // Get root org plan (L1) — plan applies to entire org tree
-    let rootPlan = org.plan;
-    if (org.parent_org_id) {
-      const { data: rootRows } = await supabaseAdmin
-        .from("organizations").select("plan")
-        .eq("cascade_level", 1)
-        .is("parent_org_id", null)
-        .limit(1);
-      // Walk up using org_path to find the root
-      const rootId = org.org_path?.split(".")?.[0]?.replace(/_/g, "-");
-      if (rootId) {
-        const { data: rootOrgRows } = await supabaseAdmin
-          .from("organizations").select("plan").eq("id", rootId).limit(1);
-        rootPlan = rootOrgRows?.[0]?.plan || org.plan;
-      }
-    }
+    const billingRoot = await getBillingRootOrgRow(supabaseAdmin, org.id);
+    const rootPlan = billingRoot?.plan ?? org.plan;
 
     // Load everything in parallel
     const [sprintsRes, betsRes, evidenceRes, signalChecksRes, childrenRes] = await Promise.all([
