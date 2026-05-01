@@ -1,15 +1,26 @@
 "use client";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 
-export default function AuthCallbackPage() {
+function AuthCallbackCompleteInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
   const [message, setMessage] = useState("");
 
   useEffect(() => {
     async function handleCallback() {
+      const code = searchParams.get("code");
+      if (code) {
+        const { error: exchangeErr } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeErr) {
+          setStatus("error");
+          setMessage(exchangeErr.message || "Could not verify session.");
+          return;
+        }
+      }
+
       const { data: { session }, error } = await supabase.auth.getSession();
 
       if (error || !session) {
@@ -18,15 +29,19 @@ export default function AuthCallbackPage() {
         return;
       }
 
-      // Get user's org
       const { data: members } = await supabase
         .from("org_members")
         .select("org_id")
         .eq("user_id", session.user.id);
 
       if (!members?.length) {
-        setStatus("error");
-        setMessage("No se encontró ninguna organización para este usuario.");
+        const qs = new URLSearchParams();
+        qs.set("oauth", "true");
+        const p = searchParams.get("plan");
+        const per = searchParams.get("period");
+        if (p) qs.set("plan", p);
+        if (per) qs.set("period", per);
+        router.replace(`/auth/signup?${qs.toString()}`);
         return;
       }
 
@@ -38,8 +53,23 @@ export default function AuthCallbackPage() {
 
       const org = orgs?.[0];
       if (!org) {
-        setStatus("error");
-        setMessage("No se encontró la organización.");
+        const qs = new URLSearchParams();
+        qs.set("oauth", "true");
+        const p = searchParams.get("plan");
+        const per = searchParams.get("period");
+        if (p) qs.set("plan", p);
+        if (per) qs.set("period", per);
+        router.replace(`/auth/signup?${qs.toString()}`);
+        return;
+      }
+
+      const requestedPlan = searchParams.get("plan");
+      const requestedPeriod = searchParams.get("period");
+      if (requestedPlan) {
+        const qs = new URLSearchParams();
+        qs.set("plan", requestedPlan);
+        if (requestedPeriod) qs.set("period", requestedPeriod);
+        router.replace(`/pricing?${qs.toString()}`);
         return;
       }
 
@@ -54,7 +84,7 @@ export default function AuthCallbackPage() {
     }
 
     handleCallback();
-  }, []);
+  }, [router, searchParams]);
 
   return (
     <div style={{
@@ -130,5 +160,17 @@ export default function AuthCallbackPage() {
         @keyframes spin { to { transform: rotate(360deg); } }
       `}</style>
     </div>
+  );
+}
+
+export default function AuthCallbackCompletePage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+        <div style={{ fontFamily: "var(--font-body)", color: "var(--t2)" }}>Loading…</div>
+      </div>
+    }>
+      <AuthCallbackCompleteInner />
+    </Suspense>
   );
 }

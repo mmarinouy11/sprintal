@@ -99,7 +99,13 @@
     "passwordMismatch": "Las contraseñas no coinciden.",
     "passwordTooShort": "La contraseña debe tener al menos 8 caracteres.",
     "setPasswordBtn": "Guardar contraseña",
-    "settingPassword": "Guardando..."
+    "settingPassword": "Guardando...",
+    "continueWithGoogle": "Continuar con Google",
+    "orDivider": "o",
+    "oauthFinishTitle": "Completá tu cuenta",
+    "signedInAs": "Sesión iniciada como {email}",
+    "oauthFinishCta": "Continuar",
+    "oauthFailed": "No se pudo iniciar sesión con Google. Probá de nuevo."
   },
   "coach": {
     "strategicAnalysis": "Análisis estratégico",

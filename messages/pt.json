@@ -99,7 +99,13 @@
     "passwordMismatch": "As senhas não coincidem.",
     "passwordTooShort": "A senha deve ter pelo menos 8 caracteres.",
     "setPasswordBtn": "Salvar senha",
-    "settingPassword": "Salvando..."
+    "settingPassword": "Salvando...",
+    "continueWithGoogle": "Continuar com Google",
+    "orDivider": "ou",
+    "oauthFinishTitle": "Conclua sua conta",
+    "signedInAs": "Conectado como {email}",
+    "oauthFinishCta": "Continuar",
+    "oauthFailed": "Não foi possível entrar com o Google. Tente novamente."
   },
   "coach": {
     "strategicAnalysis": "Análise estratégica",

@@ -13,7 +13,7 @@ export default async function RootPage() {
     .eq("user_id", user.id)
     .limit(1);
   const member = members?.[0];
-  if (!member) redirect("/auth/login");
+  if (!member) redirect("/auth/signup?oauth=true");
 
   // Get org
   const { data: orgs } = await supabase

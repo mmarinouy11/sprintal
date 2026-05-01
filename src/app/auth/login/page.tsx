@@ -1,9 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useT } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import GoogleOAuthButton from "@/components/auth/GoogleOAuthButton";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -13,6 +14,14 @@ export default function LoginPage() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const e = params.get("error");
+    if (!e) return;
+    if (e === "oauth") setError(t("oauthFailed"));
+    else setError(decodeURIComponent(e));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- read ?error= once on mount
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -64,6 +73,13 @@ export default function LoginPage() {
             </div>
             <div className="t-label">Strategic Portfolio Management</div>
           </div>
+          <GoogleOAuthButton disabled={loading} />
+          <div className="flex items-center gap-3 my-5">
+            <div className="flex-1 h-px" style={{ background: "var(--border-mid)" }} />
+            <span className="t-mono text-xs shrink-0" style={{ color: "var(--t3)" }}>{t("orDivider")}</span>
+            <div className="flex-1 h-px" style={{ background: "var(--border-mid)" }} />
+          </div>
+
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
               <label className="t-label block mb-2">Email</label>

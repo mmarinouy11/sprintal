@@ -99,7 +99,13 @@
     "passwordMismatch": "Passwords do not match.",
     "passwordTooShort": "Password must be at least 8 characters.",
     "setPasswordBtn": "Save password",
-    "settingPassword": "Saving..."
+    "settingPassword": "Saving...",
+    "continueWithGoogle": "Continue with Google",
+    "orDivider": "or",
+    "oauthFinishTitle": "Finish setting up your account",
+    "signedInAs": "Signed in as {email}",
+    "oauthFinishCta": "Continue",
+    "oauthFailed": "Google sign-in failed. Please try again."
   },
   "coach": {
     "strategicAnalysis": "Strategic Analysis",

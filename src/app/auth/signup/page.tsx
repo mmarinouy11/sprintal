@@ -1,29 +1,93 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useT } from "@/lib/i18n";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import GoogleOAuthButton from "@/components/auth/GoogleOAuthButton";
 
-export default function SignupPage() {
+function SignupPageInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useT("auth");
+  const oauthMode = searchParams.get("oauth") === "true";
+  const planQ = searchParams.get("plan");
+  const periodQ = searchParams.get("period");
+
   const [form, setForm] = useState({ email: "", password: "", orgName: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [oauthEmail, setOauthEmail] = useState<string | null>(null);
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
+
+  useEffect(() => {
+    if (!oauthMode) return;
+    let cancelled = false;
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (cancelled) return;
+      if (!user?.email) {
+        router.replace("/auth/login");
+        return;
+      }
+      setOauthEmail(user.email);
+    })();
+    return () => { cancelled = true; };
+  }, [oauthMode, router]);
+
+  async function handleOAuthOrgSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user?.email) {
+        setError("Session expired. Please sign in again.");
+        setLoading(false);
+        return;
+      }
+      const res = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: user.id,
+          email: user.email,
+          orgName: form.orgName,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Error al crear la organización.");
+        setLoading(false);
+        return;
+      }
+      const requestedPlan = searchParams.get("plan");
+      const requestedPeriod = searchParams.get("period");
+      if (requestedPlan) {
+        const qs = new URLSearchParams();
+        qs.set("plan", requestedPlan);
+        if (requestedPeriod) qs.set("period", requestedPeriod);
+        router.push(`/pricing?${qs.toString()}`);
+        return;
+      }
+      router.push(`/onboarding/${data.slug}`);
+    } catch {
+      setError("Error de conexión. Intentá de nuevo.");
+    } finally {
+      setLoading(false);
+    }
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(""); setLoading(true);
     try {
-      // 1. Sign up via Supabase client — this triggers the confirmation email
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: form.email,
         password: form.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${window.location.origin}/auth/callback/complete`,
         },
       });
 
@@ -37,7 +101,6 @@ export default function SignupPage() {
         return;
       }
 
-      // 2. Create org + member via API Route using the new user.id
       const res = await fetch("/api/auth/signup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -55,12 +118,9 @@ export default function SignupPage() {
         return;
       }
 
-      // 3. If session exists immediately (email confirmation disabled), go to onboarding
-      // If no session, email confirmation is required — go to verify page
       if (authData.session) {
-        const params = new URLSearchParams(window.location.search);
-        const requestedPlan = params.get("plan");
-        const requestedPeriod = params.get("period");
+        const requestedPlan = searchParams.get("plan");
+        const requestedPeriod = searchParams.get("period");
         if (requestedPlan) {
           const qs = new URLSearchParams();
           qs.set("plan", requestedPlan);
@@ -90,11 +150,28 @@ export default function SignupPage() {
               Sprintal
             </div>
             <div style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t3)" }}>
-              Create your account
+              {oauthMode ? t("oauthFinishTitle") : "Create your account"}
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16 }}>
+          {!oauthMode && (
+            <>
+              <GoogleOAuthButton disabled={loading} plan={planQ} period={periodQ} />
+              <div className="flex items-center gap-3 my-5">
+                <div className="flex-1 h-px" style={{ background: "var(--border-mid)" }} />
+                <span className="t-mono text-xs shrink-0" style={{ color: "var(--t3)" }}>{t("orDivider")}</span>
+                <div className="flex-1 h-px" style={{ background: "var(--border-mid)" }} />
+              </div>
+            </>
+          )}
+
+          {oauthMode && oauthEmail && (
+            <p style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t2)", marginBottom:16 }}>
+              {t("signedInAs", { email: oauthEmail })}
+            </p>
+          )}
+
+          <form onSubmit={oauthMode ? handleOAuthOrgSubmit : handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16 }}>
             <div>
               <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
                 fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
@@ -104,24 +181,28 @@ export default function SignupPage() {
               <input className="input" value={form.orgName} onChange={set("orgName")}
                 placeholder={t("orgPlaceholder")} required autoFocus />
             </div>
-            <div>
-              <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
-                fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
-                textTransform:"uppercase" }}>
-                Email
-              </label>
-              <input className="input" type="email" value={form.email} onChange={set("email")}
-                placeholder={t("emailPlaceholder")} required />
-            </div>
-            <div>
-              <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
-                fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
-                textTransform:"uppercase" }}>
-                Password
-              </label>
-              <input className="input" type="password" value={form.password} onChange={set("password")}
-                placeholder={t("passwordMin")} required minLength={8} />
-            </div>
+            {!oauthMode && (
+              <>
+                <div>
+                  <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
+                    fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
+                    textTransform:"uppercase" }}>
+                    Email
+                  </label>
+                  <input className="input" type="email" value={form.email} onChange={set("email")}
+                    placeholder={t("emailPlaceholder")} required />
+                </div>
+                <div>
+                  <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
+                    fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
+                    textTransform:"uppercase" }}>
+                    Password
+                  </label>
+                  <input className="input" type="password" value={form.password} onChange={set("password")}
+                    placeholder={t("passwordMin")} required minLength={8} />
+                </div>
+              </>
+            )}
 
             {error && (
               <div style={{ padding:"10px 14px", borderRadius:"var(--rs)",
@@ -131,12 +212,12 @@ export default function SignupPage() {
               </div>
             )}
 
-            <button type="submit" disabled={loading}
+            <button type="submit" disabled={loading || (oauthMode && !oauthEmail)}
               style={{ padding:"12px", borderRadius:"var(--r)",
                 background:"var(--brand)", color:"#fff", border:"none", cursor:"pointer",
                 fontFamily:"var(--font-body)", fontWeight:600, fontSize:"1rem",
                 marginTop:4, opacity: loading ? 0.7 : 1 }}>
-              {loading ? t("creating") : t("signUp")}
+              {loading ? t("creating") : oauthMode ? t("oauthFinishCta") : t("signUp")}
             </button>
           </form>
 
@@ -150,5 +231,17 @@ export default function SignupPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
+        <div style={{ color: "var(--t2)", fontFamily: "var(--font-body)" }}>Loading…</div>
+      </div>
+    }>
+      <SignupPageInner />
+    </Suspense>
   );
 }
