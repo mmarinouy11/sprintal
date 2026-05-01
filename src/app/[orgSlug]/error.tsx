@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 export default function OrgError({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
   const params = useParams<{ orgSlug: string }>();
   const slug = typeof params?.orgSlug === "string" ? params.orgSlug : "";
+  const t = useT("errors");
 
   return (
     <div
@@ -16,10 +18,10 @@ export default function OrgError({ error, reset }: { error: Error & { digest?: s
         className="text-2xl font-bold mb-3"
         style={{ color: "#5C6AC4", fontFamily: "'Outfit', var(--font-display), sans-serif" }}
       >
-        Something went wrong
+        {t("orgBoundaryTitle")}
       </h1>
       <p className="text-body mb-6" style={{ color: "var(--t2)" }}>
-        Something went wrong loading this page.
+        {t("orgBoundaryBody")}
       </p>
       {process.env.NODE_ENV === "development" && error?.message ? (
         <pre
@@ -31,15 +33,15 @@ export default function OrgError({ error, reset }: { error: Error & { digest?: s
       ) : null}
       <div className="flex flex-wrap gap-3 justify-center">
         <button type="button" className="btn-primary" onClick={() => reset()}>
-          Try again
+          {t("tryAgain")}
         </button>
         {slug ? (
           <Link href={`/${slug}/dashboard`} className="btn-ghost" style={{ textDecoration: "none" }}>
-            Back to dashboard
+            {t("backToDashboard")}
           </Link>
         ) : (
           <Link href="/" className="btn-ghost" style={{ textDecoration: "none" }}>
-            Home
+            {t("home")}
           </Link>
         )}
       </div>

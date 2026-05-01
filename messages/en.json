@@ -110,6 +110,16 @@
     "oauthSessionLoading": "Connecting your Google account…",
     "oauthNewUserHint": "Your Google account is ready. Tap “Continue with Google” below to finish signing in."
   },
+  "errors": {
+    "orgBoundaryTitle": "Something went wrong",
+    "orgBoundaryBody": "Something went wrong loading this page.",
+    "tryAgain": "Try again",
+    "backToDashboard": "Back to dashboard",
+    "home": "Home",
+    "goHome": "Go home",
+    "orgNotFoundTitle": "Page not found",
+    "orgNotFoundBody": "This area or URL does not exist in your organization."
+  },
   "coach": {
     "strategicAnalysis": "Strategic Analysis",
     "identifyingContext": "Identifying context...",

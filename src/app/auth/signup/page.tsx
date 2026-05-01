@@ -188,15 +188,17 @@ function SignupPageInner() {
 
           {oauthMode && oauthWaiting && (
             <div style={{ textAlign: "center", padding: "32px 0" }}>
-              <div style={{
-                width: 40, height: 40, borderRadius: "50%",
-                border: "3px solid var(--raised)", borderTopColor: "var(--brand)",
-                animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
-              }} />
+              <div
+                className="sprintal-spin"
+                style={{
+                  width: 40, height: 40, borderRadius: "50%",
+                  border: "3px solid var(--raised)", borderTopColor: "var(--brand)",
+                  margin: "0 auto 16px",
+                }}
+              />
               <div style={{ fontFamily: "var(--font-body)", fontSize: "0.9375rem", color: "var(--t2)" }}>
                 {t("oauthSessionLoading")}
               </div>
-              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
             </div>
           )}
 

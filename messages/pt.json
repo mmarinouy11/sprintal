@@ -110,6 +110,16 @@
     "oauthSessionLoading": "Conectando sua conta do Google…",
     "oauthNewUserHint": "Sua conta do Google está pronta. Toque em «Continuar com Google» abaixo para entrar."
   },
+  "errors": {
+    "orgBoundaryTitle": "Algo deu errado",
+    "orgBoundaryBody": "Algo deu errado ao carregar esta página.",
+    "tryAgain": "Tentar de novo",
+    "backToDashboard": "Voltar ao painel",
+    "home": "Início",
+    "goHome": "Ir para o início",
+    "orgNotFoundTitle": "Página não encontrada",
+    "orgNotFoundBody": "Esta área ou URL não existe na sua organização."
+  },
   "coach": {
     "strategicAnalysis": "Análise estratégica",
     "identifyingContext": "Identificando contexto...",

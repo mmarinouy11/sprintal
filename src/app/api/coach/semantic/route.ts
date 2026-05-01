@@ -302,7 +302,9 @@ export async function POST(req: NextRequest) {
         return apiOk({ observation: null, sources: [] });
       }
       if (first.ok && extractAnthropicText(first.data)) {
-        console.log("anthropic usage object:", JSON.stringify(first.data?.usage));
+        if (process.env.NODE_ENV === "development") {
+          console.log("anthropic usage object:", JSON.stringify(first.data?.usage));
+        }
         text = extractAnthropicText(first.data);
         usageData = (first.data?.usage as AnthropicUsageSnapshot) ?? null;
         modelUsed = model;
@@ -313,7 +315,9 @@ export async function POST(req: NextRequest) {
         return apiOk({ observation: null, sources: [] });
       }
       if (second.ok && extractAnthropicText(second.data)) {
-        console.log("anthropic usage object:", JSON.stringify(second.data?.usage));
+        if (process.env.NODE_ENV === "development") {
+          console.log("anthropic usage object:", JSON.stringify(second.data?.usage));
+        }
         text = extractAnthropicText(second.data);
         usageData = (second.data?.usage as AnthropicUsageSnapshot) ?? null;
         modelUsed = model;
@@ -335,18 +339,20 @@ export async function POST(req: NextRequest) {
     const observation =
       parsed.observation || text.replace(/\nSOURCES:[\s\S]*$/i, "").trim() || null;
     const usage = usageData;
-    console.log(
-      JSON.stringify({
-        coach: "semantic",
-        analysis_type: analysisType,
-        model: modelUsed,
-        input_tokens: usage?.input_tokens ?? null,
-        output_tokens: usage?.output_tokens ?? null,
-        org_id: orgId,
-        had_observation: observation !== null,
-        sources_count: parsed.sources.length,
-      })
-    );
+    if (process.env.NODE_ENV === "development") {
+      console.log(
+        JSON.stringify({
+          coach: "semantic",
+          analysis_type: analysisType,
+          model: modelUsed,
+          input_tokens: usage?.input_tokens ?? null,
+          output_tokens: usage?.output_tokens ?? null,
+          org_id: orgId,
+          had_observation: observation !== null,
+          sources_count: parsed.sources.length,
+        })
+      );
+    }
 
     let creditsRemaining =
       totalCap < 0

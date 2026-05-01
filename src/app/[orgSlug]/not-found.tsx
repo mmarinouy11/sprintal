@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
+import { useT } from "@/lib/i18n";
 
 export default function OrgNotFound() {
   const params = useParams<{ orgSlug: string }>();
   const slug = typeof params?.orgSlug === "string" ? params.orgSlug : "";
+  const t = useT("errors");
 
   return (
     <div
@@ -16,10 +18,10 @@ export default function OrgNotFound() {
         className="text-2xl font-bold mb-3"
         style={{ color: "#5C6AC4", fontFamily: "'Outfit', var(--font-display), sans-serif" }}
       >
-        Page not found
+        {t("orgNotFoundTitle")}
       </h1>
       <p className="text-body mb-6" style={{ color: "var(--t2)" }}>
-        This area or URL does not exist in your organization.
+        {t("orgNotFoundBody")}
       </p>
       {slug ? (
         <Link
@@ -27,11 +29,11 @@ export default function OrgNotFound() {
           className="btn-primary"
           style={{ textDecoration: "none", display: "inline-block" }}
         >
-          Back to dashboard
+          {t("backToDashboard")}
         </Link>
       ) : (
         <Link href="/" className="btn-primary" style={{ textDecoration: "none", display: "inline-block" }}>
-          Go home
+          {t("goHome")}
         </Link>
       )}
     </div>

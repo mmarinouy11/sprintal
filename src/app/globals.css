@@ -484,3 +484,18 @@ textarea.input { resize: none; }
   .px-10 { padding-left: 1rem !important; padding-right: 1rem !important; }
   .py-8  { padding-top: 1.5rem !important; padding-bottom: 1.5rem !important; }
 }
+
+/* ── Shared motion (route loading skeletons, auth spinners) ───────── */
+@keyframes sprintal-skel-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+.sprintal-skel-pulse {
+  animation: sprintal-skel-pulse 1.4s ease-in-out infinite;
+}
+@keyframes sprintal-spin {
+  to { transform: rotate(360deg); }
+}
+.sprintal-spin {
+  animation: sprintal-spin 0.8s linear infinite;
+}

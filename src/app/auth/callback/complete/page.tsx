@@ -99,9 +99,12 @@ function AuthCallbackCompleteInner() {
 
         {status === "loading" && (
           <>
-            <div style={{ width: 48, height: 48, borderRadius: "50%",
-              border: "3px solid var(--raised)", borderTopColor: "var(--brand)",
-              animation: "spin 0.8s linear infinite", margin: "0 auto 20px" }} />
+            <div
+              className="sprintal-spin"
+              style={{ width: 48, height: 48, borderRadius: "50%",
+                border: "3px solid var(--raised)", borderTopColor: "var(--brand)",
+                margin: "0 auto 20px" }}
+            />
             <div style={{ fontFamily: "var(--font-body)", fontSize: "1rem",
               color: "var(--t2)" }}>
               Verificando tu email...
@@ -155,10 +158,6 @@ function AuthCallbackCompleteInner() {
           </>
         )}
       </div>
-
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   );
 }
