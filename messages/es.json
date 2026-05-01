@@ -7,7 +7,6 @@
     "evidence": "Log de Evidencia",
     "settings": "Configuración",
     "billing": "Facturación",
-    "pricing": "Planes y precios",
     "signOut": "Cerrar sesión",
     "core": "Principal",
     "actions": "Acciones",
@@ -488,6 +487,8 @@
     "starterPlan": "Starter"
   },
   "billing": {
+    "pageTitle": "Facturación",
+    "pageSubtitle": "Gestioná tu suscripción y los datos de pago.",
     "title": "Precios simples y transparentes",
     "subtitle": "Elegí el plan que mejor se adapta a tu equipo. Podés cambiarlo en cualquier momento.",
     "monthly": "Mensual",

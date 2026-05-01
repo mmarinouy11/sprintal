@@ -7,7 +7,6 @@
     "evidence": "Evidence Log",
     "settings": "Settings",
     "billing": "Billing",
-    "pricing": "Plans & pricing",
     "signOut": "Sign out",
     "core": "Core",
     "actions": "Actions",
@@ -488,6 +487,8 @@
     "starterPlan": "Starter"
   },
   "billing": {
+    "pageTitle": "Billing",
+    "pageSubtitle": "Manage your subscription and payment details.",
     "title": "Simple, transparent pricing",
     "subtitle": "Choose the plan that fits your team. Upgrade or downgrade anytime.",
     "monthly": "Monthly",

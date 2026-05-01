@@ -7,7 +7,6 @@
     "evidence": "Log de Evidências",
     "settings": "Configurações",
     "billing": "Faturamento",
-    "pricing": "Planos e preços",
     "signOut": "Sair",
     "core": "Principal",
     "actions": "Ações",
@@ -488,6 +487,8 @@
     "starterPlan": "Starter"
   },
   "billing": {
+    "pageTitle": "Faturamento",
+    "pageSubtitle": "Gerencie sua assinatura e os dados de pagamento.",
     "title": "Precos simples e transparentes",
     "subtitle": "Escolha o plano que melhor atende sua equipe. Atualize ou reduza quando quiser.",
     "monthly": "Mensal",

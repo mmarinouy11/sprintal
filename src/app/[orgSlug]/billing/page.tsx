@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
@@ -75,11 +76,13 @@ export default function OrgBillingPage() {
   const statusLabel =
     status === "past_due" ? t("pastDue") : status === "canceled" ? t("canceled") : t("active");
 
+  const pricingHref = `/pricing?org=${encodeURIComponent(params.orgSlug)}`;
+
   return (
     <div className="px-8 py-8 max-w-3xl mx-auto">
       <div className="ph">
-        <div className="ph-title">Billing</div>
-        <div className="ph-sub">Manage your subscription and payment details.</div>
+        <div className="ph-title">{t("pageTitle")}</div>
+        <div className="ph-sub">{t("pageSubtitle")}</div>
       </div>
 
       <div className="card p-5 mb-4">
@@ -98,9 +101,9 @@ export default function OrgBillingPage() {
       </div>
 
       <div className="flex gap-3">
-        <button className="btn-primary" type="button" onClick={openPortal} disabled={openingPortal}>
+        <Link href={pricingHref} className="btn-primary" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center", justifyContent: "center" }}>
           {t("changePlan")}
-        </button>
+        </Link>
         <button className="btn-ghost" type="button" onClick={openPortal} disabled={openingPortal}>
           {t("cancelSubscription")}
         </button>
