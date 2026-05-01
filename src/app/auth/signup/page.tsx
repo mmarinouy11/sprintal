@@ -93,6 +93,8 @@ function SignupPageInner() {
       }
       const requestedPlan = searchParams.get("plan");
       const requestedPeriod = searchParams.get("period");
+      await supabase.auth.getSession();
+      router.refresh();
       if (requestedPlan) {
         const qs = new URLSearchParams();
         qs.set("plan", requestedPlan);
