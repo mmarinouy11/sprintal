@@ -106,6 +106,7 @@
     "signedInAs": "Conectado como {email}",
     "oauthFinishCta": "Continuar",
     "oauthFailed": "Não foi possível entrar com o Google. Tente novamente.",
+    "completingOAuth": "Concluindo o login…",
     "oauthSessionLoading": "Conectando sua conta do Google…",
     "oauthNewUserHint": "Sua conta do Google está pronta. Toque em «Continuar com Google» abaixo para entrar."
   },

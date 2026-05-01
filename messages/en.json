@@ -106,6 +106,7 @@
     "signedInAs": "Signed in as {email}",
     "oauthFinishCta": "Continue",
     "oauthFailed": "Google sign-in failed. Please try again.",
+    "completingOAuth": "Completing sign-in…",
     "oauthSessionLoading": "Connecting your Google account…",
     "oauthNewUserHint": "Your Google account is ready. Tap “Continue with Google” below to finish signing in."
   },
