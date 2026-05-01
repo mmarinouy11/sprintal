@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -14,7 +15,7 @@ export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed } = rateLimit({ key: `invite-target:${ip}`, limit: 60, windowMs: 60 * 1000 });
   if (!allowed) {
-    return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+    return apiError("Too many requests.", 429);
   }
 
   const supabaseAdmin = createClient(
@@ -25,13 +26,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) return apiError("Unauthorized", 401);
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (authError || !user) return apiError("Unauthorized", 401);
 
     const orgId = req.nextUrl.searchParams.get("orgId")?.trim();
-    if (!orgId) return NextResponse.json({ error: "orgId required" }, { status: 400 });
+    if (!orgId) return apiError("orgId required", 400);
 
     const { data: member, error: memError } = await supabaseAdmin
       .from("org_members")
@@ -41,7 +42,7 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (memError || !member) {
-      return NextResponse.json({ error: "Not a member of this organization." }, { status: 403 });
+      return apiError("Not a member of this organization.", 403);
     }
 
     const { data: org, error: orgError } = await supabaseAdmin
@@ -51,15 +52,15 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (orgError || !org?.slug) {
-      return NextResponse.json({ error: "Organization not found." }, { status: 404 });
+      return apiError("Organization not found.", 404);
     }
 
-    return NextResponse.json({
+    return apiOk({
       slug: org.slug,
       onboarding_complete: !!org.onboarding_complete,
     });
   } catch (e) {
     console.error("invite-target error:", e);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return apiError("Server error", 500);
   }
 }

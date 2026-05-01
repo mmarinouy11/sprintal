@@ -1,5 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiError, apiOk } from "@/lib/api-response";
 import { addDays, parseISO } from "date-fns";
 
 export const dynamic = "force-dynamic";
@@ -22,20 +23,17 @@ const DIGEST_DUE_WEEK_TYPES = new Set([
 export async function GET(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    return NextResponse.json({ error: "CRON_SECRET not configured." }, { status: 500 });
+    return apiError("CRON_SECRET not configured.", 500);
   }
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    return apiError("Unauthorized.", 401);
   }
   const requestedTestMode = req.nextUrl.searchParams.get("test") === "true";
   const isProduction = process.env.VERCEL_ENV === "production";
   const hasExplicitTestHeader = req.headers.get("x-test-mode") === "true";
   if (requestedTestMode && isProduction && !hasExplicitTestHeader) {
-    return NextResponse.json(
-      { error: "Test mode is blocked in production without X-Test-Mode: true." },
-      { status: 403 }
-    );
+    return apiError("Test mode is blocked in production without X-Test-Mode: true.", 403);
   }
   const testMode = requestedTestMode && (!isProduction || hasExplicitTestHeader);
 
@@ -310,6 +308,7 @@ export async function GET(req: NextRequest) {
     const orgs = activeOrgs ?? [];
 
     for (const org of orgs) {
+      try {
       const membersResult = await supabaseAdmin
         .from("org_members")
         .select("user_id, role")
@@ -522,6 +521,9 @@ export async function GET(req: NextRequest) {
           });
         }
       }
+      } catch (e) {
+        console.error(`cron — failed processing org ${org.id}:`, e);
+      }
     }
 
     // Monday digest (UTC): overdue / due this week / portfolio — skip if all empty
@@ -678,7 +680,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    return apiOk({
       ok: true,
       sprintsClosed,
       cleanupOrgCount: cleanupOrgIds.length,
@@ -687,6 +689,6 @@ export async function GET(req: NextRequest) {
     });
   } catch (e) {
     console.error("cleanup-expired cron:", e);
-    return NextResponse.json({ error: "Cleanup failed." }, { status: 500 });
+    return apiError("Cleanup failed.", 500);
   }
 }

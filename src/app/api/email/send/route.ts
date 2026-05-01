@@ -1,16 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import nodemailer from "nodemailer";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: NextRequest) {
   const secret = process.env.CRON_SECRET;
   if (!secret) {
-    return NextResponse.json({ error: "CRON_SECRET not configured." }, { status: 500 });
+    return apiError("CRON_SECRET not configured.", 500);
   }
   const auth = req.headers.get("authorization");
   if (auth !== `Bearer ${secret}`) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    return apiError("Unauthorized.", 401);
   }
 
   const body = (await req.json().catch(() => ({}))) as {
@@ -19,7 +20,7 @@ export async function POST(req: NextRequest) {
     html?: string;
   };
   if (!body.to || !body.subject || !body.html) {
-    return NextResponse.json({ error: "Missing email payload." }, { status: 400 });
+    return apiError("Missing email payload.", 400);
   }
 
   const host = process.env.SMTP_HOST;
@@ -28,7 +29,7 @@ export async function POST(req: NextRequest) {
   const pass = process.env.SMTP_PASS;
   const from = process.env.SMTP_FROM || user;
   if (!host || !user || !pass || !from) {
-    return NextResponse.json({ error: "SMTP env vars missing." }, { status: 500 });
+    return apiError("SMTP env vars missing.", 500);
   }
 
   try {
@@ -44,9 +45,9 @@ export async function POST(req: NextRequest) {
       subject: body.subject,
       html: body.html,
     });
-    return NextResponse.json({ ok: true });
+    return apiOk({ ok: true });
   } catch (e) {
     console.error("email/send:", e);
-    return NextResponse.json({ error: "Failed to send email." }, { status: 500 });
+    return apiError("Failed to send email.", 500);
   }
 }

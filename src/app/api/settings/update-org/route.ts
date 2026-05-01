@@ -1,10 +1,16 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `settings-update-org:${ip}`, limit: 20, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!token) return apiError("Unauthorized", 401);
 
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -13,7 +19,7 @@ export async function POST(req: NextRequest) {
 
     const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
     const user = authData?.user;
-    if (authError || !user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (authError || !user) return apiError("Unauthorized", 401);
 
     const body = await req.json() as {
       orgId?: string;
@@ -25,7 +31,7 @@ export async function POST(req: NextRequest) {
     const name = body.name?.trim();
     const primaryColor = body.primaryColor?.trim();
     if (!orgId || !name || !primaryColor) {
-      return NextResponse.json({ error: "Missing required fields." }, { status: 400 });
+      return apiError("Missing required fields.", 400);
     }
 
     const { data: membership } = await supabaseAdmin
@@ -37,7 +43,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!membership || !["owner", "admin"].includes(membership.role)) {
-      return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+      return apiError("Forbidden.", 403);
     }
 
     const { data: updatedOrg, error: updateError } = await supabaseAdmin
@@ -49,7 +55,7 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (updateError || !updatedOrg) {
-      return NextResponse.json({ error: "Unable to update organization." }, { status: 500 });
+      return apiError("Unable to update organization.", 500);
     }
 
     // Defensive readback to ensure the response reflects stored DB state.
@@ -61,11 +67,11 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (readbackError || !persistedOrg) {
-      return NextResponse.json({ error: "Unable to verify organization update." }, { status: 500 });
+      return apiError("Unable to verify organization update.", 500);
     }
 
-    return NextResponse.json({ org: persistedOrg });
+    return apiOk({ org: persistedOrg });
   } catch {
-    return NextResponse.json({ error: "Internal error." }, { status: 500 });
+    return apiError("Internal error.", 500);
   }
 }

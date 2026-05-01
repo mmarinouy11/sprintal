@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { COACH_LIMITS, SEMANTIC_CREDIT_WEIGHT } from "@/types";
 import type { Plan } from "@/types";
@@ -13,6 +13,8 @@ import {
   type SemanticPortfolioContext,
   type SemanticReviewContext,
 } from "@/lib/coach/semanticPrompts";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -72,11 +74,26 @@ async function incrementCoachUsage(
   }
 }
 
+type CallOnceResult =
+  | { ok: true; data: Record<string, unknown> }
+  | { ok: false; status: number; error: string }
+  | { ok: false; aborted: true };
+
+type AnthropicUsageSnapshot = {
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_read_input_tokens?: number;
+};
+
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `coach-semantic:${ip}`, limit: 10, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   try {
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return NextResponse.json({ observation: null, sources: [] }, { status: 401 });
+      return apiOk({ observation: null, sources: [] }, { status: 401 });
     }
 
     const token = authHeader.replace("Bearer ", "");
@@ -88,7 +105,7 @@ export async function POST(req: NextRequest) {
 
     const { data: userData } = await supabaseAdmin.auth.getUser(token);
     if (!userData.user) {
-      return NextResponse.json({ observation: null, sources: [] }, { status: 401 });
+      return apiOk({ observation: null, sources: [] }, { status: 401 });
     }
 
     const body = (await req.json()) as {
@@ -105,7 +122,7 @@ export async function POST(req: NextRequest) {
 
     const { analysisType, locale, orgId } = body;
     if (!orgId || !analysisType) {
-      return NextResponse.json({ observation: null, sources: [] }, { status: 400 });
+      return apiOk({ observation: null, sources: [] }, { status: 400 });
     }
 
     const { data: orgRow } = await supabaseAdmin
@@ -116,14 +133,14 @@ export async function POST(req: NextRequest) {
       .maybeSingle();
 
     if (!orgRow?.coach_semantic_enabled) {
-      return NextResponse.json({ observation: null, sources: [] });
+      return apiOk({ observation: null, sources: [] });
     }
 
     const plan = (orgRow.plan || "trial") as Plan;
     const limits = COACH_LIMITS[plan] || COACH_LIMITS.trial;
 
     if (limits.semantic === 0) {
-      return NextResponse.json({ observation: null, sources: [], limitReached: true });
+      return apiOk({ observation: null, sources: [], limitReached: true });
     }
 
     if (analysisType === "portfolio") {
@@ -132,7 +149,7 @@ export async function POST(req: NextRequest) {
         (b) => typeof b.hypothesis === "string" && b.hypothesis.trim().length > 0
       );
       if (withHypothesis.length < 3) {
-        return NextResponse.json({
+        return apiOk({
           observation: null,
           sources: [],
           insufficientContext: true,
@@ -162,7 +179,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (semanticCap >= 0 && semanticCap > 0 && currentSemanticUsage >= semanticCap) {
-      return NextResponse.json({
+      return apiOk({
         observation: null,
         sources: [],
         limitReached: true,
@@ -172,7 +189,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (totalCap >= 0 && currentSyntacticUsage + SEMANTIC_CREDIT_WEIGHT > totalCap) {
-      return NextResponse.json({
+      return apiOk({
         observation: null,
         sources: [],
         limitReached: true,
@@ -218,43 +235,57 @@ export async function POST(req: NextRequest) {
       };
       userPrompt = SEMANTIC_BET_USER_PROMPT(lang, ctx);
     } else {
-      return NextResponse.json({ observation: null, sources: [] }, { status: 400 });
+      return apiOk({ observation: null, sources: [] }, { status: 400 });
     }
 
-    const callOnce = async (withWebSearch: boolean, model: string) => {
-      const res = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-api-key": process.env.ANTHROPIC_API_KEY!,
-          "anthropic-version": "2023-06-01",
-        },
-        body: JSON.stringify({
-          model,
-          max_tokens: 1200,
-          system: SEMANTIC_COACH_SYSTEM,
-          messages: [{ role: "user", content: userPrompt }],
-          ...(withWebSearch
-            ? {
-                tools: [
-                  {
-                    type: "web_search_20250305",
-                    name: "web_search",
-                  },
-                ],
-              }
-            : {}),
-        }),
-      });
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        return {
-          ok: false as const,
-          status: res.status,
-          error: data?.error?.message || res.statusText,
+    const callOnce = async (withWebSearch: boolean, model: string): Promise<CallOnceResult> => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15_000);
+      try {
+        const res = await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env.ANTHROPIC_API_KEY!,
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model,
+            max_tokens: 1200,
+            system: SEMANTIC_COACH_SYSTEM,
+            messages: [{ role: "user", content: userPrompt }],
+            ...(withWebSearch
+              ? {
+                  tools: [
+                    {
+                      type: "web_search_20250305",
+                      name: "web_search",
+                    },
+                  ],
+                }
+              : {}),
+          }),
+          signal: controller.signal,
+        });
+        const data = (await res.json().catch(() => ({}))) as Record<string, unknown> & {
+          error?: { message?: string };
         };
+        if (!res.ok) {
+          return {
+            ok: false as const,
+            status: res.status,
+            error: data?.error?.message || res.statusText,
+          };
+        }
+        return { ok: true as const, data };
+      } catch (e) {
+        if (e instanceof Error && e.name === "AbortError") {
+          return { ok: false as const, aborted: true as const };
+        }
+        throw e;
+      } finally {
+        clearTimeout(timeout);
       }
-      return { ok: true as const, data };
     };
 
     const models = [
@@ -264,30 +295,32 @@ export async function POST(req: NextRequest) {
     ] as const;
     let modelUsed: (typeof models)[number] | null = null;
     let text = "";
-    let usageData: {
-      input_tokens?: number;
-      output_tokens?: number;
-      cache_read_input_tokens?: number;
-    } | null = null;
+    let usageData: AnthropicUsageSnapshot | null = null;
     for (const model of models) {
       const first = await callOnce(true, model);
+      if ("aborted" in first && first.aborted) {
+        return apiOk({ observation: null, sources: [] });
+      }
       if (first.ok && extractAnthropicText(first.data)) {
         console.log("anthropic usage object:", JSON.stringify(first.data?.usage));
         text = extractAnthropicText(first.data);
-        usageData = first.data?.usage ?? null;
+        usageData = (first.data?.usage as AnthropicUsageSnapshot) ?? null;
         modelUsed = model;
         break;
       }
       const second = await callOnce(false, model);
+      if ("aborted" in second && second.aborted) {
+        return apiOk({ observation: null, sources: [] });
+      }
       if (second.ok && extractAnthropicText(second.data)) {
         console.log("anthropic usage object:", JSON.stringify(second.data?.usage));
         text = extractAnthropicText(second.data);
-        usageData = second.data?.usage ?? null;
+        usageData = (second.data?.usage as AnthropicUsageSnapshot) ?? null;
         modelUsed = model;
         break;
       }
-      const firstModelNotFound = !first.ok && first.status === 404;
-      const secondModelNotFound = !second.ok && second.status === 404;
+      const firstModelNotFound = !first.ok && "status" in first && first.status === 404;
+      const secondModelNotFound = !second.ok && "status" in second && second.status === 404;
       // If model not found/available, try next model.
       if (!firstModelNotFound && !secondModelNotFound) {
         break;
@@ -295,7 +328,7 @@ export async function POST(req: NextRequest) {
     }
 
     if (!text) {
-      return NextResponse.json({ observation: null, sources: [] });
+      return apiOk({ observation: null, sources: [] });
     }
 
     const parsed = parseSemanticAssistantText(text);
@@ -332,13 +365,13 @@ export async function POST(req: NextRequest) {
         totalCap < 0 ? -1 : Math.max(0, totalCap - updatedUnified);
     }
 
-    return NextResponse.json({
+    return apiOk({
       observation,
       sources: parsed.sources,
       modelUsed,
       creditsRemaining,
     });
   } catch {
-    return NextResponse.json({ observation: null, sources: [] });
+    return apiOk({ observation: null, sources: [] });
   }
 }

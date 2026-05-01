@@ -1,11 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `paddle-portal:${ip}`, limit: 20, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   const token = req.headers.get("authorization")?.replace("Bearer ", "") || "";
-  if (!token) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!token) return apiError("Unauthorized.", 401);
 
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -15,7 +21,7 @@ export async function GET(req: NextRequest) {
 
   const { data: authData, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !authData.user) {
-    return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+    return apiError("Unauthorized.", 401);
   }
 
   const orgIdQuery = req.nextUrl.searchParams.get("orgId");
@@ -31,7 +37,7 @@ export async function GET(req: NextRequest) {
     orgId = member?.org_id ?? null;
   }
 
-  if (!orgId) return NextResponse.json({ error: "Organization not found." }, { status: 404 });
+  if (!orgId) return apiError("Organization not found.", 404);
 
   const { data: membership } = await supabaseAdmin
     .from("org_members")
@@ -41,7 +47,7 @@ export async function GET(req: NextRequest) {
     .limit(1)
     .maybeSingle();
 
-  if (!membership) return NextResponse.json({ error: "Forbidden." }, { status: 403 });
+  if (!membership) return apiError("Forbidden.", 403);
 
   const { data: org } = await supabaseAdmin
     .from("organizations")
@@ -51,11 +57,11 @@ export async function GET(req: NextRequest) {
     .maybeSingle();
 
   if (!org?.paddle_customer_id) {
-    return NextResponse.json({ error: "No Paddle customer for organization." }, { status: 400 });
+    return apiError("No Paddle customer for organization.", 400);
   }
 
   const apiKey = process.env.PADDLE_API_KEY;
-  if (!apiKey) return NextResponse.json({ error: "Missing Paddle API key." }, { status: 500 });
+  if (!apiKey) return apiError("Missing Paddle API key.", 500);
 
   const paddleRes = await fetch(
     `https://api.paddle.com/customers/${encodeURIComponent(org.paddle_customer_id)}/portal-sessions`,
@@ -76,11 +82,11 @@ export async function GET(req: NextRequest) {
 
   const payload = await paddleRes.json().catch(() => ({}));
   if (!paddleRes.ok) {
-    return NextResponse.json({ error: "Failed to create customer portal session." }, { status: 502 });
+    return apiError("Failed to create customer portal session.", 502);
   }
 
   const url = payload?.data?.urls?.general?.overview ?? payload?.data?.url ?? null;
-  if (!url) return NextResponse.json({ error: "Portal URL unavailable." }, { status: 502 });
+  if (!url) return apiError("Portal URL unavailable.", 502);
 
-  return NextResponse.json({ url });
+  return apiOk({ url });
 }

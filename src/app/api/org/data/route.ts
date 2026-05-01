@@ -1,7 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getBillingRootOrgRow } from "@/lib/orgBillingRoot";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed } = rateLimit({ key: `org-data:${ip}`, limit: 300, windowMs: 60 * 1000 });
   if (!allowed) {
-    return NextResponse.json({ error: "Too many requests." }, { status: 429 });
+    return apiError("Too many requests.", 429);
   }
 
   // Create fresh client per request — avoids stale connection cache
@@ -22,13 +23,13 @@ export async function GET(req: NextRequest) {
 
   try {
     const token = req.headers.get("authorization")?.replace("Bearer ", "");
-    if (!token) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+    if (!token) return apiError("No autorizado.", 401);
 
     const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-    if (authError || !user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+    if (authError || !user) return apiError("No autorizado.", 401);
 
     const slug = req.nextUrl.searchParams.get("slug");
-    if (!slug) return NextResponse.json({ error: "slug requerido." }, { status: 400 });
+    if (!slug) return apiError("slug requerido.", 400);
 
     // Resolve memberships first, then filter org by slug within accessible org IDs.
     const { data: memberRows } = await supabaseAdmin
@@ -36,7 +37,7 @@ export async function GET(req: NextRequest) {
       .select("org_id, role")
       .eq("user_id", user.id)
       .limit(200);
-    if (!memberRows?.length) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
+    if (!memberRows?.length) return apiError("Sin acceso.", 403);
 
     const memberByOrgId = new Map(memberRows.map((m: { org_id: string; role: string }) => [m.org_id, m.role]));
     const accessibleOrgIds = Array.from(memberByOrgId.keys());
@@ -50,9 +51,9 @@ export async function GET(req: NextRequest) {
       .limit(1);
 
     const org = orgRows?.[0] ?? null;
-    if (!org) return NextResponse.json({ error: "Org no encontrada." }, { status: 404 });
+    if (!org) return apiError("Org no encontrada.", 404);
     const role = memberByOrgId.get(org.id);
-    if (!role) return NextResponse.json({ error: "Sin acceso." }, { status: 403 });
+    if (!role) return apiError("Sin acceso.", 403);
 
     const billingRoot =
       (await getBillingRootOrgRow(supabaseAdmin, org.id)) ?? {
@@ -80,7 +81,7 @@ export async function GET(req: NextRequest) {
       betAlignments = alData || [];
     }
 
-    return NextResponse.json({
+    return apiOk({
       org,
       rootPlan,
       billingRoot,
@@ -92,11 +93,11 @@ export async function GET(req: NextRequest) {
       children: childrenRes.data || [],
       betAlignments,
     }, {
-      headers: { "Cache-Control": "no-store, max-age=0" }
+      headers: { "Cache-Control": "no-store, max-age=0" },
     });
 
   } catch (err) {
     console.error("org/data error:", err);
-    return NextResponse.json({ error: "Error interno." }, { status: 500 });
+    return apiError("Error interno.", 500);
   }
 }

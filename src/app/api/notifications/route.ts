@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +24,12 @@ async function getAuthedUser(req: NextRequest) {
 }
 
 export async function GET(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `notifications:get:${ip}`, limit: 60, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   const user = await getAuthedUser(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!user) return apiError("Unauthorized.", 401);
 
   const admin = getAdmin();
   const orgId = req.nextUrl.searchParams.get("orgId");
@@ -37,13 +43,17 @@ export async function GET(req: NextRequest) {
   if (orgId) query = query.eq("org_id", orgId);
 
   const { data, error } = await query;
-  if (error) return NextResponse.json({ error: "Failed to load notifications." }, { status: 500 });
-  return NextResponse.json({ notifications: data || [] });
+  if (error) return apiError("Failed to load notifications.", 500);
+  return apiOk({ notifications: data || [] });
 }
 
 export async function PATCH(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `notifications:patch:${ip}`, limit: 60, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   const user = await getAuthedUser(req);
-  if (!user) return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
+  if (!user) return apiError("Unauthorized.", 401);
 
   const admin = getAdmin();
   const body = (await req.json().catch(() => ({}))) as {
@@ -60,17 +70,17 @@ export async function PATCH(req: NextRequest) {
       .eq("read", false);
     if (body.orgId) query = query.eq("org_id", body.orgId);
     const { error } = await query;
-    if (error) return NextResponse.json({ error: "Failed to mark all read." }, { status: 500 });
-    return NextResponse.json({ ok: true });
+    if (error) return apiError("Failed to mark all read.", 500);
+    return apiOk({ ok: true });
   }
 
   const ids = body.ids || [];
-  if (!ids.length) return NextResponse.json({ ok: true });
+  if (!ids.length) return apiOk({ ok: true });
   const { error } = await admin
     .from("notifications")
     .update({ read: true })
     .eq("user_id", user.id)
     .in("id", ids);
-  if (error) return NextResponse.json({ error: "Failed to mark read." }, { status: 500 });
-  return NextResponse.json({ ok: true });
+  if (error) return apiError("Failed to mark read.", 500);
+  return apiOk({ ok: true });
 }

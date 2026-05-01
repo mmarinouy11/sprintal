@@ -1,6 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 import { sanitizeText, sanitizeColor, sanitizeInt } from "@/lib/sanitize";
 import { COACH_LIMITS, type Plan } from "@/types";
 
@@ -25,10 +26,9 @@ export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed, resetAt } = rateLimit({ key: `create-sub:${ip}`, limit: 20, windowMs: 60 * 60 * 1000 });
   if (!allowed) {
-    return NextResponse.json(
-      { error: "Demasiados intentos. Intentá de nuevo más tarde." },
-      { status: 429, headers: { "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)) } }
-    );
+    return apiError("Demasiados intentos. Intentá de nuevo más tarde.", 429, {
+      "Retry-After": String(Math.ceil((resetAt - Date.now()) / 1000)),
+    });
   }
 
   const supabaseAdmin = createClient(
@@ -56,10 +56,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (!name || !parentOrgId) {
-      return NextResponse.json({ error: "Nombre y org padre son requeridos." }, { status: 400 });
+      return apiError("Nombre y org padre son requeridos.", 400);
     }
     if (childLevel > 4) {
-      return NextResponse.json({ error: "Máximo 4 niveles." }, { status: 400 });
+      return apiError("Máximo 4 niveles.", 400);
     }
 
     // Resolve user — for onboarding use userId from body, otherwise verify token
@@ -71,13 +71,13 @@ export async function POST(req: NextRequest) {
     } else {
       // Verify token for post-onboarding requests
       const token = req.headers.get("authorization")?.replace("Bearer ", "");
-      if (!token) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+      if (!token) return apiError("No autorizado.", 401);
       const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
-      if (authError || !user) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+      if (authError || !user) return apiError("No autorizado.", 401);
       userId = user.id;
     }
 
-    if (!userId) return NextResponse.json({ error: "No autorizado." }, { status: 401 });
+    if (!userId) return apiError("No autorizado.", 401);
 
     // Check permission — user must be member of parent org
     const { data: member } = await supabaseAdmin
@@ -90,23 +90,26 @@ export async function POST(req: NextRequest) {
       const { data: fallbackMember } = await supabaseAdmin
         .from("org_members").select("role").eq("user_id", userId).maybeSingle();
       if (!fallbackMember) {
-        return NextResponse.json({ error: "No tenés membresía en esta organización." }, { status: 403 });
+        return apiError("No tenés membresía en esta organización.", 403);
       }
     }
 
     // Only owner/admin can create sub-areas
     const role = member?.role;
     if (role && !["owner", "admin"].includes(role)) {
-      return NextResponse.json({ error: "Se requiere rol owner o admin." }, { status: 403 });
+      return apiError("Se requiere rol owner o admin.", 403);
     }
 
     // Trial limit — no sub-areas post-onboarding
     // Use plan from body (client sends current org plan from store)
     if (!fromOnboarding && body.parentOrgPlan === "trial") {
-      return NextResponse.json({
-        error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
-        code: "TRIAL_LIMIT"
-      }, { status: 403 });
+      return apiOk(
+        {
+          error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
+          code: "TRIAL_LIMIT",
+        },
+        { status: 403 }
+      );
     }
 
     // Unique slug
@@ -146,7 +149,7 @@ export async function POST(req: NextRequest) {
 
     if (orgError || !newOrg) {
       console.error("Org creation error:", orgError);
-      return NextResponse.json({ error: orgError?.message || "Error al crear el área." }, { status: 500 });
+      return apiError(orgError?.message || "Error al crear el área.", 500);
     }
 
     // Add user as owner
@@ -154,10 +157,10 @@ export async function POST(req: NextRequest) {
       org_id: newOrg.id, user_id: userId, role: "owner",
     });
 
-    return NextResponse.json({ success: true, org: newOrg });
+    return apiOk({ success: true, org: newOrg });
 
   } catch (err) {
     console.error("Create sub-org error:", err);
-    return NextResponse.json({ error: "Error interno del servidor." }, { status: 500 });
+    return apiError("Error interno del servidor.", 500);
   }
 }

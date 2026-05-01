@@ -1,19 +1,25 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
 import { FIELD_PROMPTS, SPRINT_DURATION_CONTEXT } from "@/lib/coach/prompts";
 import { COACH_LIMITS } from "@/types";
 import type { CoachField } from "@/lib/coach/useSyntacticCoach";
 import type { Plan } from "@/types";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 function getMonth() {
   return new Date().toISOString().slice(0, 7); // 'YYYY-MM'
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `coach:${ip}`, limit: 30, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   try {
     // Verify auth
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!authHeader) return apiError("Unauthorized", 401);
 
     const token = authHeader.replace("Bearer ", "");
     const supabaseAdmin = createClient(
@@ -23,7 +29,7 @@ export async function POST(req: NextRequest) {
 
     // Verify JWT
     const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return apiError("Unauthorized", 401);
 
     const { field, value, sprintDays, locale, orgId, coachType = "syntactic" } = await req.json() as {
       field: CoachField;
@@ -35,7 +41,7 @@ export async function POST(req: NextRequest) {
     };
 
     if (!field || !value || !FIELD_PROMPTS[field]) {
-      return NextResponse.json({ observation: null });
+      return apiOk({ observation: null });
     }
 
     let org: {
@@ -57,10 +63,10 @@ export async function POST(req: NextRequest) {
     // Check coach toggles only when org context is available.
     if (org) {
       if (coachType === "syntactic" && !org.coach_syntactic_enabled) {
-        return NextResponse.json({ observation: null, disabled: true });
+        return apiOk({ observation: null, disabled: true });
       }
       if (coachType === "semantic" && !org.coach_semantic_enabled) {
-        return NextResponse.json({ observation: null, disabled: true });
+        return apiOk({ observation: null, disabled: true });
       }
     }
 
@@ -71,7 +77,7 @@ export async function POST(req: NextRequest) {
     const semanticCap = limits.semantic;
 
     if (coachType === "semantic" && semanticCap === 0) {
-      return NextResponse.json({ observation: null, limitReached: true, upgradeRequired: true });
+      return apiOk({ observation: null, limitReached: true, upgradeRequired: true });
     }
 
     if (orgId) {
@@ -88,7 +94,7 @@ export async function POST(req: NextRequest) {
       const semanticUsed = usage?.semantic_calls ?? 0;
 
       if (coachType === "syntactic" && totalCap >= 0 && unifiedUsed >= totalCap) {
-        return NextResponse.json({
+        return apiOk({
           observation: null,
           limitReached: true,
           used: unifiedUsed,
@@ -101,7 +107,7 @@ export async function POST(req: NextRequest) {
         semanticCap > 0 &&
         semanticUsed >= semanticCap
       ) {
-        return NextResponse.json({
+        return apiOk({
           observation: null,
           limitReached: true,
           used: semanticUsed,
@@ -110,7 +116,7 @@ export async function POST(req: NextRequest) {
         });
       }
       if (coachType === "semantic" && totalCap >= 0 && unifiedUsed + 1 > totalCap) {
-        return NextResponse.json({
+        return apiOk({
           observation: null,
           limitReached: true,
           used: unifiedUsed,
@@ -127,22 +133,38 @@ export async function POST(req: NextRequest) {
       ? `${FIELD_PROMPTS[field]}\n\n${SPRINT_DURATION_CONTEXT(sprintDays)}`
       : FIELD_PROMPTS[field]) + languageInstruction;
 
-    const res = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": process.env.ANTHROPIC_API_KEY!,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-haiku-4-5-20251001",
-        max_tokens: 150,
-        system: systemPrompt,
-        messages: [{ role: "user", content: value.trim() }],
-      }),
-    });
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 15_000);
+    let data: {
+      content?: Array<{ text?: string }>;
+      usage?: { input_tokens?: number; output_tokens?: number };
+    };
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": process.env.ANTHROPIC_API_KEY!,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model: "claude-haiku-4-5-20251001",
+          max_tokens: 150,
+          system: systemPrompt,
+          messages: [{ role: "user", content: value.trim() }],
+        }),
+        signal: controller.signal,
+      });
+      data = await res.json();
+    } catch (err) {
+      if (err instanceof Error && err.name === "AbortError") {
+        return apiOk({ observation: null });
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeout);
+    }
 
-    const data = await res.json();
     console.log("anthropic usage object:", JSON.stringify(data.usage));
     const text = data.content?.[0]?.text?.trim() || "";
     const observation = text === "NULL" || text === "" ? null : text;
@@ -183,8 +205,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ observation });
+    return apiOk({ observation });
   } catch {
-    return NextResponse.json({ observation: null });
+    return apiOk({ observation: null });
   }
 }

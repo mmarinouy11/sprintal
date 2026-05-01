@@ -1,5 +1,6 @@
 import crypto from "crypto";
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
+import { apiOk } from "@/lib/api-response";
 import { createClient } from "@supabase/supabase-js";
 import { getPeriodFromPriceId, getPlanFromPriceId } from "@/lib/billing";
 
@@ -84,13 +85,13 @@ export async function POST(req: NextRequest) {
 
   if (!secret) {
     console.error("paddle webhook: missing PADDLE_WEBHOOK_SECRET");
-    return NextResponse.json({ received: true });
+    return apiOk({ received: true });
   }
 
   const valid = verifyWebhookSignature(rawBody, signature, secret);
   if (!valid) {
     console.error("paddle webhook: invalid signature");
-    return NextResponse.json({ received: true });
+    return apiOk({ received: true });
   }
 
   try {
@@ -125,7 +126,7 @@ export async function POST(req: NextRequest) {
 
     if (!orgId) {
       console.error("paddle webhook: could not resolve org id", eventType);
-      return NextResponse.json({ received: true });
+      return apiOk({ received: true });
     }
 
     // Paddle recommends subscription.created for provisioning; activated often follows but is not always subscribed.
@@ -215,5 +216,5 @@ export async function POST(req: NextRequest) {
     console.error("paddle webhook processing error", error);
   }
 
-  return NextResponse.json({ received: true });
+  return apiOk({ received: true });
 }

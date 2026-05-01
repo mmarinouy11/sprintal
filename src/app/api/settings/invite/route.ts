@@ -1,5 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
@@ -37,9 +39,13 @@ function getInviteAppBaseUrl(): string {
 }
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `settings-invite:${ip}`, limit: 10, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   try {
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!authHeader) return apiError("Unauthorized", 401);
 
     const token = authHeader.replace("Bearer ", "");
     const supabaseAdmin = createClient(
@@ -48,7 +54,7 @@ export async function POST(req: NextRequest) {
     );
 
     const { data: { user } } = await supabaseAdmin.auth.getUser(token);
-    if (!user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    if (!user) return apiError("Unauthorized", 401);
 
     const { orgId, email, role } = await req.json();
 
@@ -58,17 +64,14 @@ export async function POST(req: NextRequest) {
       .limit(1).maybeSingle();
 
     if (!member || !["owner", "admin"].includes(member.role)) {
-      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 });
+      return apiError("Insufficient permissions", 403);
     }
 
     const baseUrl = getInviteAppBaseUrl();
     if (!baseUrl) {
-      return NextResponse.json(
-        {
-          error:
-            "Server misconfiguration: set APP_URL (or INVITE_APP_ORIGIN) to https://sprintal.vercel.app for Production and Preview if you invite from previews. Optional: NEXT_PUBLIC_APP_URL.",
-        },
-        { status: 500 }
+      return apiError(
+        "Server misconfiguration: set APP_URL (or INVITE_APP_ORIGIN) to https://sprintal.vercel.app for Production and Preview if you invite from previews. Optional: NEXT_PUBLIC_APP_URL.",
+        500
       );
     }
 
@@ -80,7 +83,7 @@ export async function POST(req: NextRequest) {
       redirectTo,
     });
 
-    if (inviteError) return NextResponse.json({ error: inviteError.message }, { status: 400 });
+    if (inviteError) return apiError(inviteError.message, 400);
 
     // Pre-create org_member record
     const { error: memberError } = await supabaseAdmin.from("org_members").upsert(
@@ -94,11 +97,11 @@ export async function POST(req: NextRequest) {
     );
     if (memberError) {
       console.error("invite org_members upsert:", memberError);
-      return NextResponse.json({ error: memberError.message }, { status: 500 });
+      return apiError(memberError.message, 500);
     }
 
-    return NextResponse.json({ success: true });
+    return apiOk({ success: true });
   } catch {
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return apiError("Server error", 500);
   }
 }

@@ -1,7 +1,13 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { rateLimit, getClientIp } from "@/lib/rate-limit";
+import { apiError, apiOk } from "@/lib/api-response";
 
 export async function POST(req: NextRequest) {
+  const ip = getClientIp(req);
+  const { allowed } = rateLimit({ key: `auth-login:${ip}`, limit: 10, windowMs: 60_000 });
+  if (!allowed) return apiError("Too many requests.", 429);
+
   const supabaseAdmin = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -10,7 +16,7 @@ export async function POST(req: NextRequest) {
 
   try {
     const { userId } = await req.json();
-    if (!userId) return NextResponse.json({ error: "userId requerido." }, { status: 400 });
+    if (!userId) return apiError("userId requerido.", 400);
 
     // Get user's org memberships using service_role — bypasses RLS
     const { data: members } = await supabaseAdmin
@@ -19,7 +25,7 @@ export async function POST(req: NextRequest) {
       .eq("user_id", userId);
 
     if (!members?.length) {
-      return NextResponse.json({ error: "No se encontró la organización." }, { status: 404 });
+      return apiError("No se encontró la organización.", 404);
     }
 
     // Get all orgs, prefer L1
@@ -30,12 +36,12 @@ export async function POST(req: NextRequest) {
       .order("cascade_level", { ascending: true });
 
     const org = orgs?.[0];
-    if (!org) return NextResponse.json({ error: "No se encontró la organización." }, { status: 404 });
+    if (!org) return apiError("No se encontró la organización.", 404);
 
-    return NextResponse.json({ slug: org.slug, onboarding_complete: org.onboarding_complete });
+    return apiOk({ slug: org.slug, onboarding_complete: org.onboarding_complete });
 
   } catch (err) {
     console.error("Login API error:", err);
-    return NextResponse.json({ error: "Error interno." }, { status: 500 });
+    return apiError("Error interno.", 500);
   }
 }
