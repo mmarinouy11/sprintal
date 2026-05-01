@@ -18,22 +18,51 @@ function SignupPageInner() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [oauthEmail, setOauthEmail] = useState<string | null>(null);
+  const [oauthWaiting, setOauthWaiting] = useState(oauthMode);
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
+  /** After OAuth redirect, cookies/session may not be visible to the browser client immediately. */
   useEffect(() => {
-    if (!oauthMode) return;
+    if (!oauthMode) {
+      setOauthWaiting(false);
+      return;
+    }
     let cancelled = false;
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+
+    const resolved = (email: string) => {
       if (cancelled) return;
-      if (!user?.email) {
-        router.replace("/auth/login");
-        return;
+      setOauthEmail(email);
+      setOauthWaiting(false);
+    };
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (session?.user?.email) resolved(session.user.email);
+    });
+
+    (async () => {
+      for (let i = 0; i < 40; i++) {
+        if (cancelled) return;
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session?.user?.email) {
+          resolved(session.user.email);
+          return;
+        }
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user?.email) {
+          resolved(user.email);
+          return;
+        }
+        await new Promise(r => setTimeout(r, 100));
       }
-      setOauthEmail(user.email);
+      if (cancelled) return;
+      router.replace("/auth/login?hint=oauth_new_user");
     })();
-    return () => { cancelled = true; };
+
+    return () => {
+      cancelled = true;
+      subscription.unsubscribe();
+    };
   }, [oauthMode, router]);
 
   async function handleOAuthOrgSubmit(e: React.FormEvent) {
@@ -154,6 +183,20 @@ function SignupPageInner() {
             </div>
           </div>
 
+          {oauthMode && oauthWaiting && (
+            <div style={{ textAlign: "center", padding: "32px 0" }}>
+              <div style={{
+                width: 40, height: 40, borderRadius: "50%",
+                border: "3px solid var(--raised)", borderTopColor: "var(--brand)",
+                animation: "spin 0.8s linear infinite", margin: "0 auto 16px",
+              }} />
+              <div style={{ fontFamily: "var(--font-body)", fontSize: "0.9375rem", color: "var(--t2)" }}>
+                {t("oauthSessionLoading")}
+              </div>
+              <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+            </div>
+          )}
+
           {!oauthMode && (
             <>
               <GoogleOAuthButton disabled={loading} plan={planQ} period={periodQ} />
@@ -165,12 +208,13 @@ function SignupPageInner() {
             </>
           )}
 
-          {oauthMode && oauthEmail && (
+          {oauthMode && !oauthWaiting && oauthEmail && (
             <p style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t2)", marginBottom:16 }}>
               {t("signedInAs", { email: oauthEmail })}
             </p>
           )}
 
+          {(!oauthMode || !oauthWaiting) && (
           <form onSubmit={oauthMode ? handleOAuthOrgSubmit : handleSubmit} style={{ display:"flex", flexDirection:"column", gap:16 }}>
             <div>
               <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
@@ -212,7 +256,7 @@ function SignupPageInner() {
               </div>
             )}
 
-            <button type="submit" disabled={loading || (oauthMode && !oauthEmail)}
+            <button type="submit" disabled={loading || (oauthMode && (!oauthEmail || oauthWaiting))}
               style={{ padding:"12px", borderRadius:"var(--r)",
                 background:"var(--brand)", color:"#fff", border:"none", cursor:"pointer",
                 fontFamily:"var(--font-body)", fontWeight:600, fontSize:"1rem",
@@ -220,6 +264,7 @@ function SignupPageInner() {
               {loading ? t("creating") : oauthMode ? t("oauthFinishCta") : t("signUp")}
             </button>
           </form>
+          )}
 
           <div style={{ marginTop:24, textAlign:"center", fontFamily:"var(--font-body)",
             fontSize:"0.875rem", color:"var(--t3)" }}>

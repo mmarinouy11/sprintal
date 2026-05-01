@@ -105,7 +105,9 @@
     "oauthFinishTitle": "Completá tu cuenta",
     "signedInAs": "Sesión iniciada como {email}",
     "oauthFinishCta": "Continuar",
-    "oauthFailed": "No se pudo iniciar sesión con Google. Probá de nuevo."
+    "oauthFailed": "No se pudo iniciar sesión con Google. Probá de nuevo.",
+    "oauthSessionLoading": "Conectando tu cuenta de Google…",
+    "oauthNewUserHint": "Tu cuenta con Google ya está lista. Tocá «Continuar con Google» abajo para entrar."
   },
   "coach": {
     "strategicAnalysis": "Análisis estratégico",

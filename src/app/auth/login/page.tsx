@@ -13,15 +13,18 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const e = params.get("error");
-    if (!e) return;
-    if (e === "oauth") setError(t("oauthFailed"));
-    else setError(decodeURIComponent(e));
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- read ?error= once on mount
+    if (e) {
+      if (e === "oauth") setError(t("oauthFailed"));
+      else setError(decodeURIComponent(e));
+    }
+    if (params.get("hint") === "oauth_new_user") setInfo(t("oauthNewUserHint"));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps -- read query once on mount
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
@@ -73,6 +76,16 @@ export default function LoginPage() {
             </div>
             <div className="t-label">Strategic Portfolio Management</div>
           </div>
+          {info && (
+            <div className="t-mono text-sm p-3 rounded mb-4"
+              style={{
+                background: "var(--brand-bg)",
+                color: "var(--brand-dk)",
+                border: "1px solid var(--brand-mid)",
+              }}>
+              {info}
+            </div>
+          )}
           <GoogleOAuthButton disabled={loading} />
           <div className="flex items-center gap-3 my-5">
             <div className="flex-1 h-px" style={{ background: "var(--border-mid)" }} />

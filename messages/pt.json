@@ -105,7 +105,9 @@
     "oauthFinishTitle": "Conclua sua conta",
     "signedInAs": "Conectado como {email}",
     "oauthFinishCta": "Continuar",
-    "oauthFailed": "Não foi possível entrar com o Google. Tente novamente."
+    "oauthFailed": "Não foi possível entrar com o Google. Tente novamente.",
+    "oauthSessionLoading": "Conectando sua conta do Google…",
+    "oauthNewUserHint": "Sua conta do Google está pronta. Toque em «Continuar com Google» abaixo para entrar."
   },
   "coach": {
     "strategicAnalysis": "Análise estratégica",

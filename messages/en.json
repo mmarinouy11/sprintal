@@ -105,7 +105,9 @@
     "oauthFinishTitle": "Finish setting up your account",
     "signedInAs": "Signed in as {email}",
     "oauthFinishCta": "Continue",
-    "oauthFailed": "Google sign-in failed. Please try again."
+    "oauthFailed": "Google sign-in failed. Please try again.",
+    "oauthSessionLoading": "Connecting your Google account…",
+    "oauthNewUserHint": "Your Google account is ready. Tap “Continue with Google” below to finish signing in."
   },
   "coach": {
     "strategicAnalysis": "Strategic Analysis",
