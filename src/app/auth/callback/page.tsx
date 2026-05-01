@@ -1,18 +1,23 @@
 "use client";
 
 /**
- * OAuth PKCE return (Google, etc.): exchange runs in the **browser** so session cookies
- * are written the same way as signInWithOAuth — server-side exchange often drops Set-Cookie
- * on Vercel/Next redirects.
- * Email confirmation with hash: /auth/callback/complete
+ * OAuth PKCE return: exchange in the browser, then **full-page** navigation so the next
+ * request always sends session cookies (avoids Next client router + RSC cookie races).
+ *
+ * Supabase (production): set Site URL + Redirect URLs to match NEXT_PUBLIC_APP_URL, e.g.
+ *   https://sprintal.vercel.app/auth/callback
+ *   https://sprintal.vercel.app/auth/callback/complete
  */
 import { Suspense, useEffect } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 
+function hardGo(path: string) {
+  window.location.replace(path);
+}
+
 function AuthOAuthCallbackInner() {
-  const router = useRouter();
   const t = useT("auth");
   const searchParams = useSearchParams();
   const q = searchParams.toString();
@@ -29,14 +34,14 @@ function AuthOAuthCallbackInner() {
       const code = params.get("code");
 
       if (oauthError) {
-        router.replace(
+        hardGo(
           `/auth/login?error=${encodeURIComponent(oauthErrorDescription || oauthError)}`
         );
         return;
       }
 
       if (!code) {
-        router.replace(`/auth/callback/complete${q.length ? `?${q}` : ""}`);
+        hardGo(`/auth/callback/complete${q.length ? `?${q}` : ""}`);
         return;
       }
 
@@ -48,7 +53,7 @@ function AuthOAuthCallbackInner() {
           if (!session) {
             if (!cancelled) {
               console.error("OAuth exchange:", exErr.message);
-              router.replace("/auth/login?error=oauth");
+              hardGo("/auth/login?error=oauth");
             }
             return;
           }
@@ -58,7 +63,7 @@ function AuthOAuthCallbackInner() {
       }
 
       if (!session?.user) {
-        if (!cancelled) router.replace("/auth/login?error=oauth");
+        if (!cancelled) hardGo("/auth/login?error=oauth");
         return;
       }
 
@@ -70,40 +75,53 @@ function AuthOAuthCallbackInner() {
 
       if (membersError) {
         console.error("OAuth callback org_members:", membersError.message);
-        if (!cancelled) router.replace("/");
+        if (!cancelled) hardGo("/");
         return;
       }
 
-      const hasOrg = Boolean(members?.[0]);
-
-      router.refresh();
-
-      if (!hasOrg) {
+      const member = members?.[0];
+      if (!member) {
         const qs = new URLSearchParams();
         qs.set("oauth", "true");
         if (plan) qs.set("plan", plan);
         if (period) qs.set("period", period);
-        if (!cancelled) router.replace(`/auth/signup?${qs.toString()}`);
+        if (!cancelled) hardGo(`/auth/signup?${qs.toString()}`);
         return;
       }
 
       if (plan) {
         if (!cancelled) {
-          router.replace(
+          hardGo(
             `/pricing?plan=${encodeURIComponent(plan)}&period=${encodeURIComponent(period || "monthly")}`
           );
         }
         return;
       }
 
-      if (!cancelled) router.replace("/");
+      const { data: orgRow, error: orgErr } = await supabase
+        .from("organizations")
+        .select("slug, onboarding_complete")
+        .eq("id", member.org_id)
+        .maybeSingle();
+
+      if (orgErr || !orgRow?.slug) {
+        if (!cancelled) hardGo("/auth/login");
+        return;
+      }
+
+      if (!orgRow.onboarding_complete) {
+        if (!cancelled) hardGo(`/onboarding/${orgRow.slug}`);
+        return;
+      }
+
+      if (!cancelled) hardGo(`/${orgRow.slug}/dashboard`);
     }
 
     run();
     return () => {
       cancelled = true;
     };
-  }, [router, q]);
+  }, [q]);
 
   return (
     <div

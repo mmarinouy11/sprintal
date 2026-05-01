@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import GoogleOAuthButton from "@/components/auth/GoogleOAuthButton";
+import { getBrowserAppOrigin } from "@/lib/app-origin";
 
 function SignupPageInner() {
   const router = useRouter();
@@ -118,7 +119,7 @@ function SignupPageInner() {
         email: form.email,
         password: form.password,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback/complete`,
+          emailRedirectTo: `${getBrowserAppOrigin()}/auth/callback/complete`,
         },
       });
 

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useT } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
+import { getBrowserAppOrigin } from "@/lib/app-origin";
 
 function GoogleMark({ className }: { className?: string }) {
   return (
@@ -42,12 +43,13 @@ export default function GoogleOAuthButton({ disabled, plan, period }: Props) {
   async function handleClick() {
     setLoading(true);
     try {
-      let redirectTo = `${window.location.origin}/auth/callback`;
+      const origin = getBrowserAppOrigin();
+      let redirectTo = `${origin}/auth/callback`;
       if (plan) {
         const qs = new URLSearchParams();
         qs.set("plan", plan);
         qs.set("period", period || "monthly");
-        redirectTo = `${window.location.origin}/auth/callback?${qs.toString()}`;
+        redirectTo = `${origin}/auth/callback?${qs.toString()}`;
       }
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
