@@ -7,7 +7,7 @@ import { useT } from "@/lib/i18n";
 import BetDetailPanel from "@/components/bets/BetDetailPanel";
 
 export default function ActiveBetsTable() {
-  const { bets, sprints, evidence, signalChecks, betAlignments } = useStore();
+  const { bets, sprints, evidence, signalChecks, betAlignments, org } = useStore();
   const active = sprints.find(s => s.status === "Active");
   const ab = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
   const [selectedBet, setSelectedBet] = useState<Bet|null>(null);
@@ -36,6 +36,7 @@ export default function ActiveBetsTable() {
               : ab.map(b => {
                   const incomplete = !b.kill_criteria || !b.scale_trigger || !b.hypothesis;
                   const isOrphan = b.bet_type !== "enabler" &&
+                    (org?.cascade_level ?? 1) > 1 &&
                     !betAlignments.some(a => a.child_bet_id === b.id);
                   const isEnabler = b.bet_type === "enabler";
                   return (

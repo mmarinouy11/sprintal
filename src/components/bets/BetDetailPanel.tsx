@@ -463,7 +463,9 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
                     </div>
                   )}
                   {/* Orphan warning */}
-                  {bet.bet_type === "strategic" && parentBets.length === 0 && (
+                  {bet.bet_type === "strategic" &&
+                    parentBets.length === 0 &&
+                    (org?.cascade_level ?? 1) > 1 && (
                     <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px",
                       borderRadius:"var(--rs)", background:"rgba(234,160,18,0.06)",
                       border:"1px solid rgba(234,160,18,0.2)", marginBottom:12 }}>
