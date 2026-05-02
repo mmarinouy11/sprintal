@@ -1,11 +1,18 @@
 "use client";
-import { useT } from "@/lib/i18n";
+import { useT, useLocale } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { sprintProgress, daysRemaining } from "@/lib/utils";
+
+function localeTag(locale: "en" | "es" | "pt"): string {
+  if (locale === "es") return "es";
+  if (locale === "pt") return "pt-BR";
+  return "en-US";
+}
 
 export default function SprintCard({ fullHeight = false }: { fullHeight?: boolean }) {
   const { sprints } = useStore();
   const t = useT("dashboard");
+  const locale = useLocale();
   const active = sprints.find(s => s.status === "Active");
 
   const wrap: React.CSSProperties = {
@@ -30,6 +37,18 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
   const pct = sprintProgress(active.start_date, active.end_date);
   const days = daysRemaining(active.end_date);
   const signals = active.signals?.split(",").map(s => s.trim()).filter(Boolean) || [];
+
+  const today = new Date();
+  const elapsed = Math.max(0, Math.floor((today.getTime() - new Date(active.start_date).getTime()) / 86400000));
+  const totalDays = Math.floor((new Date(active.end_date).getTime() - new Date(active.start_date).getTime()) / 86400000);
+  const startMs = new Date(active.start_date).getTime();
+  const endMs = new Date(active.end_date).getTime();
+  const durationMs = endMs - startMs;
+  const reviewMilestones = [0.33, 0.66, 0.9].map(p => new Date(startMs + p * durationMs));
+  const nextReview = reviewMilestones.find(d => d > today);
+  const reviewDateLabel = nextReview
+    ? nextReview.toLocaleDateString(localeTag(locale), { day: "numeric", month: "short" })
+    : "";
 
   return (
     <div style={wrap}>
@@ -67,6 +86,13 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
           ))}
         </div>
       )}
+
+      <div style={{ display: "flex", flexDirection: "row", gap: 24, marginTop: 8, fontSize: "0.8125rem", color: "var(--t3)" }}>
+        <span>{t("sprintDayOfTotal", { current: String(elapsed), total: String(totalDays) })}</span>
+        {nextReview && (
+          <span>{t("nextStrategicReview", { date: reviewDateLabel })}</span>
+        )}
+      </div>
 
       {/* Progress */}
       <div style={{ marginTop:"auto" }}>

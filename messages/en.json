@@ -49,6 +49,8 @@
     "noActiveSprint": "No active sprint.",
     "neverReviewed": "Never reviewed, due every {days}d",
     "daysRemaining": "{days}d remaining",
+    "sprintDayOfTotal": "Day {current} of {total}",
+    "nextStrategicReview": "Next review: {date}",
     "successSignals": "Success Signals",
     "sprintProgress": "Sprint Progress",
     "throughSprint": "{pct}% through sprint",
@@ -68,6 +70,7 @@
   "auth": {
     "signIn": "Sign in",
     "signUp": "Create Account",
+    "createAccount": "Create your account",
     "email": "Email",
     "password": "Password",
     "orgName": "Organization Name",

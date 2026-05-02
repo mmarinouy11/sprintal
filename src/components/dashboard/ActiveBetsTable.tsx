@@ -6,10 +6,18 @@ import type { Bet } from "@/types";
 import { useT } from "@/lib/i18n";
 import BetDetailPanel from "@/components/bets/BetDetailPanel";
 
-export default function ActiveBetsTable() {
+type ActiveBetsTableProps = {
+  riskFilter?: boolean;
+  onClearRiskFilter?: () => void;
+};
+
+export default function ActiveBetsTable({ riskFilter = false, onClearRiskFilter }: ActiveBetsTableProps = {}) {
   const { bets, sprints, evidence, signalChecks, betAlignments, org } = useStore();
   const active = sprints.find(s => s.status === "Active");
   const ab = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
+  const displayAb = riskFilter
+    ? ab.filter(b => b.signal === "Unclear" || b.signal === "Weak")
+    : ab;
   const [selectedBet, setSelectedBet] = useState<Bet|null>(null);
   const t = useT();
   const openBetPanel = (bet: Bet) => {
@@ -21,19 +29,60 @@ export default function ActiveBetsTable() {
     setSelectedBet(bet);
   };
 
+  const hasReviewed = displayAb.some(b => !!b.last_reviewed);
+  const hasNote = displayAb.some(b => !!b.last_note);
+
   return (
     <>
+      {riskFilter && (
+        <div
+          style={{
+            fontSize: "0.8125rem",
+            color: "var(--unclear)",
+            padding: "6px 12px",
+            background: "rgba(234,160,18,0.06)",
+            borderRadius: "var(--rs)",
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: 8,
+          }}
+        >
+          <span>Mostrando bets en riesgo</span>
+          <button
+            type="button"
+            onClick={() => onClearRiskFilter?.()}
+            style={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              color: "inherit",
+              fontSize: "inherit",
+              fontFamily: "var(--font-body)",
+              padding: 0,
+            }}
+          >
+            × Ver todas
+          </button>
+        </div>
+      )}
       <div style={{ borderRadius:"var(--r)", overflow:"hidden", border:"1px solid var(--border)", borderLeft:"3px solid var(--active)" }}>
         <table className="tbl">
           <thead>
             <tr>
-              {[t("table.bet"),t("table.owner"),t("table.signal"),t("table.lastReviewed"),t("table.note")].map(h => <th key={h}>{h}</th>)}
+              <th>{t("table.bet")}</th>
+              <th>{t("table.owner")}</th>
+              <th>{t("table.signal")}</th>
+              {hasReviewed && <th>{t("table.lastReviewed")}</th>}
+              {hasNote && <th>{t("table.note")}</th>}
             </tr>
           </thead>
           <tbody>
-            {ab.length === 0
-              ? <tr><td colSpan={5} style={{ color:"var(--t3)", fontFamily:"var(--font-body)", fontStyle:"italic", padding:"20px 16px" }}>{t("dashboard.noActiveBets")}</td></tr>
-              : ab.map(b => {
+            {displayAb.length === 0
+              ? <tr><td colSpan={3 + (hasReviewed ? 1 : 0) + (hasNote ? 1 : 0)} style={{ color:"var(--t3)", fontFamily:"var(--font-body)", fontStyle:"italic", padding:"20px 16px" }}>
+                  {ab.length === 0 ? t("dashboard.noActiveBets") : "No hay bets en riesgo"}
+                </td></tr>
+              : displayAb.map(b => {
                   const incomplete = !b.kill_criteria || !b.scale_trigger || !b.hypothesis;
                   const isOrphan = b.bet_type !== "enabler" &&
                     (org?.cascade_level ?? 1) > 1 &&
@@ -80,14 +129,18 @@ export default function ActiveBetsTable() {
                         </div>
                       </td>
                       <td><SignalBadge signal={b.signal}/></td>
-                      <td style={{ fontFamily:"var(--font-mono)", fontSize:"0.8125rem", color:"var(--t3)" }}>
-                        {b.last_reviewed || <span style={{ color:"var(--border-mid)" }}>—</span>}
-                      </td>
-                      <td style={{ maxWidth:220 }}>
-                        <span style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t3)", display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
-                          {b.last_note || <span style={{ color:"var(--border-mid)" }}>—</span>}
-                        </span>
-                      </td>
+                      {hasReviewed && (
+                        <td style={{ fontFamily:"var(--font-mono)", fontSize:"0.8125rem", color:"var(--t3)" }}>
+                          {b.last_reviewed || <span style={{ color:"var(--border-mid)" }}>—</span>}
+                        </td>
+                      )}
+                      {hasNote && (
+                        <td style={{ maxWidth:220 }}>
+                          <span style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t3)", display:"block", overflow:"hidden", textOverflow:"ellipsis", whiteSpace:"nowrap" }}>
+                            {b.last_note || <span style={{ color:"var(--border-mid)" }}>—</span>}
+                          </span>
+                        </td>
+                      )}
                     </tr>
                   );
                 })

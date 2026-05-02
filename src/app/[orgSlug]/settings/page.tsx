@@ -221,6 +221,14 @@ function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
   );
 }
 
+function memberRowPrimaryLabel(m: OrgMember): string {
+  const name = m.full_name?.trim();
+  if (name) return name;
+  const email = m.email?.trim();
+  if (email) return email;
+  return "—";
+}
+
 // ── Members Tab ──────────────────────────────────────────────
 function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
   const t = useT();
@@ -302,8 +310,10 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
             <div key={m.id} className="flex items-center gap-4 px-5 py-3"
               style={{ borderBottom: i < members.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
               <div className="flex-1">
-                <div style={{ fontWeight: 500, fontSize: "0.875rem", color: "var(--text)" }}>{m.full_name || "—"}</div>
-                <div style={{ fontSize: "0.8125rem", color: "var(--t2)", fontFamily: "var(--font-mono)" }}>{m.email || m.user_id?.slice(0, 8)}</div>
+                <div style={{ fontWeight: 500, fontSize: "0.875rem", color: "var(--text)" }}>{memberRowPrimaryLabel(m)}</div>
+                {m.full_name?.trim() && m.email?.trim() && (
+                  <div style={{ fontSize: "0.8125rem", color: "var(--t2)", fontFamily: "var(--font-mono)" }}>{m.email}</div>
+                )}
               </div>
               {isAdmin && m.role !== "owner" ? (
                 <select className="input" style={{ width: 110, fontSize: "0.8125rem" }}
@@ -449,55 +459,111 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
       {/* Areas table */}
       <div className="t-label mb-3">{t("settings.coachByArea")}</div>
       <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", overflow: "hidden" }}>
-        {/* Header */}
-        <div className="grid px-5 py-2" style={{ gridTemplateColumns: "1fr 100px 100px 100px 110px", background: "var(--raised)", borderBottom: "1px solid var(--border)", fontSize: "0.75rem", fontWeight: 700, color: "var(--t2)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-          <div>{t("settings.area")}</div>
-          <div style={{ textAlign: "center" }}>{t("settings.syntactic")}</div>
-          <div style={{ textAlign: "center" }}>{t("settings.semantic")}</div>
-          <div style={{ textAlign: "center" }}>{t("settings.formulationCol")}</div>
-          <div style={{ textAlign: "center" }}>{t("settings.strategicCol")}</div>
-        </div>
-        {allOrgs.map((a, i) => {
-          const u = a.isRoot ? usage : areaUsage[a.id];
-          const areaUnifiedUsed = coachUnifiedCreditsUsed(u ?? null);
-          const areaSemanticUsed = u?.semantic_calls || 0;
-          return (
-            <div key={a.id} className="grid items-center px-5 py-3"
-              style={{ gridTemplateColumns: "1fr 100px 100px 100px 110px", borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
-              <div>
-                <span style={{ fontSize: "0.875rem", color: "var(--text)", fontWeight: a.isRoot ? 600 : 400 }}>{a.name}</span>
-                {a.isRoot && <span className="badge ml-2" style={{ fontSize: "0.6rem" }}>{t("settings.rootBadge")}</span>}
-              </div>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                {isAdmin
-                  ? <Toggle enabled={a.coach_syntactic_enabled} disabled={toggling === a.id + "coach_syntactic_enabled"} onClick={() => toggleCoach(a.id, "coach_syntactic_enabled", a.coach_syntactic_enabled)} />
-                  : <span style={{ fontSize: "0.8125rem", color: a.coach_syntactic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_syntactic_enabled ? t("common.on") : t("common.off")}</span>
-                }
-              </div>
-              <div style={{ display: "flex", justifyContent: "center" }}>
-                {!semanticAvailable
-                  ? <UpgradeBadge nextPlan={t("settings.starterPlan")} />
-                  : isAdmin
-                    ? <Toggle enabled={a.coach_semantic_enabled} disabled={toggling === a.id + "coach_semantic_enabled"} onClick={() => toggleCoach(a.id, "coach_semantic_enabled", a.coach_semantic_enabled)} />
-                    : <span style={{ fontSize: "0.8125rem", color: a.coach_semantic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_semantic_enabled ? t("common.on") : t("common.off")}</span>
-                }
-              </div>
-              <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
-                {areaUnifiedUsed > 0 ? areaUnifiedUsed : "—"}
-              </div>
-              {areaSemanticUsed > 0 ? (
-                <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
-                  <span style={{ color: "var(--text)" }}>{areaSemanticUsed}</span>
-                  <span style={{ color: "var(--t3)", marginLeft: 6 }}>
-                    ({areaSemanticUsed * SEMANTIC_CREDIT_WEIGHT} cr)
-                  </span>
-                </div>
-              ) : (
-                <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>—</div>
-              )}
-            </div>
-          );
-        })}
+        <table style={{ width: "100%", borderCollapse: "collapse", tableLayout: "fixed" }}>
+          <colgroup>
+            <col />
+            <col style={{ width: 100 }} />
+            <col style={{ width: 100 }} />
+            <col style={{ width: 100 }} />
+            <col style={{ width: 110 }} />
+          </colgroup>
+          <thead>
+            <tr>
+              <th
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--t3)",
+                  textAlign: "center",
+                  paddingBottom: 4,
+                  borderBottom: "1px solid var(--border)",
+                  fontWeight: "normal",
+                }}
+              />
+              <th
+                colSpan={2}
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--t3)",
+                  textAlign: "center",
+                  paddingBottom: 4,
+                  borderBottom: "1px solid var(--border)",
+                  fontWeight: "normal",
+                }}
+              >
+                Habilitado
+              </th>
+              <th
+                colSpan={2}
+                style={{
+                  fontSize: "0.75rem",
+                  color: "var(--t3)",
+                  textAlign: "center",
+                  paddingBottom: 4,
+                  borderBottom: "1px solid var(--border)",
+                  fontWeight: "normal",
+                }}
+              >
+                Uso del mes
+              </th>
+            </tr>
+            <tr style={{ background: "var(--raised)", borderBottom: "1px solid var(--border)", fontSize: "0.75rem", fontWeight: 700, color: "var(--t2)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+              <th className="px-5 py-2" style={{ textAlign: "left" }}>{t("settings.area")}</th>
+              <th className="px-5 py-2" style={{ textAlign: "center" }}>{t("settings.syntactic")}</th>
+              <th className="px-5 py-2" style={{ textAlign: "center" }}>{t("settings.semantic")}</th>
+              <th className="px-5 py-2" style={{ textAlign: "center" }}>{t("settings.formulationCol")}</th>
+              <th className="px-5 py-2" style={{ textAlign: "center" }}>{t("settings.strategicCol")}</th>
+            </tr>
+          </thead>
+          <tbody>
+            {allOrgs.map((a, i) => {
+              const u = a.isRoot ? usage : areaUsage[a.id];
+              const areaUnifiedUsed = coachUnifiedCreditsUsed(u ?? null);
+              const areaSemanticUsed = u?.semantic_calls || 0;
+              return (
+                <tr key={a.id}
+                  style={{ borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
+                  <td className="px-5 py-3" style={{ verticalAlign: "middle" }}>
+                    <span style={{ fontSize: "0.875rem", color: "var(--text)", fontWeight: a.isRoot ? 600 : 400 }}>{a.name}</span>
+                    {a.isRoot && <span className="badge ml-2" style={{ fontSize: "0.6rem" }}>{t("settings.rootBadge")}</span>}
+                  </td>
+                  <td className="px-5 py-3" style={{ verticalAlign: "middle" }}>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      {isAdmin
+                        ? <Toggle enabled={a.coach_syntactic_enabled} disabled={toggling === a.id + "coach_syntactic_enabled"} onClick={() => toggleCoach(a.id, "coach_syntactic_enabled", a.coach_syntactic_enabled)} />
+                        : <span style={{ fontSize: "0.8125rem", color: a.coach_syntactic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_syntactic_enabled ? t("common.on") : t("common.off")}</span>
+                      }
+                    </div>
+                  </td>
+                  <td className="px-5 py-3" style={{ verticalAlign: "middle" }}>
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      {!semanticAvailable
+                        ? <UpgradeBadge nextPlan={t("settings.starterPlan")} />
+                        : isAdmin
+                          ? <Toggle enabled={a.coach_semantic_enabled} disabled={toggling === a.id + "coach_semantic_enabled"} onClick={() => toggleCoach(a.id, "coach_semantic_enabled", a.coach_semantic_enabled)} />
+                          : <span style={{ fontSize: "0.8125rem", color: a.coach_semantic_enabled ? "var(--scaled)" : "var(--t3)" }}>{a.coach_semantic_enabled ? t("common.on") : t("common.off")}</span>
+                      }
+                    </div>
+                  </td>
+                  <td className="px-5 py-3" style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center", verticalAlign: "middle" }}>
+                    {areaUnifiedUsed > 0 ? areaUnifiedUsed : "—"}
+                  </td>
+                  <td className="px-5 py-3" style={{ verticalAlign: "middle" }}>
+                    {areaSemanticUsed > 0 ? (
+                      <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
+                        <span style={{ color: "var(--text)" }}>{areaSemanticUsed}</span>
+                        <span style={{ color: "var(--t3)", marginLeft: 6 }}>
+                          ({areaSemanticUsed * SEMANTIC_CREDIT_WEIGHT} cr)
+                        </span>
+                      </div>
+                    ) : (
+                      <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>—</div>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );

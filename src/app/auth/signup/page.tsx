@@ -182,7 +182,7 @@ function SignupPageInner() {
               Sprintal
             </div>
             <div style={{ fontFamily:"var(--font-body)", fontSize:"0.875rem", color:"var(--t3)" }}>
-              {oauthMode ? t("oauthFinishTitle") : "Create your account"}
+              {oauthMode ? t("oauthFinishTitle") : t("createAccount")}
             </div>
           </div>
 
@@ -225,7 +225,7 @@ function SignupPageInner() {
               <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
                 fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
                 textTransform:"uppercase" }}>
-                Organization Name
+                {t("orgName")}
               </label>
               <input className="input" value={form.orgName} onChange={set("orgName")}
                 placeholder={t("orgPlaceholder")} required autoFocus />
@@ -236,7 +236,7 @@ function SignupPageInner() {
                   <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
                     fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
                     textTransform:"uppercase" }}>
-                    Email
+                    {t("email")}
                   </label>
                   <input className="input" type="email" value={form.email} onChange={set("email")}
                     placeholder={t("emailPlaceholder")} required />
@@ -245,7 +245,7 @@ function SignupPageInner() {
                   <label style={{ display:"block", fontFamily:"var(--font-body)", fontSize:"0.8125rem",
                     fontWeight:600, color:"var(--t2)", marginBottom:6, letterSpacing:"0.03em",
                     textTransform:"uppercase" }}>
-                    Password
+                    {t("password")}
                   </label>
                   <input className="input" type="password" value={form.password} onChange={set("password")}
                     placeholder={t("passwordMin")} required minLength={8} />
@@ -273,9 +273,9 @@ function SignupPageInner() {
 
           <div style={{ marginTop:24, textAlign:"center", fontFamily:"var(--font-body)",
             fontSize:"0.875rem", color:"var(--t3)" }}>
-            Already have an account?{" "}
+            {t("alreadyAccount")}{" "}
             <Link href="/auth/login" style={{ color:"var(--brand)", fontWeight:600, textDecoration:"none" }}>
-              Sign in
+              {t("signIn")}
             </Link>
           </div>
         </div>

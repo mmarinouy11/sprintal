@@ -43,7 +43,12 @@ function Metric({ label, value, sub, color, last }: { label:string; value:number
   );
 }
 
-export default function MetricsBar() {
+export interface MetricsBarProps {
+  onRiskClick?: () => void;
+  riskFilterActive?: boolean;
+}
+
+export default function MetricsBar({ onRiskClick, riskFilterActive }: MetricsBarProps = {}) {
   const { sprints, bets } = useStore();
   const t = useT("dashboard");
   const active = sprints.find(s => s.status === "Active");
@@ -58,7 +63,16 @@ export default function MetricsBar() {
       <Metric label={t("activeSprint")}  value={active?1:0} sub={active?.name||t("none")}  color="var(--brand)" />
       <Metric label={t("betsInSprint")} value={ab.length}  sub={t("currentlyTesting")}     color="var(--text)" />
       <Metric label={t("strongSignal")}  value={ab.filter(b=>b.signal==="Strong").length} sub={t("candidatesToScale")} color="var(--scaled)" />
-      <Metric label={t("atRisk")}        value={ab.filter(b=>b.signal!=="Strong").length} sub={t("needADecision")}     color="var(--unclear)" last />
+      <div
+        onClick={onRiskClick}
+        style={{
+          cursor: onRiskClick ? "pointer" : "default",
+          outline: riskFilterActive ? "2px solid var(--unclear)" : undefined,
+          background: riskFilterActive ? "rgba(234,160,18,0.06)" : undefined,
+        }}
+      >
+        <Metric label={t("atRisk")} value={ab.filter(b=>b.signal!=="Strong").length} sub={t("needADecision")} color="var(--unclear)" last />
+      </div>
     </div>
   );
 }

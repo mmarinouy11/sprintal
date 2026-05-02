@@ -37,6 +37,7 @@ export default function DashboardPage() {
   const [portfolioSlideOpen, setPortfolioSlideOpen] = useState(false);
   const [portfolioRunNonce, setPortfolioRunNonce] = useState(0);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
+  const [riskFilter, setRiskFilter] = useState(false);
   const searchParams = useSearchParams();
   const activeSprint = sprints.find((s) => s.status === "Active");
   const activeBets = useMemo(
@@ -112,7 +113,7 @@ export default function DashboardPage() {
       }}>
         {/* Left col — metrics on top, sprint card below */}
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          <MetricsBar />
+          <MetricsBar onRiskClick={() => setRiskFilter((f) => !f)} riskFilterActive={riskFilter} />
           <div style={{ flex: 1 }}>
             <SprintCard fullHeight />
           </div>
@@ -123,7 +124,9 @@ export default function DashboardPage() {
       </div>
 
       <OwnedBetsSection />
-      <Section label={t("activeBets")}><ActiveBetsTable /></Section>
+      <Section label={t("activeBets")}>
+        <ActiveBetsTable riskFilter={riskFilter} onClearRiskFilter={() => setRiskFilter(false)} />
+      </Section>
       {showPortfolioRow && org && (
         <Section label={tCoach("portfolioAnalysis")}>
           <button
