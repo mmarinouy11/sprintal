@@ -43,7 +43,8 @@ async function fetchAncestorBundle(accessToken: string, orgSlug: string, fromSlu
 
 async function loadOrgBundle(accessToken: string, orgSlug: string, fromSlug: string | null) {
   let bundle = await fetchOrgDataBundle(accessToken, orgSlug);
-  if (!bundle.ok && bundle.status === 403 && fromSlug) {
+  // Parent / ancestor slugs are not in the user's membership list → org/data returns 404 (not 403).
+  if (!bundle.ok && fromSlug && (bundle.status === 403 || bundle.status === 404)) {
     bundle = await fetchAncestorBundle(accessToken, orgSlug, fromSlug);
   }
   return bundle;

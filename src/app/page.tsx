@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-server";
 
-type OrgEmbed = { slug: string; onboarding_complete: boolean; cascade_level: number };
+type OrgEmbed = { id: string; slug: string; onboarding_complete: boolean; cascade_level: number };
 type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
 
 export default async function RootPage() {
@@ -11,22 +11,38 @@ export default async function RootPage() {
 
   const { data: memberships } = await supabase
     .from("org_members")
-    .select("org_id, organizations(slug, onboarding_complete, cascade_level)")
+    .select("org_id, organizations(id, slug, onboarding_complete, cascade_level)")
     .eq("user_id", user.id);
 
   if (!memberships?.length) redirect("/auth/signup?oauth=true");
 
-  const orgRows = (memberships as unknown as MembershipRow[])
+  type Row = OrgEmbed & { membershipOrgId: string };
+  const orgRows: Row[] = (memberships as unknown as MembershipRow[])
     .map((m) => {
       const o = m.organizations;
-      return Array.isArray(o) ? o[0] : o;
+      const org = Array.isArray(o) ? o[0] : o;
+      if (!org?.slug || !org.id) return null;
+      return { ...org, membershipOrgId: m.org_id };
     })
-    .filter((o): o is OrgEmbed => !!o?.slug);
+    .filter((r): r is Row => r != null);
 
   if (!orgRows.length) redirect("/auth/signup?oauth=true");
 
-  orgRows.sort((a, b) => (b.cascade_level ?? 0) - (a.cascade_level ?? 0));
-  const home = orgRows[0];
+  orgRows.sort((a, b) => {
+    const d = (b.cascade_level ?? 0) - (a.cascade_level ?? 0);
+    if (d !== 0) return d;
+    return (a.slug || "").localeCompare(b.slug || "");
+  });
+
+  const invitedRaw = user.user_metadata?.invited_to_org;
+  const invitedId = typeof invitedRaw === "string" ? invitedRaw : undefined;
+  let home = orgRows[0];
+  if (invitedId) {
+    const hit = orgRows.find(
+      (r) => r.membershipOrgId === invitedId || r.id === invitedId
+    );
+    if (hit) home = hit;
+  }
 
   if (!home.onboarding_complete) {
     redirect(`/onboarding/${home.slug}`);
