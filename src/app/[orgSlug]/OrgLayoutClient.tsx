@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import {
@@ -39,6 +39,11 @@ async function fetchAncestorBundle(accessToken: string, orgSlug: string, fromSlu
   if (!res.ok) return { ok: false as const, status: res.status };
   const data = await res.json();
   return { ok: true as const, data };
+}
+
+function readFromQueryParam(): string | null {
+  if (typeof window === "undefined") return null;
+  return new URLSearchParams(window.location.search).get("from");
 }
 
 async function loadOrgBundle(accessToken: string, orgSlug: string, fromSlug: string | null) {
@@ -80,25 +85,31 @@ export default function OrgLayoutClient({
   } = useStore();
   const router = useRouter();
   const pathname = usePathname();
-  const searchParams = useSearchParams();
-  const fromQuery = searchParams.get("from");
   const t = useT();
   /** Slug changes → full-screen load; same org, new path (p. ej. vuelta desde /pricing) → refresh sin bloquear UI */
   const lastLoadedSlugRef = useRef<string | null>(null);
 
+  const loadGenerationRef = useRef(0);
+
   useEffect(() => {
+    const gen = ++loadGenerationRef.current;
     async function load() {
-      const fromParam = fromQuery;
+      const fromParam = readFromQueryParam();
       const slugChanged =
         lastLoadedSlugRef.current !== null && lastLoadedSlugRef.current !== params.orgSlug;
       const isInitial = lastLoadedSlugRef.current === null;
+      const showedFullScreenLoad = slugChanged || isInitial;
       lastLoadedSlugRef.current = params.orgSlug;
 
-      if (slugChanged || isInitial) {
+      if (showedFullScreenLoad) {
         setLoading(true);
       }
 
       const { data: { session } } = await supabase.auth.getSession();
+      if (gen !== loadGenerationRef.current) {
+        if (showedFullScreenLoad) setLoading(false);
+        return;
+      }
       if (!session) {
         router.replace("/auth/login");
         setLoading(false);
@@ -106,6 +117,10 @@ export default function OrgLayoutClient({
       }
 
       const first = await loadOrgBundle(session.access_token, params.orgSlug, fromParam);
+      if (gen !== loadGenerationRef.current) {
+        if (showedFullScreenLoad) setLoading(false);
+        return;
+      }
       if (!first.ok) {
         if (first.status === 401) {
           router.replace("/auth/login");
@@ -146,8 +161,10 @@ export default function OrgLayoutClient({
       ) {
         for (let i = 0; i < 4; i++) {
           await new Promise((r) => setTimeout(r, 350 + i * 150));
+          if (gen !== loadGenerationRef.current) break;
           const again = await loadOrgBundle(session.access_token, params.orgSlug, fromParam);
           if (!again.ok) break;
+          if (gen !== loadGenerationRef.current) break;
           data = again.data as BundleData;
           orgData = data.org;
           rootPlan = data.rootPlan;
@@ -175,6 +192,11 @@ export default function OrgLayoutClient({
         }
       }
 
+      if (gen !== loadGenerationRef.current) {
+        if (showedFullScreenLoad) setLoading(false);
+        return;
+      }
+
       const upgraded =
         typeof window !== "undefined" &&
         new URLSearchParams(window.location.search).get("upgraded") === "true";
@@ -183,8 +205,10 @@ export default function OrgLayoutClient({
         const initialSubId = orgData.paddle_subscription_id ?? null;
         for (let i = 0; i < 16; i++) {
           await new Promise((r) => setTimeout(r, 450));
+          if (gen !== loadGenerationRef.current) break;
           const again = await loadOrgBundle(session.access_token, params.orgSlug, fromParam);
           if (!again.ok) break;
+          if (gen !== loadGenerationRef.current) break;
           data = again.data as BundleData;
           orgData = data.org;
           rootPlan = data.rootPlan;
@@ -207,6 +231,11 @@ export default function OrgLayoutClient({
             break;
           }
         }
+      }
+
+      if (gen !== loadGenerationRef.current) {
+        if (showedFullScreenLoad) setLoading(false);
+        return;
       }
 
       if (orgData.id !== org?.id) {
@@ -250,27 +279,44 @@ export default function OrgLayoutClient({
           headers: { Authorization: `Bearer ${session.access_token}` },
         }
       );
+      if (gen !== loadGenerationRef.current) {
+        if (showedFullScreenLoad) setLoading(false);
+        return;
+      }
       if (notificationsRes.ok) {
         const notificationsData = await notificationsRes.json().catch(() => ({ notifications: [] }));
+        if (gen !== loadGenerationRef.current) {
+          if (showedFullScreenLoad) setLoading(false);
+          return;
+        }
         setNotifications(notificationsData.notifications || []);
       } else {
         setNotifications([]);
       }
 
+      if (gen !== loadGenerationRef.current) {
+        if (showedFullScreenLoad) setLoading(false);
+        return;
+      }
       setLoading(false);
     }
-    load();
-  }, [params.orgSlug, pathname, fromQuery, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
+    void load().catch(() => {
+      if (gen === loadGenerationRef.current) setLoading(false);
+    });
+  }, [params.orgSlug, pathname, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
-    const fromParam = fromQuery;
 
     async function pullOrgBundle() {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
       if (!session) return;
-      const bundle = await loadOrgBundle(session.access_token, params.orgSlug, fromParam);
+      const bundle = await loadOrgBundle(
+        session.access_token,
+        params.orgSlug,
+        readFromQueryParam()
+      );
       if (!bundle.ok || !("data" in bundle)) return;
       const d = bundle.data as BundleData;
       setOrg(d.org);
@@ -298,7 +344,7 @@ export default function OrgLayoutClient({
       window.removeEventListener("focus", scheduleRefresh);
       document.removeEventListener("visibilitychange", scheduleRefresh);
     };
-  }, [params.orgSlug, fromQuery, setOrg, setRootPlan, setCurrentRole, setChildOrgs, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
+  }, [params.orgSlug, setOrg, setRootPlan, setCurrentRole, setChildOrgs, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
