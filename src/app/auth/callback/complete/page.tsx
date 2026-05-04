@@ -29,12 +29,15 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      const { data: members } = await supabase
+      type OrgEmbed = { slug: string; onboarding_complete: boolean; cascade_level: number };
+      type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
+
+      const { data: memberships } = await supabase
         .from("org_members")
-        .select("org_id")
+        .select("org_id, organizations(slug, onboarding_complete, cascade_level)")
         .eq("user_id", session.user.id);
 
-      if (!members?.length) {
+      if (!memberships?.length) {
         const qs = new URLSearchParams();
         qs.set("oauth", "true");
         const p = searchParams.get("plan");
@@ -45,14 +48,14 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      const { data: orgs } = await supabase
-        .from("organizations")
-        .select("slug, onboarding_complete, cascade_level")
-        .in("id", members.map(m => m.org_id))
-        .order("cascade_level", { ascending: true });
+      const orgRows = (memberships as unknown as MembershipRow[])
+        .map((m) => {
+          const o = m.organizations;
+          return Array.isArray(o) ? o[0] : o;
+        })
+        .filter((o): o is OrgEmbed => !!o?.slug);
 
-      const org = orgs?.[0];
-      if (!org) {
+      if (!orgRows.length) {
         const qs = new URLSearchParams();
         qs.set("oauth", "true");
         const p = searchParams.get("plan");
@@ -62,6 +65,9 @@ function AuthCallbackCompleteInner() {
         router.replace(`/auth/signup?${qs.toString()}`);
         return;
       }
+
+      orgRows.sort((a, b) => (b.cascade_level ?? 0) - (a.cascade_level ?? 0));
+      const org = orgRows[0];
 
       const requestedPlan = searchParams.get("plan");
       const requestedPeriod = searchParams.get("period");

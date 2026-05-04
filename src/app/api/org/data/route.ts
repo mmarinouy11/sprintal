@@ -63,13 +63,22 @@ export async function GET(req: NextRequest) {
       };
     const rootPlan = billingRoot.plan;
 
+    const parentOrgPromise = org.parent_org_id
+      ? supabaseAdmin
+          .from("organizations")
+          .select("id, name, slug, cascade_level, primary_color, plan, parent_org_id")
+          .eq("id", org.parent_org_id)
+          .maybeSingle()
+      : Promise.resolve({ data: null as null });
+
     // Load everything in parallel
-    const [sprintsRes, betsRes, evidenceRes, signalChecksRes, childrenRes] = await Promise.all([
+    const [sprintsRes, betsRes, evidenceRes, signalChecksRes, childrenRes, parentOrgRes] = await Promise.all([
       supabaseAdmin.from("sprints").select("*").eq("org_id", org.id).order("created_at"),
       supabaseAdmin.from("bets").select("*").eq("org_id", org.id).order("created_at"),
       supabaseAdmin.from("evidence").select("*").eq("org_id", org.id).order("created_at", { ascending: false }),
       supabaseAdmin.from("signal_checks").select("*").eq("org_id", org.id).order("created_at", { ascending: false }),
       supabaseAdmin.from("organizations").select("*").eq("parent_org_id", org.id).order("cascade_level"),
+      parentOrgPromise,
     ]);
 
     const bets = betsRes.data || [];
@@ -80,6 +89,8 @@ export async function GET(req: NextRequest) {
         .in("child_bet_id", bets.map((b: { id: string }) => b.id));
       betAlignments = alData || [];
     }
+
+    const parentOrg = parentOrgRes.data ?? null;
 
     return apiOk({
       org,
@@ -92,6 +103,10 @@ export async function GET(req: NextRequest) {
       signalChecks: signalChecksRes.data || [],
       children: childrenRes.data || [],
       betAlignments,
+      parentOrg,
+      ancestorReadOnly: false,
+      memberContextSlug: null,
+      memberContextName: null,
     }, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });

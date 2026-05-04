@@ -22,6 +22,14 @@ interface Store {
   notifications: NotificationItem[];
   unreadCount: number;
 
+  /** Parent org row (from /api/org/data) for hierarchy navigation */
+  parentOrg: Organization | null;
+  /** True when viewing an ancestor org without membership (read-only, ?from=childSlug) */
+  ancestorReadOnly: boolean;
+  /** Slug of the org where the user has membership (context for read-only ancestor view) */
+  memberContextSlug: string | null;
+  memberContextName: string | null;
+
   // ── Setters ──────────────────────────────────────────
   setOrg:          (org: Organization) => void;
   updateOrg:       (updates: Partial<Organization>) => void;
@@ -41,6 +49,10 @@ interface Store {
   setNotifications: (items: NotificationItem[]) => void;
   markRead: (ids: string[]) => void;
   markAllRead: () => void;
+  setParentOrg: (org: Organization | null) => void;
+  setAncestorReadOnly: (v: boolean) => void;
+  setMemberContextSlug: (slug: string | null) => void;
+  setMemberContextName: (name: string | null) => void;
 
   // ── Mutations ────────────────────────────────────────
   addSprint:      (sprint: Sprint) => void;
@@ -68,6 +80,10 @@ const initialState = {
   betAlignments: [],
   notifications: [],
   unreadCount: 0,
+  parentOrg: null,
+  ancestorReadOnly: false,
+  memberContextSlug: null,
+  memberContextName: null,
 };
 
 export const useStore = create<Store>((set) => ({
@@ -110,6 +126,10 @@ export const useStore = create<Store>((set) => ({
       const notifications = s.notifications.map((n) => ({ ...n, read: true }));
       return { notifications, unreadCount: 0 };
     }),
+  setParentOrg: (parentOrg) => set({ parentOrg }),
+  setAncestorReadOnly: (ancestorReadOnly) => set({ ancestorReadOnly }),
+  setMemberContextSlug: (memberContextSlug) => set({ memberContextSlug }),
+  setMemberContextName: (memberContextName) => set({ memberContextName }),
 
   // Mutations
   addSprint:      (sprint) => set(s => ({ sprints: [...s.sprints, sprint] })),

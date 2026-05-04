@@ -17,7 +17,17 @@
     "dashboardSub": "Strategic overview · Current sprint only",
     "evidenceSub": "Signal tracking and decisions",
     "newArea": "New Area",
-    "noSubAreas": "no sub-areas"
+    "noSubAreas": "no sub-areas",
+    "yourArea": "Your area",
+    "parentOrg": "Parent",
+    "viewOnly": "View only",
+    "current": "Current",
+    "sameLevel": "Same level",
+    "areas": "Areas"
+  },
+  "layout": {
+    "readOnlyAncestor": "You're viewing {org} in read-only.",
+    "readOnlySwitchTo": "Open {member} to take actions"
   },
   "actions": {
     "newSprint": "New Sprint",
@@ -482,6 +492,9 @@
     "saved": "Saved",
     "saveError": "Error saving changes.",
     "inviteMember": "Invite Member",
+    "inviteToOrg": "Invite to",
+    "thisOrgSection": "This organization",
+    "manageMembersInChild": "Manage members in that area's settings.",
     "emailPlaceholder": "colleague@company.com",
     "invite": "Send Invite",
     "inviteSent": "Invite sent successfully.",

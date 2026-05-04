@@ -25,7 +25,23 @@ export function can(role: OrgRole | null, permission: Permission): boolean {
   return (PERMISSIONS[permission] as OrgRole[]).includes(role);
 }
 
-export function usePermissions(role: OrgRole | null) {
+export function usePermissions(
+  role: OrgRole | null,
+  options?: { readOnlyAncestor?: boolean }
+) {
+  const ro = options?.readOnlyAncestor ?? false;
+  if (ro) {
+    return {
+      canCreateSprint: false,
+      canCreateBet: false,
+      canSignalCheck: false,
+      canReview: false,
+      canCloseSprint: false,
+      canEditSettings: false,
+      canCreateSubOrg: false,
+      canViewDashboard: true,
+    };
+  }
   return {
     canCreateSprint:  can(role, "canCreateSprint"),
     canCreateBet:     can(role, "canCreateBet"),

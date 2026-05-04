@@ -11,22 +11,22 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
   const store = useStore();
   const org = store.org;
   const childOrgs = store.childOrgs;
-    const t = useT();
+  const parentOrgFromStore = store.parentOrg;
+  const ancestorReadOnly = store.ancestorReadOnly;
+  const memberContextSlug = store.memberContextSlug;
+  const memberContextName = store.memberContextName;
+  const setParentOrg = store.setParentOrg;
+  const t = useT();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [parentOrg, setParentOrg] = useState<Organization | null>(null);
   const [siblings, setSiblings] = useState<Organization[]>([]);
   const unreadCount = store.unreadCount;
 
-  // Mark children as navigable if they have sub-orgs
-  // We use a simple heuristic: children are navigable by default
-  // (we'll load grandchildren lazily when dropdown opens)
   const [navigableIds, setNavigableIds] = useState<Set<string>>(new Set());
   const [navigableLoaded, setNavigableLoaded] = useState(false);
 
   async function openDropdown() {
-    // Load grandchildren to determine navigability
     if (childOrgs.length === 0) { setNavigableLoaded(true); }
     if (childOrgs.length > 0) {
       const { data: grandchildren } = await supabase
@@ -37,11 +37,12 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
       setNavigableLoaded(true);
     }
 
-    // Load parent and siblings if sub-org
-    if (org?.parent_org_id) {
+    if (org?.parent_org_id && !parentOrgFromStore) {
       const { data: parent } = await supabase
         .from("organizations").select("*").eq("id", org.parent_org_id).maybeSingle();
-      setParentOrg(parent);
+      if (parent) setParentOrg(parent as Organization);
+    }
+    if (org?.parent_org_id) {
       const { data: sibs } = await supabase
         .from("organizations").select("*")
         .eq("parent_org_id", org.parent_org_id).neq("id", org.id);
@@ -55,7 +56,15 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
     router.push(`/${slug}/dashboard`);
   }
 
-  const hasNav = childOrgs.length > 0 || !!org?.parent_org_id;
+  function navigateToParentReadOnly() {
+    const p = parentOrgFromStore;
+    if (!p) return;
+    setOpen(false);
+    router.push(`/${p.slug}/dashboard?from=${encodeURIComponent(orgSlug)}`);
+  }
+
+  const parentOrg = parentOrgFromStore;
+  const hasNav = childOrgs.length > 0 || !!org?.parent_org_id || ancestorReadOnly;
 
   return (
     <div style={{
@@ -66,7 +75,6 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
       background: "var(--bg)",
       position: "relative", zIndex: 30,
     }}>
-      {/* Left — org name */}
       <div style={{
         fontFamily: "var(--font-display)", fontWeight: 700,
         fontSize: "1rem", color: "var(--text)",
@@ -75,7 +83,6 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
         {org?.name || "—"}
       </div>
 
-      {/* Right controls */}
       <div style={{ position: "relative", display: "flex", alignItems: "center", gap: 10 }}>
         <div style={{ position: "relative" }}>
           <button
@@ -136,7 +143,6 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
             cursor: hasNav ? "pointer" : "default",
             transition: "border-color 0.15s, background 0.15s",
           }}>
-          {/* Org avatar */}
           <div style={{
             width: 22, height: 22, borderRadius: 4, flexShrink: 0,
             background: org?.primary_color || "var(--brand)", color: "#fff",
@@ -166,7 +172,6 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
           )}
         </button>
 
-        {/* Dropdown */}
         {open && (
           <>
             <div style={{ position: "fixed", inset: 0, zIndex: 40 }} onClick={() => setOpen(false)} />
@@ -176,31 +181,52 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
               background: "var(--bg)", border: "1px solid var(--border-mid)",
               borderRadius: "var(--r)", boxShadow: "0 8px 32px rgba(0,0,0,0.12)",
             }}>
-              {/* Parent */}
-              {parentOrg && (
+              {ancestorReadOnly && memberContextSlug && (
                 <div style={{ padding: "8px 0 4px" }}>
                   <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                     fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
-                    textTransform: "uppercase", color: "var(--t3)" }}>↑ Up</div>
-                  <AreaItem org={parentOrg} current={false} navigable={true}
-                    onClick={() => navigateTo(parentOrg.slug)} />
+                    textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.yourArea")}</div>
+                  <button
+                    type="button"
+                    onClick={() => { setOpen(false); navigateTo(memberContextSlug); }}
+                    style={{
+                      display: "flex", alignItems: "center", gap: 10,
+                      width: "100%", padding: "8px 16px",
+                      background: "none", border: "none", cursor: "pointer",
+                      textAlign: "left", fontFamily: "var(--font-body)", fontSize: "0.875rem",
+                      color: "var(--brand)", fontWeight: 600,
+                    }}
+                  >
+                    {memberContextName || memberContextSlug}
+                  </button>
                 </div>
               )}
 
-              {/* Current */}
-              <div style={{ padding: "8px 0 4px", borderTop: parentOrg ? "1px solid var(--border)" : "none" }}>
+              {parentOrg && (
+                <div style={{ padding: "8px 0 4px", borderTop: ancestorReadOnly ? "1px solid var(--border)" : "none" }}>
+                  <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
+                    fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
+                    textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.parentOrg")}</div>
+                  <ParentReadOnlyItem
+                    org={parentOrg}
+                    label={t("nav.viewOnly")}
+                    onClick={navigateToParentReadOnly}
+                  />
+                </div>
+              )}
+
+              <div style={{ padding: "8px 0 4px", borderTop: (parentOrg || ancestorReadOnly) ? "1px solid var(--border)" : "none" }}>
                 <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                   fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
-                  textTransform: "uppercase", color: "var(--t3)" }}>Current</div>
+                  textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.current")}</div>
                 {org && <AreaItem org={org} current={true} navigable={true} onClick={() => setOpen(false)} />}
               </div>
 
-              {/* Siblings */}
               {siblings.length > 0 && (
                 <div style={{ padding: "8px 0 4px", borderTop: "1px solid var(--border)" }}>
                   <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                     fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
-                    textTransform: "uppercase", color: "var(--t3)" }}>Same level</div>
+                    textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.sameLevel")}</div>
                   {siblings.map(s => (
                     <AreaItem key={s.id} org={s} current={false} navigable={true}
                       onClick={() => navigateTo(s.slug)} />
@@ -208,12 +234,11 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                 </div>
               )}
 
-              {/* Children */}
               {childOrgs.length > 0 && (
                 <div style={{ padding: "8px 0 8px", borderTop: "1px solid var(--border)" }}>
                   <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                     fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
-                    textTransform: "uppercase", color: "var(--t3)" }}>Areas</div>
+                    textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.areas")}</div>
                   {childOrgs.map(c => (
                     <AreaItem key={c.id} org={c} current={false}
                       navigable={navigableLoaded && navigableIds.has(c.id)}
@@ -222,7 +247,7 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                 </div>
               )}
 
-              {/* New area — Pro only */}
+              {!ancestorReadOnly && (
               <div style={{ padding: "4px 0 8px", borderTop: "1px solid var(--border)" }}>
                 <button
                   onClick={() => { setOpen(false); router.push(`/${orgSlug}/new/sub-org`); }}
@@ -247,12 +272,53 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                   )}
                 </button>
               </div>
+              )}
             </div>
           </>
         )}
         </div>
       </div>
     </div>
+  );
+}
+
+function ParentReadOnlyItem({ org, label, onClick }: {
+  org: Organization; label: string; onClick: () => void;
+}) {
+  return (
+    <button onClick={onClick}
+      style={{
+        display: "flex", alignItems: "center", gap: 10,
+        width: "100%", padding: "8px 16px",
+        background: "none",
+        border: "none",
+        cursor: "pointer",
+        textAlign: "left",
+        borderLeft: "2px solid transparent",
+      }}>
+      <div style={{
+        width: 26, height: 26, borderRadius: 5, flexShrink: 0,
+        background: "var(--raised)",
+        color: "var(--t2)",
+        display: "flex", alignItems: "center", justifyContent: "center",
+        fontSize: "0.75rem", fontWeight: 700,
+      }}>
+        ↑
+      </div>
+      <div style={{ minWidth: 0, flex: 1 }}>
+        <div style={{
+          fontFamily: "var(--font-body)", fontWeight: 400,
+          fontSize: "0.875rem",
+          color: "var(--text)",
+          whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+        }}>
+          {org.name}
+        </div>
+        <div style={{ fontFamily: "var(--font-body)", fontSize: "0.6875rem", color: "var(--unclear)", marginTop: 2 }}>
+          {label}
+        </div>
+      </div>
+    </button>
   );
 }
 

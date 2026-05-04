@@ -17,7 +17,17 @@
     "dashboardSub": "Vista estratégica · Sprint actual",
     "evidenceSub": "Seguimiento de señales y decisiones",
     "newArea": "Nueva Área",
-    "noSubAreas": "sin sub-áreas"
+    "noSubAreas": "sin sub-áreas",
+    "yourArea": "Tu área",
+    "parentOrg": "Padre",
+    "viewOnly": "Solo lectura",
+    "current": "Actual",
+    "sameLevel": "Mismo nivel",
+    "areas": "Áreas"
+  },
+  "layout": {
+    "readOnlyAncestor": "Estás viendo {org} en solo lectura.",
+    "readOnlySwitchTo": "Abrí {member} para actuar"
   },
   "actions": {
     "newSprint": "Nuevo Sprint",
@@ -482,6 +492,9 @@
     "saved": "Guardado",
     "saveError": "Error al guardar los cambios.",
     "inviteMember": "Invitar Miembro",
+    "inviteToOrg": "Invitar a",
+    "thisOrgSection": "Esta organización",
+    "manageMembersInChild": "Gestioná miembros en la configuración de esa área.",
     "emailPlaceholder": "colega@empresa.com",
     "invite": "Enviar Invitación",
     "inviteSent": "Invitación enviada exitosamente.",

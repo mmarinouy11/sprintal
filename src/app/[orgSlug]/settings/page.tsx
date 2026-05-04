@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useStore } from "@/lib/store";
 import { useT, useLocale, setLocale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
@@ -232,17 +232,61 @@ function memberRowPrimaryLabel(m: OrgMember): string {
 // ── Members Tab ──────────────────────────────────────────────
 function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
   const t = useT();
-  const [members, setMembers] = useState<OrgMember[]>([]);
+  const { childOrgs } = useStore();
+  const [flatMembers, setFlatMembers] = useState<OrgMember[]>([]);
+  const [inviteTargetOrgId, setInviteTargetOrgId] = useState(org.id);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteRole, setInviteRole] = useState<OrgRole>("editor");
   const [inviting, setInviting] = useState(false);
   const [inviteMsg, setInviteMsg] = useState("");
   const [loading, setLoading] = useState(true);
 
+  const inviteOrgs = useMemo(
+    () => [{ id: org.id, name: org.name }, ...childOrgs.map((c: { id: string; name: string }) => ({ id: c.id, name: c.name }))],
+    [org.id, org.name, childOrgs]
+  );
+
+  const memberGroups = useMemo(() => {
+    const byOrg = new Map<string, OrgMember[]>();
+    for (const m of flatMembers) {
+      const list = byOrg.get(m.org_id) || [];
+      list.push(m);
+      byOrg.set(m.org_id, list);
+    }
+    const groups: { orgId: string; name: string; isHome: boolean; members: OrgMember[] }[] = [
+      { orgId: org.id, name: org.name, isHome: true, members: byOrg.get(org.id) || [] },
+      ...[...childOrgs]
+        .sort((a: { name: string }, b: { name: string }) => a.name.localeCompare(b.name))
+        .map((c: { id: string; name: string }) => ({
+          orgId: c.id,
+          name: c.name,
+          isHome: false,
+          members: byOrg.get(c.id) || [],
+        })),
+    ];
+    return groups;
+  }, [flatMembers, org.id, org.name, childOrgs]);
+
   useEffect(() => {
-    supabase.from("org_members").select("*").eq("org_id", org.id)
-      .then(({ data }) => { if (data) setMembers(data); setLoading(false); });
+    setInviteTargetOrgId(org.id);
   }, [org.id]);
+
+  useEffect(() => {
+    const allIds = [org.id, ...childOrgs.map((c: { id: string }) => c.id)];
+    if (allIds.length === 0) {
+      setFlatMembers([]);
+      setLoading(false);
+      return;
+    }
+    supabase
+      .from("org_members")
+      .select("*")
+      .in("org_id", allIds)
+      .then(({ data }) => {
+        if (data) setFlatMembers(data);
+        setLoading(false);
+      });
+  }, [org.id, childOrgs]);
 
   async function invite() {
     if (!inviteEmail) return;
@@ -252,12 +296,15 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
     const res = await fetch("/api/settings/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
-      body: JSON.stringify({ orgId: org.id, email: inviteEmail, role: inviteRole }),
+      body: JSON.stringify({ orgId: inviteTargetOrgId, email: inviteEmail, role: inviteRole }),
     });
     const data = await res.json();
     if (data.success) {
       setInviteMsg(t("settings.inviteSent"));
       setInviteEmail("");
+      const allIds = [org.id, ...childOrgs.map((c: { id: string }) => c.id)];
+      const { data: refreshed } = await supabase.from("org_members").select("*").in("org_id", allIds);
+      if (refreshed) setFlatMembers(refreshed);
     } else {
       setInviteMsg(data.error || t("settings.inviteError"));
     }
@@ -266,70 +313,116 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
 
   async function changeRole(memberId: string, newRole: OrgRole) {
     await supabase.from("org_members").update({ role: newRole }).eq("id", memberId);
-    setMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
+    setFlatMembers(prev => prev.map(m => m.id === memberId ? { ...m, role: newRole } : m));
   }
 
   async function removeMember(memberId: string) {
     if (!confirm(t("settings.confirmRemove"))) return;
     await supabase.from("org_members").delete().eq("id", memberId);
-    setMembers(prev => prev.filter(m => m.id !== memberId));
+    setFlatMembers(prev => prev.filter(m => m.id !== memberId));
   }
 
   const ROLES: OrgRole[] = ["owner", "admin", "editor", "viewer"];
 
   return (
     <div>
-      {/* Invite form */}
       {isAdmin && (
         <div className="mb-8 p-5 rounded-lg" style={{ background: "var(--sidebar)", border: "1px solid var(--border)" }}>
           <div className="t-label mb-3">{t("settings.inviteMember")}</div>
-          <div className="flex gap-3 flex-wrap">
-            <input className="input flex-1" style={{ minWidth: 200 }}
-              type="email" placeholder={t("settings.emailPlaceholder")}
-              value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
-              onKeyDown={e => e.key === "Enter" && invite()} />
-            <select className="input" style={{ width: 130 }} value={inviteRole} onChange={e => setInviteRole(e.target.value as OrgRole)}>
-              {ROLES.filter(r => r !== "owner").map(r => (
-                <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-              ))}
-            </select>
-            <button onClick={invite} disabled={inviting || !inviteEmail} className="btn-primary">
-              {inviting ? t("common.loading") : t("settings.invite")}
-            </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex gap-3 flex-wrap items-center">
+              <label className="t-label" style={{ minWidth: 80 }}>{t("settings.inviteToOrg")}</label>
+              <select
+                className="input"
+                style={{ minWidth: 200 }}
+                value={inviteTargetOrgId}
+                onChange={e => setInviteTargetOrgId(e.target.value)}
+              >
+                {inviteOrgs.map((o: { id: string; name: string }) => (
+                  <option key={o.id} value={o.id}>{o.name}{o.id === org.id ? ` — ${t("settings.thisOrgSection")}` : ""}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex gap-3 flex-wrap">
+              <input className="input flex-1" style={{ minWidth: 200 }}
+                type="email" placeholder={t("settings.emailPlaceholder")}
+                value={inviteEmail} onChange={e => setInviteEmail(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && invite()} />
+              <select className="input" style={{ width: 130 }} value={inviteRole} onChange={e => setInviteRole(e.target.value as OrgRole)}>
+                {ROLES.filter(r => r !== "owner").map(r => (
+                  <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                ))}
+              </select>
+              <button onClick={invite} disabled={inviting || !inviteEmail} className="btn-primary">
+                {inviting ? t("common.loading") : t("settings.invite")}
+              </button>
+            </div>
           </div>
           {inviteMsg && <p style={{ fontSize: "0.875rem", marginTop: 8, color: inviteMsg.includes("error") || inviteMsg.includes("Error") ? "var(--killed)" : "var(--scaled)" }}>{inviteMsg}</p>}
         </div>
       )}
 
-      {/* Members list */}
       {loading ? (
         <p style={{ color: "var(--t2)", fontSize: "0.875rem" }}>{t("common.loading")}</p>
       ) : (
         <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", overflow: "hidden" }}>
-          {members.map((m, i) => (
-            <div key={m.id} className="flex items-center gap-4 px-5 py-3"
-              style={{ borderBottom: i < members.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
-              <div className="flex-1">
-                <div style={{ fontWeight: 500, fontSize: "0.875rem", color: "var(--text)" }}>{memberRowPrimaryLabel(m)}</div>
-                {m.full_name?.trim() && m.email?.trim() && (
-                  <div style={{ fontSize: "0.8125rem", color: "var(--t2)", fontFamily: "var(--font-mono)" }}>{m.email}</div>
-                )}
+          {memberGroups.map(group => (
+            <div key={group.orgId}>
+              <div
+                className="px-5 py-2"
+                style={{
+                  background: "var(--raised)",
+                  borderBottom: "1px solid var(--border)",
+                  fontFamily: "var(--font-body)",
+                  fontWeight: 600,
+                  fontSize: "0.8125rem",
+                  color: "var(--t2)",
+                }}
+              >
+                {group.name}
+                {group.isHome ? ` — ${t("settings.thisOrgSection")}` : ""}
               </div>
-              {isAdmin && m.role !== "owner" ? (
-                <select className="input" style={{ width: 110, fontSize: "0.8125rem" }}
-                  value={m.role} onChange={e => changeRole(m.id, e.target.value as OrgRole)}>
-                  {ROLES.filter(r => r !== "owner").map(r => (
-                    <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
-                  ))}
-                </select>
+              {group.members.length === 0 ? (
+                <div className="px-5 py-3" style={{ color: "var(--t3)", fontSize: "0.875rem", fontFamily: "var(--font-body)", borderBottom: "1px solid var(--border)" }}>
+                  —
+                </div>
               ) : (
-                <span className="badge">{m.role}</span>
-              )}
-              {isAdmin && m.role !== "owner" && (
-                <button onClick={() => removeMember(m.id)}
-                  style={{ background: "none", border: "none", cursor: "pointer", color: "var(--killed)", fontSize: "1rem", padding: "2px 6px" }}>
-                  ×
-                </button>
+                group.members.map((m, i) => {
+                  const canManage = isAdmin && m.org_id === org.id && m.role !== "owner";
+                  const readOnlyChild = isAdmin && m.org_id !== org.id;
+                  return (
+                    <div key={m.id} className="flex items-center gap-4 px-5 py-3"
+                      style={{ borderBottom: "1px solid var(--border)", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
+                      <div className="flex-1">
+                        <div style={{ fontWeight: 500, fontSize: "0.875rem", color: "var(--text)" }}>{memberRowPrimaryLabel(m)}</div>
+                        {m.full_name?.trim() && m.email?.trim() && (
+                          <div style={{ fontSize: "0.8125rem", color: "var(--t2)", fontFamily: "var(--font-mono)" }}>{m.email}</div>
+                        )}
+                        {readOnlyChild && (
+                          <div style={{ fontSize: "0.75rem", color: "var(--t3)", marginTop: 4, fontFamily: "var(--font-body)" }}>
+                            {t("settings.manageMembersInChild")}
+                          </div>
+                        )}
+                      </div>
+                      {canManage ? (
+                        <select className="input" style={{ width: 110, fontSize: "0.8125rem" }}
+                          value={m.role} onChange={e => changeRole(m.id, e.target.value as OrgRole)}>
+                          {ROLES.filter(r => r !== "owner").map(r => (
+                            <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <span className="badge">{m.role}</span>
+                      )}
+                      {canManage && (
+                        <button onClick={() => removeMember(m.id)}
+                          style={{ background: "none", border: "none", cursor: "pointer", color: "var(--killed)", fontSize: "1rem", padding: "2px 6px" }}>
+                          ×
+                        </button>
+                      )}
+                    </div>
+                  );
+                })
               )}
             </div>
           ))}
