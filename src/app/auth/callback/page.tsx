@@ -15,11 +15,7 @@ import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
-import {
-  selectHomeOrgFromCandidates,
-  invitedOrgIdFromMetadata,
-  type HomeOrgCandidate,
-} from "@/lib/pickHomeOrg";
+import { fetchSessionHomeClient } from "@/lib/fetchSessionHomeClient";
 import { sprintalAuthDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 function hardGo(path: string) {
@@ -85,34 +81,6 @@ function AuthOAuthCallbackInner() {
 
       sprintalAuthDebug("callback:session", { userId: sprintalShortId(session.user.id) });
 
-      type OrgEmbed = {
-        slug: string;
-        onboarding_complete: boolean;
-        cascade_level: number;
-        parent_org_id?: string | null;
-      };
-      type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
-
-      const { data: memberships, error: membersError } = await supabase
-        .from("org_members")
-        .select("org_id, organizations(slug, onboarding_complete, cascade_level, parent_org_id)")
-        .eq("user_id", session.user.id);
-
-      if (membersError) {
-        console.error("OAuth callback org_members:", membersError.message);
-        if (!cancelled) hardGo("/");
-        return;
-      }
-
-      if (!memberships?.length) {
-        const qs = new URLSearchParams();
-        qs.set("oauth", "true");
-        if (plan) qs.set("plan", plan);
-        if (period) qs.set("period", period);
-        if (!cancelled) hardGo(`/auth/signup?${qs.toString()}`);
-        return;
-      }
-
       if (plan) {
         if (!cancelled) {
           hardGo(
@@ -122,67 +90,42 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
-      const candidates = (memberships as unknown as MembershipRow[])
-        .map((m) => {
-          const o = m.organizations;
-          const org = Array.isArray(o) ? o[0] : o;
-          if (!org?.slug) return null;
-          return {
-            orgId: m.org_id,
-            slug: org.slug,
-            onboarding_complete: org.onboarding_complete,
-            cascade_level: org.cascade_level,
-            parent_org_id: org.parent_org_id ?? null,
-          };
-        })
-        .filter((r): r is HomeOrgCandidate => r != null);
-
-      if (!candidates.length) {
-        if (!cancelled) hardGo("/auth/login");
+      const homePick = await fetchSessionHomeClient(session.access_token);
+      if (!homePick.ok) {
+        if (homePick.status === 401) {
+          if (!cancelled) hardGo("/auth/login?error=oauth");
+          return;
+        }
+        if (homePick.status === 403) {
+          const qs = new URLSearchParams();
+          qs.set("oauth", "true");
+          if (plan) qs.set("plan", plan);
+          if (period) qs.set("period", period);
+          if (!cancelled) hardGo(`/auth/signup?${qs.toString()}`);
+          return;
+        }
+        console.error("OAuth callback session-home:", homePick.status);
+        if (!cancelled) hardGo("/");
         return;
       }
 
-      const rawRows = memberships?.length ?? 0;
-      sprintalAuthDebug("callback:memberships", {
-        rawRows,
-        droppedNoOrgJoin: rawRows - candidates.length,
-        candidateSlugs: candidates.map((c) => c.slug),
-        candidateOrgIds: candidates.map((c) => sprintalShortId(c.orgId)),
-      });
-
-      const {
-        data: { user: freshUser },
-      } = await supabase.auth.getUser();
-      const invitedRaw =
-        freshUser?.user_metadata?.invited_to_org ?? session.user.user_metadata?.invited_to_org;
-      sprintalAuthDebug("callback:invited_to_org", {
-        normalized: invitedOrgIdFromMetadata(invitedRaw),
-        rawType: invitedRaw == null ? "nullish" : typeof invitedRaw,
-      });
-
-      const home = selectHomeOrgFromCandidates(candidates, invitedRaw);
-      if (!home) {
-        sprintalAuthDebug("callback:pickHome", { result: "null → /auth/login" });
-        if (!cancelled) hardGo("/auth/login");
-        return;
-      }
-
-      const target = !home.onboarding_complete
-        ? `/onboarding/${home.slug}`
-        : `/${home.slug}/dashboard`;
+      const target = !homePick.onboarding_complete
+        ? `/onboarding/${homePick.slug}`
+        : `/${homePick.slug}/dashboard`;
       sprintalAuthDebug("callback:redirect", {
-        pickedSlug: home.slug,
-        pickedOrgId: sprintalShortId(home.orgId),
-        onboardingComplete: home.onboarding_complete,
+        pickedSlug: homePick.slug,
+        pickedOrgId: sprintalShortId(homePick.orgId),
+        onboardingComplete: homePick.onboarding_complete,
         target,
+        via: "session-home",
       });
 
-      if (!home.onboarding_complete) {
-        if (!cancelled) hardGo(`/onboarding/${home.slug}`);
+      if (!homePick.onboarding_complete) {
+        if (!cancelled) hardGo(`/onboarding/${homePick.slug}`);
         return;
       }
 
-      if (!cancelled) hardGo(`/${home.slug}/dashboard`);
+      if (!cancelled) hardGo(`/${homePick.slug}/dashboard`);
     }
 
     run();

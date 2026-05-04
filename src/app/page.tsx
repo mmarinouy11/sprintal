@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { createClient } from "@supabase/supabase-js";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { invitedOrgIdFromMetadata, selectHomeOrgFromCandidates, type HomeOrgCandidate } from "@/lib/pickHomeOrg";
 import { isSprintalServerDebug, sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
@@ -16,7 +17,15 @@ export default async function RootPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: memberships, error: membersError } = await supabase
+  // Same membership visibility as /api/org/* (service role, scoped to this user id).
+  // RLS on org_members can hide some of the user's rows in the anon server client, so
+  // pickHomeOrg saw too few candidates and ignored invited_to_org → marketing.
+  const supabaseAdmin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } }
+  );
+  const { data: memberships, error: membersError } = await supabaseAdmin
     .from("org_members")
     .select("org_id, organizations(slug, onboarding_complete, cascade_level, parent_org_id)")
     .eq("user_id", user.id);

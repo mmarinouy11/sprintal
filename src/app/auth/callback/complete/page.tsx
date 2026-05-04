@@ -2,11 +2,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import {
-  selectHomeOrgFromCandidates,
-  invitedOrgIdFromMetadata,
-  type HomeOrgCandidate,
-} from "@/lib/pickHomeOrg";
+import { fetchSessionHomeClient } from "@/lib/fetchSessionHomeClient";
 import { sprintalAuthDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 function AuthCallbackCompleteInner() {
@@ -40,72 +36,6 @@ function AuthCallbackCompleteInner() {
         hasCode: !!searchParams.get("code"),
       });
 
-      type OrgEmbed = {
-        slug: string;
-        onboarding_complete: boolean;
-        cascade_level: number;
-        parent_org_id?: string | null;
-      };
-      type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
-
-      const { data: memberships, error: membersError } = await supabase
-        .from("org_members")
-        .select("org_id, organizations(slug, onboarding_complete, cascade_level, parent_org_id)")
-        .eq("user_id", session.user.id);
-
-      if (membersError || !memberships?.length) {
-        const qs = new URLSearchParams();
-        qs.set("oauth", "true");
-        const p = searchParams.get("plan");
-        const per = searchParams.get("period");
-        if (p) qs.set("plan", p);
-        if (per) qs.set("period", per);
-        router.replace(`/auth/signup?${qs.toString()}`);
-        return;
-      }
-
-      const candidates = (memberships as unknown as MembershipRow[])
-        .map((m) => {
-          const o = m.organizations;
-          const org = Array.isArray(o) ? o[0] : o;
-          if (!org?.slug) return null;
-          return {
-            orgId: m.org_id,
-            slug: org.slug,
-            onboarding_complete: org.onboarding_complete,
-            cascade_level: org.cascade_level,
-            parent_org_id: org.parent_org_id ?? null,
-          };
-        })
-        .filter((r): r is HomeOrgCandidate => r != null);
-
-      if (!candidates.length) {
-        const qs = new URLSearchParams();
-        qs.set("oauth", "true");
-        const p = searchParams.get("plan");
-        const per = searchParams.get("period");
-        if (p) qs.set("plan", p);
-        if (per) qs.set("period", per);
-        router.replace(`/auth/signup?${qs.toString()}`);
-        return;
-      }
-
-      const rawRows = memberships?.length ?? 0;
-      sprintalAuthDebug("callback/complete:memberships", {
-        rawRows,
-        droppedNoOrgJoin: rawRows - candidates.length,
-        candidateSlugs: candidates.map((c) => c.slug),
-        invitedNorm: invitedOrgIdFromMetadata(session.user.user_metadata?.invited_to_org),
-      });
-
-      const org = selectHomeOrgFromCandidates(candidates, session.user.user_metadata?.invited_to_org);
-      if (!org) {
-        const qs = new URLSearchParams();
-        qs.set("oauth", "true");
-        router.replace(`/auth/signup?${qs.toString()}`);
-        return;
-      }
-
       const requestedPlan = searchParams.get("plan");
       const requestedPeriod = searchParams.get("period");
       if (requestedPlan) {
@@ -116,6 +46,22 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
+      const homePick = await fetchSessionHomeClient(session.access_token);
+      if (!homePick.ok) {
+        if (homePick.status === 401) {
+          setStatus("error");
+          setMessage("Sesión inválida. Volvé a iniciar sesión.");
+          return;
+        }
+        const qs = new URLSearchParams();
+        qs.set("oauth", "true");
+        if (requestedPlan) qs.set("plan", requestedPlan);
+        if (requestedPeriod) qs.set("period", requestedPeriod);
+        router.replace(`/auth/signup?${qs.toString()}`);
+        return;
+      }
+
+      const org = homePick;
       setStatus("success");
       const dest = !org.onboarding_complete
         ? `/onboarding/${org.slug}`
@@ -124,6 +70,7 @@ function AuthCallbackCompleteInner() {
         pickedSlug: org.slug,
         pickedOrgId: sprintalShortId(org.orgId),
         dest,
+        via: "session-home",
       });
       setTimeout(() => {
         if (!org.onboarding_complete) {
