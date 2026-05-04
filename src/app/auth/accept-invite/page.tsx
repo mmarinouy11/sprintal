@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
 import { invitedOrgIdFromMetadata } from "@/lib/pickHomeOrg";
+import { sprintalAuthDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 /** Survives React Strict Mode double-mount after we strip the hash from the URL. */
 const INVITE_HASH_TOKENS_KEY = "sprintal_invite_hash_tokens_v1";
@@ -103,6 +104,12 @@ export default function AcceptInvitePage() {
     const implicitTokens = !hashOrQueryError && !errorCode ? takeImplicitHashTokens() : null;
 
     async function processInvite() {
+      sprintalAuthDebug("accept-invite:effect-start", {
+        path: typeof window !== "undefined" ? window.location.pathname : "",
+        search: typeof window !== "undefined" ? window.location.search : "",
+        hasImplicitTokens: !!implicitTokens,
+      });
+
       if (hashOrQueryError || errorCode) {
         let message = errorDescription;
         if (errorCode === "otp_expired") {
@@ -183,6 +190,12 @@ export default function AcceptInvitePage() {
           verifiedUser.user.user_metadata?.invited_to_org
         );
         const orgId = orgIdFromUrl || orgIdFromMeta;
+        sprintalAuthDebug("accept-invite:resolved-orgId", {
+          userId: sprintalShortId(verifiedUser.user.id),
+          fromUrl: orgIdFromUrl ? sprintalShortId(orgIdFromUrl) : null,
+          fromMeta: orgIdFromMeta ? sprintalShortId(orgIdFromMeta) : null,
+          using: orgId ? sprintalShortId(orgId) : null,
+        });
         stripAuthParamsFromUrl();
 
         if (orgId) {
@@ -194,8 +207,14 @@ export default function AcceptInvitePage() {
                 cache: "no-store",
               }
             );
+            const body = (await res.json().catch(() => ({}))) as { slug?: string; error?: string };
+            sprintalAuthDebug("accept-invite:invite-target", {
+              ok: res.ok,
+              status: res.status,
+              slug: body.slug ?? null,
+              error: body.error ?? null,
+            });
             if (res.ok) {
-              const body = (await res.json()) as { slug?: string };
               if (body.slug) {
                 window.location.replace(
                   `/auth/set-password?orgSlug=${encodeURIComponent(body.slug)}`
@@ -203,11 +222,15 @@ export default function AcceptInvitePage() {
                 return;
               }
             }
-          } catch {
-            /* fall through to / */
+          } catch (e) {
+            sprintalAuthDebug("accept-invite:invite-target", {
+              ok: false,
+              thrown: e instanceof Error ? e.message : String(e),
+            });
           }
         }
 
+        sprintalAuthDebug("accept-invite:fallback", { to: "/" });
         window.location.replace("/");
       }
     }

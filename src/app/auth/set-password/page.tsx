@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
+import { sprintalAuthDebug, sprintalShortId } from "@/lib/debugOrgLoad";
+import { invitedOrgIdFromMetadata } from "@/lib/pickHomeOrg";
 
 function SetPasswordForm() {
   const router = useRouter();
@@ -32,10 +34,18 @@ function SetPasswordForm() {
       const { data: userRow, error: userErr } = await supabase.auth.getUser();
       if (cancelled) return;
       if (!session || userErr || !userRow.user) {
+        sprintalAuthDebug("set-password:no-session", { orgSlug });
         await supabase.auth.signOut();
         router.replace("/auth/login");
         return;
       }
+      sprintalAuthDebug("set-password:ready", {
+        orgSlug,
+        userId: sprintalShortId(userRow.user.id),
+        invitedToOrg: sprintalShortId(
+          invitedOrgIdFromMetadata(userRow.user.user_metadata?.invited_to_org)
+        ),
+      });
       setCheckingSession(false);
     }
     check();
@@ -67,6 +77,7 @@ function SetPasswordForm() {
       return;
     }
 
+    sprintalAuthDebug("set-password:submit", { to: `/${orgSlug}/dashboard` });
     window.location.replace(`/${orgSlug}/dashboard`);
   }
 

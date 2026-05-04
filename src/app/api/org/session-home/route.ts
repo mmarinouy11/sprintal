@@ -2,7 +2,8 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { apiError, apiOk } from "@/lib/api-response";
-import { selectHomeOrgFromCandidates } from "@/lib/pickHomeOrg";
+import { invitedOrgIdFromMetadata, selectHomeOrgFromCandidates } from "@/lib/pickHomeOrg";
+import { sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 export const dynamic = "force-dynamic";
 
@@ -65,8 +66,18 @@ export async function GET(req: NextRequest) {
 
     // Always honor invited_to_org when picking a fallback; clearing it on `except`
     // caused sibling tie-breaks (e.g. hr-ioss ↔ ld-f4x7) instead of the invited org.
-    const home = selectHomeOrgFromCandidates(pool, user.user_metadata?.invited_to_org);
+    const invitedRaw = user.user_metadata?.invited_to_org;
+    const home = selectHomeOrgFromCandidates(pool, invitedRaw);
     if (!home) return apiError("Sin acceso.", 403);
+
+    sprintalServerDebug("api", "session-home", {
+      userId: sprintalShortId(user.id),
+      exceptSlug,
+      poolSlugs: pool.map((c) => c.slug),
+      invitedNorm: invitedOrgIdFromMetadata(invitedRaw),
+      pickedSlug: home.slug,
+      pickedOrgId: sprintalShortId(home.orgId),
+    });
 
     return apiOk(
       { slug: home.slug, onboarding_complete: home.onboarding_complete, orgId: home.orgId },

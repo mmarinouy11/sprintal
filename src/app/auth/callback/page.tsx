@@ -15,7 +15,12 @@ import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
-import { selectHomeOrgFromCandidates, type HomeOrgCandidate } from "@/lib/pickHomeOrg";
+import {
+  selectHomeOrgFromCandidates,
+  invitedOrgIdFromMetadata,
+  type HomeOrgCandidate,
+} from "@/lib/pickHomeOrg";
+import { sprintalAuthDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 function hardGo(path: string) {
   window.location.replace(path);
@@ -36,6 +41,13 @@ function AuthOAuthCallbackInner() {
       const oauthError = params.get("error");
       const oauthErrorDescription = params.get("error_description");
       const code = params.get("code");
+
+      sprintalAuthDebug("callback:enter", {
+        path: typeof window !== "undefined" ? window.location.pathname : "",
+        searchLen: q.length,
+        hasCode: !!code,
+        plan: plan ?? null,
+      });
 
       if (oauthError) {
         hardGo(
@@ -70,6 +82,8 @@ function AuthOAuthCallbackInner() {
         if (!cancelled) hardGo("/auth/login?error=oauth");
         return;
       }
+
+      sprintalAuthDebug("callback:session", { userId: sprintalShortId(session.user.id) });
 
       type OrgEmbed = {
         slug: string;
@@ -128,17 +142,40 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
+      const rawRows = memberships?.length ?? 0;
+      sprintalAuthDebug("callback:memberships", {
+        rawRows,
+        droppedNoOrgJoin: rawRows - candidates.length,
+        candidateSlugs: candidates.map((c) => c.slug),
+        candidateOrgIds: candidates.map((c) => sprintalShortId(c.orgId)),
+      });
+
       const {
         data: { user: freshUser },
       } = await supabase.auth.getUser();
-      const home = selectHomeOrgFromCandidates(
-        candidates,
-        freshUser?.user_metadata?.invited_to_org ?? session.user.user_metadata?.invited_to_org
-      );
+      const invitedRaw =
+        freshUser?.user_metadata?.invited_to_org ?? session.user.user_metadata?.invited_to_org;
+      sprintalAuthDebug("callback:invited_to_org", {
+        normalized: invitedOrgIdFromMetadata(invitedRaw),
+        rawType: invitedRaw == null ? "nullish" : typeof invitedRaw,
+      });
+
+      const home = selectHomeOrgFromCandidates(candidates, invitedRaw);
       if (!home) {
+        sprintalAuthDebug("callback:pickHome", { result: "null → /auth/login" });
         if (!cancelled) hardGo("/auth/login");
         return;
       }
+
+      const target = !home.onboarding_complete
+        ? `/onboarding/${home.slug}`
+        : `/${home.slug}/dashboard`;
+      sprintalAuthDebug("callback:redirect", {
+        pickedSlug: home.slug,
+        pickedOrgId: sprintalShortId(home.orgId),
+        onboardingComplete: home.onboarding_complete,
+        target,
+      });
 
       if (!home.onboarding_complete) {
         if (!cancelled) hardGo(`/onboarding/${home.slug}`);

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-server";
-import { selectHomeOrgFromCandidates, type HomeOrgCandidate } from "@/lib/pickHomeOrg";
+import { invitedOrgIdFromMetadata, selectHomeOrgFromCandidates, type HomeOrgCandidate } from "@/lib/pickHomeOrg";
+import { isSprintalServerDebug, sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 type OrgEmbed = {
   slug: string;
@@ -40,6 +41,14 @@ export default async function RootPage() {
   if (!candidates.length) redirect("/auth/signup?oauth=true");
 
   const home = selectHomeOrgFromCandidates(candidates, user.user_metadata?.invited_to_org);
+  if (isSprintalServerDebug()) {
+    sprintalServerDebug("api", "page / home pick", {
+      userId: sprintalShortId(user.id),
+      candidateSlugs: candidates.map((c) => c.slug),
+      invitedNorm: invitedOrgIdFromMetadata(user.user_metadata?.invited_to_org),
+      pickedSlug: home?.slug ?? null,
+    });
+  }
   if (!home) redirect("/auth/signup?oauth=true");
 
   if (!home.onboarding_complete) {

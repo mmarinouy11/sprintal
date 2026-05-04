@@ -2,7 +2,12 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { selectHomeOrgFromCandidates, type HomeOrgCandidate } from "@/lib/pickHomeOrg";
+import {
+  selectHomeOrgFromCandidates,
+  invitedOrgIdFromMetadata,
+  type HomeOrgCandidate,
+} from "@/lib/pickHomeOrg";
+import { sprintalAuthDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 function AuthCallbackCompleteInner() {
   const router = useRouter();
@@ -29,6 +34,11 @@ function AuthCallbackCompleteInner() {
         setMessage("El link de confirmación es inválido o expiró.");
         return;
       }
+
+      sprintalAuthDebug("callback/complete:session", {
+        userId: sprintalShortId(session.user.id),
+        hasCode: !!searchParams.get("code"),
+      });
 
       type OrgEmbed = {
         slug: string;
@@ -80,6 +90,14 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
+      const rawRows = memberships?.length ?? 0;
+      sprintalAuthDebug("callback/complete:memberships", {
+        rawRows,
+        droppedNoOrgJoin: rawRows - candidates.length,
+        candidateSlugs: candidates.map((c) => c.slug),
+        invitedNorm: invitedOrgIdFromMetadata(session.user.user_metadata?.invited_to_org),
+      });
+
       const org = selectHomeOrgFromCandidates(candidates, session.user.user_metadata?.invited_to_org);
       if (!org) {
         const qs = new URLSearchParams();
@@ -99,6 +117,14 @@ function AuthCallbackCompleteInner() {
       }
 
       setStatus("success");
+      const dest = !org.onboarding_complete
+        ? `/onboarding/${org.slug}`
+        : `/${org.slug}/dashboard`;
+      sprintalAuthDebug("callback/complete:redirect", {
+        pickedSlug: org.slug,
+        pickedOrgId: sprintalShortId(org.orgId),
+        dest,
+      });
       setTimeout(() => {
         if (!org.onboarding_complete) {
           router.replace(`/onboarding/${org.slug}`);

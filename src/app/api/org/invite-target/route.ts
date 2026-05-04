@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { apiError, apiOk } from "@/lib/api-response";
+import { sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 export const dynamic = "force-dynamic";
 
@@ -32,7 +33,10 @@ export async function GET(req: NextRequest) {
     if (authError || !user) return apiError("Unauthorized", 401);
 
     const orgId = req.nextUrl.searchParams.get("orgId")?.trim();
-    if (!orgId) return apiError("orgId required", 400);
+    if (!orgId) {
+      sprintalServerDebug("api", "invite-target missing orgId", { userId: sprintalShortId(user.id) });
+      return apiError("orgId required", 400);
+    }
 
     const { data: member, error: memError } = await supabaseAdmin
       .from("org_members")
@@ -42,6 +46,11 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (memError || !member) {
+      sprintalServerDebug("api", "invite-target not member", {
+        userId: sprintalShortId(user.id),
+        orgId: sprintalShortId(orgId),
+        memError: memError?.message ?? null,
+      });
       return apiError("Not a member of this organization.", 403);
     }
 
@@ -52,8 +61,18 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
 
     if (orgError || !org?.slug) {
+      sprintalServerDebug("api", "invite-target org missing", {
+        orgId: sprintalShortId(orgId),
+        orgError: orgError?.message ?? null,
+      });
       return apiError("Organization not found.", 404);
     }
+
+    sprintalServerDebug("api", "invite-target ok", {
+      userId: sprintalShortId(user.id),
+      orgId: sprintalShortId(orgId),
+      slug: org.slug,
+    });
 
     return apiOk({
       slug: org.slug,

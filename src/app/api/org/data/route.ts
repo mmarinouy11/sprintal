@@ -4,6 +4,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getBillingRootOrgRow } from "@/lib/orgBillingRoot";
 import { isStrictAncestor } from "@/lib/orgHierarchy";
 import { apiError, apiOk } from "@/lib/api-response";
+import { sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 export const dynamic = "force-dynamic";
 
@@ -127,7 +128,13 @@ export async function GET(req: NextRequest) {
       .limit(1);
 
     const org = (orgRows?.[0] ?? null) as OrgRow | null;
-    if (!org) return apiError("Org no encontrada.", 404);
+    if (!org) {
+      sprintalServerDebug("api", "org/data 404 slug", {
+        slug,
+        userId: sprintalShortId(user.id),
+      });
+      return apiError("Org no encontrada.", 404);
+    }
 
     if (memberByOrgId.has(org.id)) {
       const billingRoot =
@@ -152,6 +159,12 @@ export async function GET(req: NextRequest) {
     );
     const candidateIds = checks.filter((x): x is string => x != null);
     if (!candidateIds.length) {
+      sprintalServerDebug("api", "org/data 403 no ancestor", {
+        slug,
+        orgId: sprintalShortId(org.id),
+        userId: sprintalShortId(user.id),
+        memberOrgCount: memberRows.length,
+      });
       return apiError("Sin acceso.", 403);
     }
 
