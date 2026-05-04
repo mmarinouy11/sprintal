@@ -42,6 +42,16 @@ async function fetchAncestorBundle(accessToken: string, orgSlug: string, fromSlu
   return { ok: true as const, data };
 }
 
+async function fetchSessionHomeSlug(accessToken: string): Promise<string | null> {
+  const res = await fetch(`/api/org/session-home?_ts=${Date.now()}`, {
+    cache: "no-store",
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!res.ok) return null;
+  const body = (await res.json()) as { slug?: string };
+  return typeof body.slug === "string" && body.slug ? body.slug : null;
+}
+
 function readFromQueryParam(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("from");
@@ -147,17 +157,26 @@ export default function OrgLayoutClient({
         return;
       }
       if (!first.ok) {
-        orgLoadDebug("layout:bundle failed → redirect", {
-          gen,
-          status: first.status,
-          to: first.status === 401 ? "/auth/login" : "/",
-        });
         if (first.status === 401) {
+          orgLoadDebug("layout:bundle failed → redirect", { gen, status: first.status, to: "/auth/login" });
           router.replace("/auth/login");
-        } else {
-          // Recover: wrong slug, stale session edge cases — let `/` pick home org instead of forcing login.
-          router.replace("/");
+          setLoading(false);
+          return;
         }
+        const homeSlug = await fetchSessionHomeSlug(session.access_token);
+        if (homeSlug && homeSlug !== params.orgSlug) {
+          orgLoadDebug("layout:bundle failed → redirect to session home", {
+            gen,
+            status: first.status,
+            fromSlug: params.orgSlug,
+            homeSlug,
+          });
+          router.replace(`/${homeSlug}/dashboard`);
+          setLoading(false);
+          return;
+        }
+        orgLoadDebug("layout:bundle failed → redirect", { gen, status: first.status, to: "/" });
+        router.replace("/");
         setLoading(false);
         return;
       }
