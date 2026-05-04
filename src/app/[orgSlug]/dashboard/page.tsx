@@ -16,7 +16,7 @@ import PortfolioSemanticSlideover from "@/components/dashboard/PortfolioSemantic
 import SemanticCoachPanel from "@/components/coach/SemanticCoachPanel";
 import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
 import { COACH_LIMITS, type Plan } from "@/types";
-import { useSearchParams } from "next/navigation";
+import { useParams } from "next/navigation";
 import { formatPlanName } from "@/lib/billing";
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -29,7 +29,9 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 }
 
 export default function DashboardPage() {
-  const { loading, org, bets, sprints, rootPlan } = useStore();
+  const params = useParams();
+  const orgSlugParam = (Array.isArray(params.orgSlug) ? params.orgSlug[0] : params.orgSlug) ?? "";
+  const { org, bets, sprints, rootPlan } = useStore();
   const displayPlanForBanner = (rootPlan as Plan) || org?.plan;
   const planForCoach = effectiveCoachPlan(rootPlan, org?.plan);
   const t = useT("dashboard");
@@ -38,7 +40,6 @@ export default function DashboardPage() {
   const [portfolioRunNonce, setPortfolioRunNonce] = useState(0);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [riskFilter, setRiskFilter] = useState(false);
-  const searchParams = useSearchParams();
   const activeSprint = sprints.find((s) => s.status === "Active");
   const activeBets = useMemo(
     () => bets.filter((b) => b.sprint_id === activeSprint?.id && b.status === "Active"),
@@ -53,17 +54,17 @@ export default function DashboardPage() {
   const showPortfolioRow = !!org && activeBets.length > 0;
 
   const portfolioOpenDisabled = !semanticPlanOk || !portfolioEligible;
-  const upgradedParam = searchParams.get("upgraded");
 
   useEffect(() => {
-    if (upgradedParam !== "true") return;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("upgraded") !== "true") return;
     setShowUpgradeBanner(true);
     const timeout = setTimeout(() => setShowUpgradeBanner(false), 5000);
     const next = new URL(window.location.href);
     next.searchParams.delete("upgraded");
     window.history.replaceState({}, "", next.toString());
     return () => clearTimeout(timeout);
-  }, [upgradedParam]);
+  }, []);
 
   const portfolioOpenTitle = (() => {
     if (!org) return undefined;
@@ -80,7 +81,8 @@ export default function DashboardPage() {
     }
   };
 
-  if (loading) return <LoadingScreen />;
+  // Do not gate on global `loading`: OrgLayout can set it during background refreshes and trap the UI.
+  if (!orgSlugParam || !org?.slug || org.slug !== orgSlugParam) return <LoadingScreen />;
   return (
     <div className="w-full px-10 py-8 fade-up">
       <div className="ph">

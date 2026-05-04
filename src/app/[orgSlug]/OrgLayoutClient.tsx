@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import {
@@ -84,7 +84,6 @@ export default function OrgLayoutClient({
     ancestorReadOnly, memberContextSlug, memberContextName,
   } = useStore();
   const router = useRouter();
-  const pathname = usePathname();
   const t = useT();
   /** Slug changes → full-screen load; same org, new path (p. ej. vuelta desde /pricing) → refresh sin bloquear UI */
   const lastLoadedSlugRef = useRef<string | null>(null);
@@ -253,7 +252,9 @@ export default function OrgLayoutClient({
 
       if (orgData.plan === "trial" && orgData.trial_ends_at) {
         const trialEnd = new Date(orgData.trial_ends_at);
-        if (trialEnd < new Date() && pathname !== "/trial-expired") {
+        const pathNow =
+          typeof window !== "undefined" ? window.location.pathname : "";
+        if (trialEnd < new Date() && pathNow !== "/trial-expired") {
           router.replace("/trial-expired");
           setLoading(false);
           return;
@@ -303,7 +304,7 @@ export default function OrgLayoutClient({
     void load().catch(() => {
       if (gen === loadGenerationRef.current) setLoading(false);
     });
-  }, [params.orgSlug, pathname, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
+  }, [params.orgSlug, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
