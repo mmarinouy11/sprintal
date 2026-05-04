@@ -144,7 +144,7 @@ export default function AcceptInvitePage() {
       const code = searchParams.get("code");
 
       if (!session && code) {
-        await supabase.auth.signOut();
+        // Do not signOut before exchange — it clears the PKCE code_verifier and breaks the flow.
         const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
         ({
           data: { session },

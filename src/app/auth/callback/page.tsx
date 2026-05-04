@@ -1,17 +1,21 @@
 "use client";
 
 /**
- * OAuth PKCE return: exchange in the browser, then **full-page** navigation so the next
- * request always sends session cookies (avoids Next client router + RSC cookie races).
+ * OAuth / magic-link PKCE return: exchange in the browser, then **full-page** navigation.
+ * Invite emails often land here (not only /auth/accept-invite) when Supabase uses the Site URL
+ * or allowlisted /auth/callback — must pick home org like / and /auth/callback/complete, not
+ * org_members LIMIT 1 (non-deterministic with multiple rows).
  *
  * Supabase (production): set Site URL + Redirect URLs to match NEXT_PUBLIC_APP_URL, e.g.
  *   https://sprintal.vercel.app/auth/callback
  *   https://sprintal.vercel.app/auth/callback/complete
+ *   https://sprintal.vercel.app/auth/accept-invite
  */
 import { Suspense, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
+import { selectHomeOrgFromCandidates, type HomeOrgCandidate } from "@/lib/pickHomeOrg";
 
 function hardGo(path: string) {
   window.location.replace(path);
@@ -67,11 +71,18 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
-      const { data: members, error: membersError } = await supabase
+      type OrgEmbed = {
+        slug: string;
+        onboarding_complete: boolean;
+        cascade_level: number;
+        parent_org_id?: string | null;
+      };
+      type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
+
+      const { data: memberships, error: membersError } = await supabase
         .from("org_members")
-        .select("org_id")
-        .eq("user_id", session.user.id)
-        .limit(1);
+        .select("org_id, organizations(slug, onboarding_complete, cascade_level, parent_org_id)")
+        .eq("user_id", session.user.id);
 
       if (membersError) {
         console.error("OAuth callback org_members:", membersError.message);
@@ -79,8 +90,7 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
-      const member = members?.[0];
-      if (!member) {
+      if (!memberships?.length) {
         const qs = new URLSearchParams();
         qs.set("oauth", "true");
         if (plan) qs.set("plan", plan);
@@ -98,23 +108,44 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
-      const { data: orgRow, error: orgErr } = await supabase
-        .from("organizations")
-        .select("slug, onboarding_complete")
-        .eq("id", member.org_id)
-        .maybeSingle();
+      const candidates = (memberships as unknown as MembershipRow[])
+        .map((m) => {
+          const o = m.organizations;
+          const org = Array.isArray(o) ? o[0] : o;
+          if (!org?.slug) return null;
+          return {
+            orgId: m.org_id,
+            slug: org.slug,
+            onboarding_complete: org.onboarding_complete,
+            cascade_level: org.cascade_level,
+            parent_org_id: org.parent_org_id ?? null,
+          };
+        })
+        .filter((r): r is HomeOrgCandidate => r != null);
 
-      if (orgErr || !orgRow?.slug) {
+      if (!candidates.length) {
         if (!cancelled) hardGo("/auth/login");
         return;
       }
 
-      if (!orgRow.onboarding_complete) {
-        if (!cancelled) hardGo(`/onboarding/${orgRow.slug}`);
+      const {
+        data: { user: freshUser },
+      } = await supabase.auth.getUser();
+      const home = selectHomeOrgFromCandidates(
+        candidates,
+        freshUser?.user_metadata?.invited_to_org ?? session.user.user_metadata?.invited_to_org
+      );
+      if (!home) {
+        if (!cancelled) hardGo("/auth/login");
         return;
       }
 
-      if (!cancelled) hardGo(`/${orgRow.slug}/dashboard`);
+      if (!home.onboarding_complete) {
+        if (!cancelled) hardGo(`/onboarding/${home.slug}`);
+        return;
+      }
+
+      if (!cancelled) hardGo(`/${home.slug}/dashboard`);
     }
 
     run();
