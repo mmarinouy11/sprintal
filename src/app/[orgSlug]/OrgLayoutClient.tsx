@@ -42,19 +42,6 @@ async function fetchAncestorBundle(accessToken: string, orgSlug: string, fromSlu
   return { ok: true as const, data };
 }
 
-async function fetchSessionHomeSlug(accessToken: string, exceptSlug?: string): Promise<string | null> {
-  const q = new URLSearchParams();
-  q.set("_ts", String(Date.now()));
-  if (exceptSlug) q.set("except", exceptSlug);
-  const res = await fetch(`/api/org/session-home?${q.toString()}`, {
-    cache: "no-store",
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  if (!res.ok) return null;
-  const body = (await res.json()) as { slug?: string };
-  return typeof body.slug === "string" && body.slug ? body.slug : null;
-}
-
 function readFromQueryParam(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("from");
@@ -166,21 +153,15 @@ export default function OrgLayoutClient({
           setLoading(false);
           return;
         }
-        const homeSlug = await fetchSessionHomeSlug(session.access_token, params.orgSlug);
-        if (homeSlug && homeSlug !== params.orgSlug) {
-          orgLoadDebug("layout:bundle failed → redirect to session home", {
-            gen,
-            status: first.status,
-            fromSlug: params.orgSlug,
-            homeSlug,
-          });
-          router.replace(`/${homeSlug}/dashboard`);
-          setLoading(false);
-          return;
-        }
-        orgLoadDebug("layout:bundle failed → redirect", { gen, status: first.status, to: "/" });
-        router.replace("/");
-        setLoading(false);
+        // Full page navigation: avoids ping-pong when session-home picks another slug that also
+        // 403s (e.g. user only belongs to marketing but URL is hr-ioss — sibling picks flip forever).
+        // Server `/` uses the same pickHome + invited_to_org rules with a fresh RSC load.
+        orgLoadDebug("layout:bundle failed → hard navigate to /", {
+          gen,
+          status: first.status,
+          slug: params.orgSlug,
+        });
+        window.location.replace("/");
         return;
       }
 
