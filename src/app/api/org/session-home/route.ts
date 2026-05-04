@@ -50,7 +50,16 @@ export async function GET(req: NextRequest) {
       })
       .filter((c): c is NonNullable<typeof c> => c != null);
 
-    const home = selectHomeOrgFromCandidates(candidates, user.user_metadata?.invited_to_org);
+    const exceptSlug = req.nextUrl.searchParams.get("except")?.trim() || null;
+    const pool = exceptSlug
+      ? candidates.filter((c) => c.slug !== exceptSlug)
+      : candidates;
+    if (!pool.length) return apiError("Sin acceso.", 403);
+
+    const home = selectHomeOrgFromCandidates(
+      pool,
+      exceptSlug ? null : user.user_metadata?.invited_to_org
+    );
     if (!home) return apiError("Sin acceso.", 403);
 
     return apiOk(

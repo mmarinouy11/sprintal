@@ -7,6 +7,16 @@ import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
 
+/** org_members.role can be null/empty; legacy schema used default "member". */
+function roleForOrgDataApi(raw: unknown): string {
+  if (raw == null) return "viewer";
+  const s = String(raw).trim();
+  if (!s) return "viewer";
+  const lower = s.toLowerCase();
+  if (lower === "owner" || lower === "admin" || lower === "editor" || lower === "viewer") return lower;
+  return "viewer";
+}
+
 type OrgRow = Record<string, unknown> & {
   id: string;
   slug: string;
@@ -119,8 +129,7 @@ export async function GET(req: NextRequest) {
     const org = (orgRows?.[0] ?? null) as OrgRow | null;
     if (!org) return apiError("Org no encontrada.", 404);
 
-    const directRole = memberByOrgId.get(org.id) ?? null;
-    if (directRole) {
+    if (memberByOrgId.has(org.id)) {
       const billingRoot =
         (await getBillingRootOrgRow(supabaseAdmin, org.id)) ?? {
           id: org.id,
@@ -129,7 +138,7 @@ export async function GET(req: NextRequest) {
         };
       const rootPlan = billingRoot.plan;
       return buildOrgDataResponse(supabaseAdmin, org, billingRoot, rootPlan, {
-        role: directRole,
+        role: roleForOrgDataApi(memberByOrgId.get(org.id)),
         ancestorReadOnly: false,
         memberContextSlug: null,
         memberContextName: null,

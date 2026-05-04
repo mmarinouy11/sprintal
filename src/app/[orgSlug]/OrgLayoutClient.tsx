@@ -42,8 +42,11 @@ async function fetchAncestorBundle(accessToken: string, orgSlug: string, fromSlu
   return { ok: true as const, data };
 }
 
-async function fetchSessionHomeSlug(accessToken: string): Promise<string | null> {
-  const res = await fetch(`/api/org/session-home?_ts=${Date.now()}`, {
+async function fetchSessionHomeSlug(accessToken: string, exceptSlug?: string): Promise<string | null> {
+  const q = new URLSearchParams();
+  q.set("_ts", String(Date.now()));
+  if (exceptSlug) q.set("except", exceptSlug);
+  const res = await fetch(`/api/org/session-home?${q.toString()}`, {
     cache: "no-store",
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -163,7 +166,7 @@ export default function OrgLayoutClient({
           setLoading(false);
           return;
         }
-        const homeSlug = await fetchSessionHomeSlug(session.access_token);
+        const homeSlug = await fetchSessionHomeSlug(session.access_token, params.orgSlug);
         if (homeSlug && homeSlug !== params.orgSlug) {
           orgLoadDebug("layout:bundle failed → redirect to session home", {
             gen,
