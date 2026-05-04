@@ -107,8 +107,12 @@ export default function OrgLayoutClient({
 
       const first = await loadOrgBundle(session.access_token, params.orgSlug, fromParam);
       if (!first.ok) {
-        if (first.status === 401) router.replace("/auth/login");
-        else router.replace("/auth/login");
+        if (first.status === 401) {
+          router.replace("/auth/login");
+        } else {
+          // Recover: wrong slug, stale session edge cases — let `/` pick home org instead of forcing login.
+          router.replace("/");
+        }
         setLoading(false);
         return;
       }

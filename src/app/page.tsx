@@ -1,28 +1,40 @@
 import { redirect } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-server";
 
-type OrgEmbed = { id: string; slug: string; onboarding_complete: boolean; cascade_level: number };
+type OrgEmbed = { slug: string; onboarding_complete: boolean; cascade_level: number };
 type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
+
+function invitedOrgIdFromMetadata(raw: unknown): string | undefined {
+  if (raw == null || raw === "") return undefined;
+  const s = String(raw).trim();
+  return s || undefined;
+}
 
 export default async function RootPage() {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
 
-  const { data: memberships } = await supabase
+  const { data: memberships, error: membersError } = await supabase
     .from("org_members")
-    .select("org_id, organizations(id, slug, onboarding_complete, cascade_level)")
+    .select("org_id, organizations(slug, onboarding_complete, cascade_level)")
     .eq("user_id", user.id);
 
-  if (!memberships?.length) redirect("/auth/signup?oauth=true");
+  if (membersError || !memberships?.length) redirect("/auth/signup?oauth=true");
 
-  type Row = OrgEmbed & { membershipOrgId: string };
+  type Row = OrgEmbed & { id: string; membershipOrgId: string };
   const orgRows: Row[] = (memberships as unknown as MembershipRow[])
     .map((m) => {
       const o = m.organizations;
       const org = Array.isArray(o) ? o[0] : o;
-      if (!org?.slug || !org.id) return null;
-      return { ...org, membershipOrgId: m.org_id };
+      if (!org?.slug) return null;
+      return {
+        slug: org.slug,
+        onboarding_complete: org.onboarding_complete,
+        cascade_level: org.cascade_level,
+        id: m.org_id,
+        membershipOrgId: m.org_id,
+      };
     })
     .filter((r): r is Row => r != null);
 
@@ -34,8 +46,7 @@ export default async function RootPage() {
     return (a.slug || "").localeCompare(b.slug || "");
   });
 
-  const invitedRaw = user.user_metadata?.invited_to_org;
-  const invitedId = typeof invitedRaw === "string" ? invitedRaw : undefined;
+  const invitedId = invitedOrgIdFromMetadata(user.user_metadata?.invited_to_org);
   let home = orgRows[0];
   if (invitedId) {
     const hit = orgRows.find(

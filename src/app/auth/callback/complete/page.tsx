@@ -29,15 +29,21 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      type OrgEmbed = { id: string; slug: string; onboarding_complete: boolean; cascade_level: number };
+      type OrgEmbed = { slug: string; onboarding_complete: boolean; cascade_level: number };
       type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
 
-      const { data: memberships } = await supabase
+      function invitedOrgIdFromMetadata(raw: unknown): string | undefined {
+        if (raw == null || raw === "") return undefined;
+        const s = String(raw).trim();
+        return s || undefined;
+      }
+
+      const { data: memberships, error: membersError } = await supabase
         .from("org_members")
-        .select("org_id, organizations(id, slug, onboarding_complete, cascade_level)")
+        .select("org_id, organizations(slug, onboarding_complete, cascade_level)")
         .eq("user_id", session.user.id);
 
-      if (!memberships?.length) {
+      if (membersError || !memberships?.length) {
         const qs = new URLSearchParams();
         qs.set("oauth", "true");
         const p = searchParams.get("plan");
@@ -48,13 +54,19 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      type Row = OrgEmbed & { membershipOrgId: string };
+      type Row = OrgEmbed & { id: string; membershipOrgId: string };
       const orgRows: Row[] = (memberships as unknown as MembershipRow[])
         .map((m) => {
           const o = m.organizations;
           const org = Array.isArray(o) ? o[0] : o;
-          if (!org?.slug || !org.id) return null;
-          return { ...org, membershipOrgId: m.org_id };
+          if (!org?.slug) return null;
+          return {
+            slug: org.slug,
+            onboarding_complete: org.onboarding_complete,
+            cascade_level: org.cascade_level,
+            id: m.org_id,
+            membershipOrgId: m.org_id,
+          };
         })
         .filter((r): r is Row => r != null);
 
@@ -75,8 +87,7 @@ function AuthCallbackCompleteInner() {
         return (a.slug || "").localeCompare(b.slug || "");
       });
 
-      const invitedRaw = session.user.user_metadata?.invited_to_org;
-      const invitedId = typeof invitedRaw === "string" ? invitedRaw : undefined;
+      const invitedId = invitedOrgIdFromMetadata(session.user.user_metadata?.invited_to_org);
       let org = orgRows[0];
       if (invitedId) {
         const hit = orgRows.find(
