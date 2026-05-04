@@ -34,18 +34,25 @@ export async function GET(req: NextRequest) {
     const ids = memberRows.map((m: { org_id: string }) => m.org_id);
     const { data: orgRows } = await supabaseAdmin
       .from("organizations")
-      .select("id, slug, onboarding_complete, cascade_level")
+      .select("id, slug, onboarding_complete, cascade_level, parent_org_id")
       .in("id", ids);
     if (!orgRows?.length) return apiError("Sin acceso.", 403);
 
     const candidates = orgRows
-      .map((o: { id: string; slug: string | null; onboarding_complete: boolean | null; cascade_level: number | null }) => {
+      .map((o: {
+        id: string;
+        slug: string | null;
+        onboarding_complete: boolean | null;
+        cascade_level: number | null;
+        parent_org_id: string | null;
+      }) => {
         if (!o.slug) return null;
         return {
           orgId: o.id,
           slug: o.slug,
           onboarding_complete: !!o.onboarding_complete,
           cascade_level: o.cascade_level ?? 0,
+          parent_org_id: o.parent_org_id ?? null,
         };
       })
       .filter((c): c is NonNullable<typeof c> => c != null);
@@ -56,10 +63,9 @@ export async function GET(req: NextRequest) {
       : candidates;
     if (!pool.length) return apiError("Sin acceso.", 403);
 
-    const home = selectHomeOrgFromCandidates(
-      pool,
-      exceptSlug ? null : user.user_metadata?.invited_to_org
-    );
+    // Always honor invited_to_org when picking a fallback; clearing it on `except`
+    // caused sibling tie-breaks (e.g. hr-ioss ↔ ld-f4x7) instead of the invited org.
+    const home = selectHomeOrgFromCandidates(pool, user.user_metadata?.invited_to_org);
     if (!home) return apiError("Sin acceso.", 403);
 
     return apiOk(

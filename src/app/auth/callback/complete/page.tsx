@@ -2,6 +2,7 @@
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { selectHomeOrgFromCandidates, type HomeOrgCandidate } from "@/lib/pickHomeOrg";
 
 function AuthCallbackCompleteInner() {
   const router = useRouter();
@@ -29,18 +30,17 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      type OrgEmbed = { slug: string; onboarding_complete: boolean; cascade_level: number };
+      type OrgEmbed = {
+        slug: string;
+        onboarding_complete: boolean;
+        cascade_level: number;
+        parent_org_id?: string | null;
+      };
       type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
-
-      function invitedOrgIdFromMetadata(raw: unknown): string | undefined {
-        if (raw == null || raw === "") return undefined;
-        const s = String(raw).trim();
-        return s || undefined;
-      }
 
       const { data: memberships, error: membersError } = await supabase
         .from("org_members")
-        .select("org_id, organizations(slug, onboarding_complete, cascade_level)")
+        .select("org_id, organizations(slug, onboarding_complete, cascade_level, parent_org_id)")
         .eq("user_id", session.user.id);
 
       if (membersError || !memberships?.length) {
@@ -54,23 +54,22 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      type Row = OrgEmbed & { id: string; membershipOrgId: string };
-      const orgRows: Row[] = (memberships as unknown as MembershipRow[])
+      const candidates = (memberships as unknown as MembershipRow[])
         .map((m) => {
           const o = m.organizations;
           const org = Array.isArray(o) ? o[0] : o;
           if (!org?.slug) return null;
           return {
+            orgId: m.org_id,
             slug: org.slug,
             onboarding_complete: org.onboarding_complete,
             cascade_level: org.cascade_level,
-            id: m.org_id,
-            membershipOrgId: m.org_id,
+            parent_org_id: org.parent_org_id ?? null,
           };
         })
-        .filter((r): r is Row => r != null);
+        .filter((r): r is HomeOrgCandidate => r != null);
 
-      if (!orgRows.length) {
+      if (!candidates.length) {
         const qs = new URLSearchParams();
         qs.set("oauth", "true");
         const p = searchParams.get("plan");
@@ -81,19 +80,12 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      orgRows.sort((a, b) => {
-        const d = (b.cascade_level ?? 0) - (a.cascade_level ?? 0);
-        if (d !== 0) return d;
-        return (a.slug || "").localeCompare(b.slug || "");
-      });
-
-      const invitedId = invitedOrgIdFromMetadata(session.user.user_metadata?.invited_to_org);
-      let org = orgRows[0];
-      if (invitedId) {
-        const hit = orgRows.find(
-          (r) => r.membershipOrgId === invitedId || r.id === invitedId
-        );
-        if (hit) org = hit;
+      const org = selectHomeOrgFromCandidates(candidates, session.user.user_metadata?.invited_to_org);
+      if (!org) {
+        const qs = new URLSearchParams();
+        qs.set("oauth", "true");
+        router.replace(`/auth/signup?${qs.toString()}`);
+        return;
       }
 
       const requestedPlan = searchParams.get("plan");

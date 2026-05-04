@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
+import { invitedOrgIdFromMetadata } from "@/lib/pickHomeOrg";
 
 /** Survives React Strict Mode double-mount after we strip the hash from the URL. */
 const INVITE_HASH_TOKENS_KEY = "sprintal_invite_hash_tokens_v1";
@@ -177,7 +178,11 @@ export default function AcceptInvitePage() {
 
       if (!cancelled) {
         setPhase("redirecting");
-        const orgId = new URLSearchParams(window.location.search).get("orgId")?.trim();
+        const orgIdFromUrl = new URLSearchParams(window.location.search).get("orgId")?.trim();
+        const orgIdFromMeta = invitedOrgIdFromMetadata(
+          verifiedUser.user.user_metadata?.invited_to_org
+        );
+        const orgId = orgIdFromUrl || orgIdFromMeta;
         stripAuthParamsFromUrl();
 
         if (orgId) {
