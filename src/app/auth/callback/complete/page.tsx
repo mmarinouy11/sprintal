@@ -46,7 +46,10 @@ function AuthCallbackCompleteInner() {
         return;
       }
 
-      const homePick = await fetchSessionHomeClient(session.access_token);
+      const orgIdFromUrl = searchParams.get("orgId");
+      const homePick = await fetchSessionHomeClient(session.access_token, {
+        orgId: orgIdFromUrl,
+      });
       if (!homePick.ok) {
         if (homePick.status === 401) {
           setStatus("error");

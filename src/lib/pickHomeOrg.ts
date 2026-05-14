@@ -5,6 +5,11 @@ export function invitedOrgIdFromMetadata(raw: unknown): string | undefined {
   return s || undefined;
 }
 
+/** Case-insensitive UUID compare (invite metadata vs org_members ids). */
+export function orgIdsEqual(a: string, b: string): boolean {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
+
 export type HomeOrgCandidate = {
   orgId: string;
   slug: string;
@@ -16,7 +21,8 @@ export type HomeOrgCandidate = {
 
 /**
  * Picks the dashboard org for a logged-in user (deepest cascade, then slug),
- * preferring `invited_to_org` when it matches a membership org id.
+ * preferring invite target when it matches a membership org id:
+ * `user_metadata.invited_to_org`, then `?orgId=` from the invite/callback URL.
  *
  * If two orgs share the same `cascade_level` (data bug or legacy rows), we
  * deprioritize an org that is the `parent_org_id` of another candidate — so
@@ -24,12 +30,20 @@ export type HomeOrgCandidate = {
  */
 export function selectHomeOrgFromCandidates(
   candidates: HomeOrgCandidate[],
-  invitedToOrgRaw: unknown
+  invitedToOrgFromMetadataRaw: unknown,
+  inviteOrgIdFromUrlRaw?: unknown
 ): HomeOrgCandidate | null {
   if (!candidates.length) return null;
+  const preferredId =
+    invitedOrgIdFromMetadata(invitedToOrgFromMetadataRaw) ??
+    invitedOrgIdFromMetadata(inviteOrgIdFromUrlRaw);
+  if (preferredId) {
+    const hit = candidates.find((c) => orgIdsEqual(c.orgId, preferredId));
+    if (hit) return hit;
+  }
   const sorted = [...candidates].sort((a, b) => {
-    const d = (b.cascade_level ?? 0) - (a.cascade_level ?? 0);
-    if (d !== 0) return d;
+    const d = Number(b.cascade_level ?? 0) - Number(a.cascade_level ?? 0);
+    if (!Number.isFinite(d) || d !== 0) return Number.isFinite(d) ? d : 0;
     const aIsParent = candidates.some(
       (c) => c.orgId !== a.orgId && c.parent_org_id != null && c.parent_org_id === a.orgId
     );
@@ -39,11 +53,5 @@ export function selectHomeOrgFromCandidates(
     if (aIsParent !== bIsParent) return aIsParent ? 1 : -1;
     return (a.slug || "").localeCompare(b.slug || "");
   });
-  const invitedId = invitedOrgIdFromMetadata(invitedToOrgRaw);
-  let home = sorted[0];
-  if (invitedId) {
-    const hit = sorted.find((c) => c.orgId === invitedId);
-    if (hit) home = hit;
-  }
-  return home;
+  return sorted[0] ?? null;
 }

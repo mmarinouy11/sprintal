@@ -230,8 +230,9 @@ export default function AcceptInvitePage() {
           }
         }
 
-        sprintalAuthDebug("accept-invite:fallback", { to: "/" });
-        window.location.replace("/");
+        const homeUrl = orgId ? `/?orgId=${encodeURIComponent(orgId)}` : "/";
+        sprintalAuthDebug("accept-invite:fallback", { to: homeUrl });
+        window.location.replace(homeUrl);
       }
     }
 

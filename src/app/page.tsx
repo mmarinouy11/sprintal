@@ -12,7 +12,11 @@ type OrgEmbed = {
 };
 type MembershipRow = { org_id: string; organizations: OrgEmbed | OrgEmbed[] | null };
 
-export default async function RootPage() {
+export default async function RootPage({
+  searchParams,
+}: {
+  searchParams: { orgId?: string | string[] };
+}) {
   const supabase = await createSupabaseServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/auth/login");
@@ -49,12 +53,21 @@ export default async function RootPage() {
 
   if (!candidates.length) redirect("/auth/signup?oauth=true");
 
-  const home = selectHomeOrgFromCandidates(candidates, user.user_metadata?.invited_to_org);
+  const orgIdFromUrl =
+    typeof searchParams.orgId === "string"
+      ? searchParams.orgId
+      : searchParams.orgId?.[0];
+  const home = selectHomeOrgFromCandidates(
+    candidates,
+    user.user_metadata?.invited_to_org,
+    orgIdFromUrl
+  );
   if (isSprintalServerDebug()) {
     sprintalServerDebug("api", "page / home pick", {
       userId: sprintalShortId(user.id),
       candidateSlugs: candidates.map((c) => c.slug),
       invitedNorm: invitedOrgIdFromMetadata(user.user_metadata?.invited_to_org),
+      urlOrgNorm: invitedOrgIdFromMetadata(orgIdFromUrl),
       pickedSlug: home?.slug ?? null,
     });
   }

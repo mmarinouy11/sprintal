@@ -90,7 +90,10 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
-      const homePick = await fetchSessionHomeClient(session.access_token);
+      const orgIdFromUrl = params.get("orgId");
+      const homePick = await fetchSessionHomeClient(session.access_token, {
+        orgId: orgIdFromUrl,
+      });
       if (!homePick.ok) {
         if (homePick.status === 401) {
           if (!cancelled) hardGo("/auth/login?error=oauth");

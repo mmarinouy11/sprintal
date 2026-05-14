@@ -1,9 +1,29 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { apiError, apiOk } from "@/lib/api-response";
 import { sanitizeText, sanitizeColor, sanitizeInt } from "@/lib/sanitize";
 import { COACH_LIMITS, type Plan } from "@/types";
+
+/**
+ * One-time data repair (Supabase SQL Editor): align sub-org `plan` with billing root.
+ *
+ * UPDATE organizations child
+ * SET plan = root.plan
+ * FROM organizations root
+ * WHERE child.parent_org_id IS NOT NULL
+ * AND root.parent_org_id IS NULL
+ * AND root.id = (
+ *   WITH RECURSIVE ancestors AS (
+ *     SELECT id, parent_org_id FROM organizations WHERE id = child.id
+ *     UNION ALL
+ *     SELECT o.id, o.parent_org_id FROM organizations o
+ *     JOIN ancestors a ON o.id = a.parent_org_id
+ *   )
+ *   SELECT id FROM ancestors WHERE parent_org_id IS NULL LIMIT 1
+ * )
+ * AND child.plan != root.plan;
+ */
 
 function planSupportsSemantic(planVal: string): boolean {
   const lim = COACH_LIMITS[planVal as Plan];
@@ -19,6 +39,24 @@ function readBool(v: unknown, defaultVal: boolean): boolean {
 function slugify(s: string) {
   return s.toLowerCase().trim()
     .replace(/[^a-z0-9\s-]/g, "").replace(/\s+/g, "-").replace(/-+/g, "-").slice(0, 48);
+}
+
+/** Billing / feature plan: walk up to the root org (no parent) — sub-areas must match root, not client body. */
+async function getRootPlan(supabaseAdmin: SupabaseClient, orgId: string): Promise<string> {
+  let currentId = orgId;
+  for (let i = 0; i < 32; i++) {
+    const { data } = await supabaseAdmin
+      .from("organizations")
+      .select("plan, parent_org_id")
+      .eq("id", currentId)
+      .limit(1)
+      .maybeSingle();
+    const org = data as { plan: string | null; parent_org_id: string | null } | null;
+    if (!org) return "trial";
+    if (!org.parent_org_id) return org.plan?.trim() || "trial";
+    currentId = org.parent_org_id;
+  }
+  return "trial";
 }
 
 export async function POST(req: NextRequest) {
@@ -44,7 +82,7 @@ export async function POST(req: NextRequest) {
     const parentArea = body.parentArea ? sanitizeText(body.parentArea, 100) : null;
     const levelName = sanitizeText(body.levelName || "area", 50);
     const childLevel = sanitizeInt(body.childLevel, 1, 4, 2);
-    const plan = (body.plan || "trial") as string; // inherit from parent, default trial
+    const plan = await getRootPlan(supabaseAdmin, parentOrgId);
     const primaryColor = sanitizeColor(body.primaryColor);
     const trialEndsAtBody = body.trialEndsAt;
     const fromOnboarding = !!body.fromOnboarding;
@@ -100,9 +138,8 @@ export async function POST(req: NextRequest) {
       return apiError("Se requiere rol owner o admin.", 403);
     }
 
-    // Trial limit — no sub-areas post-onboarding
-    // Use plan from body (client sends current org plan from store)
-    if (!fromOnboarding && body.parentOrgPlan === "trial") {
+    // Trial limit — no sub-areas post-onboarding (root plan from DB, not client)
+    if (!fromOnboarding && plan === "trial") {
       return apiOk(
         {
           error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",

@@ -67,7 +67,8 @@ export async function GET(req: NextRequest) {
     // Always honor invited_to_org when picking a fallback; clearing it on `except`
     // caused sibling tie-breaks (e.g. hr-ioss ↔ ld-f4x7) instead of the invited org.
     const invitedRaw = user.user_metadata?.invited_to_org;
-    const home = selectHomeOrgFromCandidates(pool, invitedRaw);
+    const orgIdFromUrl = req.nextUrl.searchParams.get("orgId");
+    const home = selectHomeOrgFromCandidates(pool, invitedRaw, orgIdFromUrl);
     if (!home) return apiError("Sin acceso.", 403);
 
     sprintalServerDebug("api", "session-home", {
@@ -75,6 +76,7 @@ export async function GET(req: NextRequest) {
       exceptSlug,
       poolSlugs: pool.map((c) => c.slug),
       invitedNorm: invitedOrgIdFromMetadata(invitedRaw),
+      urlOrgNorm: invitedOrgIdFromMetadata(orgIdFromUrl),
       pickedSlug: home.slug,
       pickedOrgId: sprintalShortId(home.orgId),
     });
