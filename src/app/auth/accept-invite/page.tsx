@@ -56,10 +56,14 @@ function stripAuthParamsFromUrl() {
 }
 
 /**
- * Supabase hosted /auth/v1/verify often redirects with tokens in the hash (implicit-style).
+ * Supabase hosted /auth/v1/verify often redirects with tokens in the hash (implicit-style)
+ * or with a PKCE `code` in the query string.
  * @supabase/ssr createBrowserClient forces flowType "pkce", so initializing the client while
  * that hash is still present causes a flow mismatch and can clear / block the session.
  * We capture tokens and strip the hash synchronously, then load the Supabase module.
+ *
+ * Invite links must replace any existing browser session: we always signOut() before
+ * setSession(implicit) or exchangeCodeForSession(code), then a short delay so storage settles.
  */
 function takeImplicitHashTokens():
   | { access_token: string; refresh_token: string }
@@ -127,12 +131,25 @@ export default function AcceptInvitePage() {
 
       const { supabase } = await import("@/lib/supabase");
 
-      let {
-        data: { session },
-      } = await supabase.auth.getSession();
+      const inviteSearch = new URLSearchParams(window.location.search);
+      const pkceCode = inviteSearch.get("code")?.trim() || null;
+      const hasInviteCredentials = !!(implicitTokens || pkceCode);
 
-      if (!session && implicitTokens) {
-        await supabase.auth.signOut();
+      if (!hasInviteCredentials) {
+        if (!cancelled) {
+          setErrorMessage(t("inviteInvalidLink"));
+          setPhase("error");
+        }
+        return;
+      }
+
+      // Always clear any other user's session before applying invite tokens or PKCE code.
+      await supabase.auth.signOut();
+      await new Promise((resolve) => setTimeout(resolve, 100));
+
+      let session: Awaited<ReturnType<typeof supabase.auth.getSession>>["data"]["session"] = null;
+
+      if (implicitTokens) {
         const { error: sessionError } = await supabase.auth.setSession(implicitTokens);
         sessionStorage.removeItem(INVITE_HASH_TOKENS_KEY);
         if (sessionError) {
@@ -145,20 +162,14 @@ export default function AcceptInvitePage() {
         ({
           data: { session },
         } = await supabase.auth.getSession());
-      }
-
-      const searchParams = new URLSearchParams(window.location.search);
-      const code = searchParams.get("code");
-
-      if (!session && code) {
-        // Do not signOut before exchange — it clears the PKCE code_verifier and breaks the flow.
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+      } else if (pkceCode) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(pkceCode);
         ({
           data: { session },
         } = await supabase.auth.getSession());
-        if (!session && exchangeError) {
+        if (!session) {
           if (!cancelled) {
-            setErrorMessage(exchangeError.message || t("inviteSessionError"));
+            setErrorMessage(exchangeError?.message || t("inviteSessionError"));
             setPhase("error");
           }
           return;
@@ -183,6 +194,8 @@ export default function AcceptInvitePage() {
         return;
       }
 
+      console.log("accepted invite as user:", verifiedUser.user.id, verifiedUser.user.email);
+
       if (!cancelled) {
         setPhase("redirecting");
         const orgIdFromUrl = new URLSearchParams(window.location.search).get("orgId")?.trim();
@@ -198,12 +211,17 @@ export default function AcceptInvitePage() {
         });
         stripAuthParamsFromUrl();
 
+        const {
+          data: { session: sessionForApi },
+        } = await supabase.auth.getSession();
+        const bearer = sessionForApi?.access_token ?? session.access_token;
+
         if (orgId) {
           try {
             const res = await fetch(
               `/api/org/invite-target?orgId=${encodeURIComponent(orgId)}`,
               {
-                headers: { Authorization: `Bearer ${session.access_token}` },
+                headers: { Authorization: `Bearer ${bearer}` },
                 cache: "no-store",
               }
             );
