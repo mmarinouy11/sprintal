@@ -85,18 +85,39 @@ export async function POST(req: NextRequest) {
 
     if (inviteError) return apiError(inviteError.message, 400);
 
+    const invitedUserId = inviteData.user.id;
+    console.log("settings/invite: after inviteUserByEmail", {
+      orgId,
+      invitedUserId,
+      role,
+      inviteEmail: email,
+      hasUser: !!inviteData?.user,
+    });
+
     // Pre-create org_member record
-    const { error: memberError } = await supabaseAdmin.from("org_members").upsert(
-      {
-        org_id: orgId,
-        user_id: inviteData.user.id,
-        role,
-        full_name: email.split("@")[0],
-      },
-      { onConflict: "org_id,user_id" }
-    );
+    const { data: memberData, error: memberError } = await supabaseAdmin
+      .from("org_members")
+      .upsert(
+        {
+          org_id: orgId,
+          user_id: invitedUserId,
+          role,
+          full_name: email.split("@")[0],
+        },
+        { onConflict: "org_id,user_id" }
+      )
+      .select("id, org_id, user_id, role, full_name");
+
+    console.log("org_members upsert:", {
+      memberData,
+      memberError,
+      orgId,
+      userId: invitedUserId,
+      role,
+    });
+
     if (memberError) {
-      console.error("invite org_members upsert:", memberError);
+      console.error("invite org_members upsert failed:", memberError);
       return apiError(memberError.message, 500);
     }
 
