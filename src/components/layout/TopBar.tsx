@@ -21,20 +21,17 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [siblings, setSiblings] = useState<Organization[]>([]);
+  const [memberOrgIds, setMemberOrgIds] = useState<Set<string>>(new Set());
   const unreadCount = store.unreadCount;
 
-  const [navigableIds, setNavigableIds] = useState<Set<string>>(new Set());
-  const [navigableLoaded, setNavigableLoaded] = useState(false);
-
   async function openDropdown() {
-    if (childOrgs.length === 0) { setNavigableLoaded(true); }
-    if (childOrgs.length > 0) {
-      const { data: grandchildren } = await supabase
-        .from("organizations").select("parent_org_id")
-        .in("parent_org_id", childOrgs.map(c => c.id));
-      const ids = new Set((grandchildren || []).map((g: { parent_org_id: string }) => g.parent_org_id));
-      setNavigableIds(ids);
-      setNavigableLoaded(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      const { data: rows } = await supabase
+        .from("org_members")
+        .select("org_id")
+        .eq("user_id", user.id);
+      setMemberOrgIds(new Set((rows || []).map((r: { org_id: string }) => r.org_id)));
     }
 
     if (org?.parent_org_id && !parentOrgFromStore) {
@@ -51,9 +48,14 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
     setOpen(true);
   }
 
-  function navigateTo(slug: string) {
+  function navigateToOrg(target: Organization) {
     setOpen(false);
-    router.push(`/${slug}/dashboard`);
+    const hasMembership = memberOrgIds.has(target.id);
+    if (hasMembership) {
+      router.push(`/${target.slug}/dashboard`);
+    } else {
+      router.push(`/${target.slug}/dashboard?from=${encodeURIComponent(orgSlug)}`);
+    }
   }
 
   function navigateToParentReadOnly() {
@@ -188,7 +190,10 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                     textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.yourArea")}</div>
                   <button
                     type="button"
-                    onClick={() => { setOpen(false); navigateTo(memberContextSlug); }}
+                    onClick={() => {
+                      setOpen(false);
+                      router.push(`/${memberContextSlug}/dashboard`);
+                    }}
                     style={{
                       display: "flex", alignItems: "center", gap: 10,
                       width: "100%", padding: "8px 16px",
@@ -227,9 +232,16 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                   <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                     fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
                     textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.sameLevel")}</div>
-                  {siblings.map(s => (
-                    <AreaItem key={s.id} org={s} current={false} navigable={true}
-                      onClick={() => navigateTo(s.slug)} />
+                  {siblings.map((s) => (
+                    <AreaItem
+                      key={s.id}
+                      org={s}
+                      current={false}
+                      navigable
+                      viewOnly={!memberOrgIds.has(s.id)}
+                      viewOnlyLabel={t("nav.viewOnly")}
+                      onClick={() => navigateToOrg(s)}
+                    />
                   ))}
                 </div>
               )}
@@ -239,11 +251,20 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                   <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                     fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
                     textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.areas")}</div>
-                  {childOrgs.map(c => (
-                    <AreaItem key={c.id} org={c} current={false}
-                      navigable={navigableLoaded && navigableIds.has(c.id)}
-                      onClick={() => navigateTo(c.slug)} />
-                  ))}
+                  {childOrgs.map((c) => {
+                    const hasMembership = memberOrgIds.has(c.id);
+                    return (
+                      <AreaItem
+                        key={c.id}
+                        org={c}
+                        current={false}
+                        navigable
+                        viewOnly={!hasMembership}
+                        viewOnlyLabel={t("nav.viewOnly")}
+                        onClick={() => navigateToOrg(c)}
+                      />
+                    );
+                  })}
                 </div>
               )}
 
@@ -322,8 +343,13 @@ function ParentReadOnlyItem({ org, label, onClick }: {
   );
 }
 
-function AreaItem({ org, current, navigable, onClick }: {
-  org: Organization; current: boolean; navigable: boolean; onClick: () => void;
+function AreaItem({ org, current, navigable, onClick, viewOnly, viewOnlyLabel }: {
+  org: Organization;
+  current: boolean;
+  navigable: boolean;
+  onClick: () => void;
+  viewOnly?: boolean;
+  viewOnlyLabel?: string;
 }) {
   return (
     <button onClick={navigable && !current ? onClick : undefined}
@@ -355,7 +381,12 @@ function AreaItem({ org, current, navigable, onClick }: {
         }}>
           {org.name}
         </div>
-        {!navigable && !current && (
+        {viewOnly && !current && viewOnlyLabel && (
+          <div style={{ fontFamily: "var(--font-body)", fontSize: "0.6875rem", color: "var(--unclear)", marginTop: 2 }}>
+            {viewOnlyLabel}
+          </div>
+        )}
+        {!navigable && !current && !viewOnly && (
           <div style={{ fontFamily: "var(--font-body)", fontSize: "0.6875rem", color: "var(--t3)" }}>
             no sub-areas
           </div>

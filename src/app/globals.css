@@ -212,6 +212,37 @@ body {
 }
 .btn-ghost:hover { border-color: var(--border-hi); color: var(--text); }
 
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--raised);
+  color: var(--t2);
+  font-family: var(--font-body);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  padding: 6px 12px;
+  border-radius: var(--rs);
+  border: 1px solid var(--border-mid);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.btn-secondary:hover {
+  border-color: var(--border-hi);
+  color: var(--text);
+  background: var(--surface);
+}
+.btn-secondary--active {
+  background: var(--brand);
+  color: #fff;
+  border-color: var(--brand);
+}
+.btn-secondary--active:hover {
+  background: var(--brand-dk);
+  color: #fff;
+}
+
 /* ── INPUTS ───────────────────────────────────────────── */
 .input {
   background: var(--surface);

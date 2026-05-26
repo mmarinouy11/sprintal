@@ -137,10 +137,13 @@ export default function DashboardPage() {
         <PortfolioDonut />
       </div>
 
-      <OwnedBetsSection />
       <Section label={t("activeBets")}>
         <ActiveBetsTable riskFilter={riskFilter} onClearRiskFilter={() => setRiskFilter(false)} />
       </Section>
+      <Section label={t("decisionFocus")}><DecisionFocus /></Section>
+      <OwnedBetsSection />
+      <Section label={t("overdueReview")}><PendingUpdates type="review" /></Section>
+      <Section label={t("overdueSignal")}><PendingUpdates type="signal" /></Section>
       {showPortfolioRow && org && (
         <Section label={tCoach("portfolioAnalysis")}>
           <button
@@ -179,9 +182,6 @@ export default function DashboardPage() {
           />
         </PortfolioSemanticSlideover>
       )}
-      <Section label={t("decisionFocus")}><DecisionFocus /></Section>
-      <Section label={t("overdueReview")}><PendingUpdates type="review" /></Section>
-      <Section label={t("overdueSignal")}><PendingUpdates type="signal" /></Section>
       <RollupDashboard />
     </div>
   );

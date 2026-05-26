@@ -5,26 +5,6 @@ import { apiError, apiOk } from "@/lib/api-response";
 import { sanitizeText, sanitizeColor, sanitizeInt } from "@/lib/sanitize";
 import { COACH_LIMITS, type Plan } from "@/types";
 
-/**
- * One-time data repair (Supabase SQL Editor): align sub-org `plan` with billing root.
- *
- * UPDATE organizations child
- * SET plan = root.plan
- * FROM organizations root
- * WHERE child.parent_org_id IS NOT NULL
- * AND root.parent_org_id IS NULL
- * AND root.id = (
- *   WITH RECURSIVE ancestors AS (
- *     SELECT id, parent_org_id FROM organizations WHERE id = child.id
- *     UNION ALL
- *     SELECT o.id, o.parent_org_id FROM organizations o
- *     JOIN ancestors a ON o.id = a.parent_org_id
- *   )
- *   SELECT id FROM ancestors WHERE parent_org_id IS NULL LIMIT 1
- * )
- * AND child.plan != root.plan;
- */
-
 function planSupportsSemantic(planVal: string): boolean {
   const lim = COACH_LIMITS[planVal as Plan];
   return !!lim && (lim.semantic > 0 || lim.semantic === -1);
@@ -52,10 +32,20 @@ async function getRootPlan(supabaseAdmin: SupabaseClient, orgId: string): Promis
       .limit(1)
       .maybeSingle();
     const org = data as { plan: string | null; parent_org_id: string | null } | null;
-    if (!org) return "trial";
+    if (!org) {
+      console.error(
+        "create-sub getRootPlan: organization not found, falling back to trial",
+        { orgId: currentId, startOrgId: orgId }
+      );
+      return "trial";
+    }
     if (!org.parent_org_id) return org.plan?.trim() || "trial";
     currentId = org.parent_org_id;
   }
+  console.error(
+    "create-sub getRootPlan: ancestor depth exceeded, falling back to trial",
+    { startOrgId: orgId }
+  );
   return "trial";
 }
 

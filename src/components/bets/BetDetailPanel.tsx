@@ -95,7 +95,7 @@ function F({ label, hint, children }: { label: string; hint?: string; children: 
 
 const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => void; onCancel: () => void }) {
   const t = useT("betDetail");
-  const tg = useT();
+  const tf = useT("form");
   const { childOrgs, org } = useStore();
   const areas = childOrgs.map(a => a.name);
   const [form, setForm] = useState({
@@ -112,15 +112,34 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
     margin:        bet.margin || "Medium",
     importance:    bet.importance || "Medium",
   });
+  const [alignment, setAlignment] = useState<string[]>(bet.alignment || []);
+  const [ownerAlignmentConflict, setOwnerAlignmentConflict] = useState("");
   const [saving, setSaving] = useState(false);
   const coach = useSyntacticCoach();
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
+  function setOwnerArea(value: string) {
+    setForm((f) => ({ ...f, owner_area: value }));
+    setAlignment((prev) => prev.filter((a) => a !== value));
+    setOwnerAlignmentConflict("");
+  }
+
+  function toggleAlignmentArea(area: string) {
+    if (area === form.owner_area) {
+      setOwnerAlignmentConflict(tf("ownerCannotBeSupport"));
+      return;
+    }
+    setOwnerAlignmentConflict("");
+    setAlignment((prev) =>
+      prev.includes(area) ? prev.filter((x) => x !== area) : [...prev, area]
+    );
+  }
+
   async function save() {
     setSaving(true);
     const indicators = form.indicators.split(",").map(s=>s.trim()).filter(Boolean).slice(0,3);
-    const updates = { ...form, indicators };
+    const updates = { ...form, indicators, alignment };
     const { data } = await supabase.from("bets").update(updates).eq("id", bet.id).select().limit(1).maybeSingle();
     if (data) onSave({ ...bet, ...updates });
     setSaving(false);
@@ -138,7 +157,8 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
       <div className="grid grid-cols-2 gap-3">
         <F label={t("ownerArea")}>
           <select className={`${inputCls} ${focusStyle}`} style={{...inputStyle, appearance:"none", cursor:"pointer"}}
-            value={form.owner_area} onChange={set("owner_area")}>
+            value={form.owner_area}
+            onChange={(e) => setOwnerArea(e.target.value)}>
             <option value="">— Select —</option>
             {areas.map(a => <option key={a} value={a}>{a}</option>)}
           </select>
@@ -174,15 +194,49 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
         <input className={`${inputCls} ${focusStyle}`} style={inputStyle} value={form.indicators} onChange={set("indicators")} onBlur={e => coach.check("indicators", e.target.value, org?.id)} placeholder={t("indicatorsPlaceholder")} />
         <CoachObservation observation={coach.results["indicators"]?.observation || null} loading={coach.results["indicators"]?.loading || false} />
       </F>
+      <F label={tf("supportAlignment")}>
+        <div className="flex flex-wrap gap-2">
+          {areas.map((a) => (
+            <button
+              key={a}
+              type="button"
+              onClick={() => toggleAlignmentArea(a)}
+              className="text-xs font-medium px-3 py-1 rounded"
+              style={{
+                border: `1px solid ${alignment.includes(a) ? "var(--brand)" : "var(--border-mid)"}`,
+                background: alignment.includes(a) ? "var(--brand-bg)" : "transparent",
+                color: alignment.includes(a) ? "var(--brand)" : "var(--t2)",
+                cursor: "pointer",
+                fontFamily: "var(--font-body)",
+              }}
+            >
+              {a}
+            </button>
+          ))}
+        </div>
+        {ownerAlignmentConflict && (
+          <p className="t-mono text-xs mt-2" style={{ color: "var(--unclear)" }}>
+            {ownerAlignmentConflict}
+          </p>
+        )}
+      </F>
       <div className="grid grid-cols-3 gap-3 mb-4">
-        {[[t("revenue"),"revenue"],[t("margin"),"margin"],[t("importanceLabel"),"importance"]].map(([label,key]) => (
-          <F key={key} label={label}>
-            <select className={`${inputCls} ${focusStyle}`} style={{...inputStyle, appearance:"none", cursor:"pointer"}}
-              value={form[key as keyof typeof form]} onChange={set(key)}>
-              <option value="High">{t("high")}</option><option value="Medium">{t("medium")}</option><option value="Low">{t("low")}</option>
-            </select>
-          </F>
-        ))}
+        {[[t("revenue"), "revenue"], [t("margin"), "margin"], [t("importanceLabel"), "importance"]].map(
+          ([label, key]) => (
+            <F key={key} label={label}>
+              <select
+                className={`${inputCls} ${focusStyle}`}
+                style={{ ...inputStyle, appearance: "none", cursor: "pointer" }}
+                value={form[key as keyof typeof form]}
+                onChange={set(key)}
+              >
+                <option value="High">{t("high")}</option>
+                <option value="Medium">{t("medium")}</option>
+                <option value="Low">{t("low")}</option>
+              </select>
+            </F>
+          )
+        )}
       </div>
       <div className="flex gap-2 pt-3" style={{ borderTop:"1px solid var(--border)" }}>
         <button onClick={onCancel} className="btn-ghost flex-1" disabled={saving}>Cancel</button>
@@ -295,15 +349,11 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
               {bet.is_draft && <span className="ml-2 badge badge-pivoted" style={{fontSize:"0.6rem", verticalAlign:"middle"}}>DRAFT</span>}
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <button onClick={() => setEditing(!editing)}
-                className="px-3 py-1 rounded text-xs font-medium transition-colors"
-                style={{
-                  fontFamily:"var(--font-mono)",
-                  background: editing ? "var(--brand)" : "var(--raised)",
-                  color: editing ? "#fff" : "var(--t2)",
-                  border:"1px solid var(--border-mid)",
-                  cursor:"pointer",
-                }}>
+              <button
+                type="button"
+                onClick={() => setEditing(!editing)}
+                className={`btn-secondary${editing ? " btn-secondary--active" : ""}`}
+              >
                 {editing ? t("viewMode") : t("edit")}
               </button>
               <button onClick={onClose}
@@ -412,21 +462,26 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
               </Section>
 
               {org && (
-                <SemanticCoachPanel
-                  mode="bet"
-                  orgId={org.id}
-                  orgName={org.name}
-                  coachSemanticEnabled={org.coach_semantic_enabled}
-                  plan={planForCoach}
-                  bet={bet}
-                  sprint={sprintForBet}
-                  siblingBets={siblingBetsInSprint}
-                  autoRun={false}
-                />
+                <div style={{ marginBottom: 8 }}>
+                  <SemanticCoachPanel
+                    mode="bet"
+                    orgId={org.id}
+                    orgName={org.name}
+                    coachSemanticEnabled={org.coach_semantic_enabled}
+                    plan={planForCoach}
+                    bet={bet}
+                    sprint={sprintForBet}
+                    siblingBets={siblingBetsInSprint}
+                    autoRun={false}
+                  />
+                </div>
               )}
 
-              {/* Cascade section */}
-              {(parentBets.length > 0 || childBets.length > 0 || (!bet.parent_alert && bet.bet_type === "strategic" && parentBets.length === 0)) && (
+              {(parentBets.length > 0 ||
+                childBets.length > 0 ||
+                (bet.bet_type === "strategic" &&
+                  parentBets.length === 0 &&
+                  (org?.cascade_level ?? 1) > 1)) && (
                 <Section label={t("cascade")}>
                   {/* Enabler badge */}
                   {bet.bet_type === "enabler" && (

@@ -2,7 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getBillingRootOrgRow } from "@/lib/orgBillingRoot";
-import { isStrictAncestor } from "@/lib/orgHierarchy";
+import { isStrictAncestor, shareOrgRoot } from "@/lib/orgHierarchy";
 import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
@@ -57,8 +57,9 @@ export async function GET(req: NextRequest) {
       .maybeSingle();
     if (!targetOrg) return apiError("Org no encontrada.", 404);
 
-    const ok = await isStrictAncestor(supabaseAdmin, targetOrg.id, fromOrgRow.id);
-    if (!ok) return apiError("Sin acceso.", 403);
+    const isAncestor = await isStrictAncestor(supabaseAdmin, targetOrg.id, fromOrgRow.id);
+    const sameRoot = await shareOrgRoot(supabaseAdmin, targetOrg.id, fromOrgRow.id);
+    if (!isAncestor && !sameRoot) return apiError("Sin acceso.", 403);
 
     const billingRoot =
       (await getBillingRootOrgRow(supabaseAdmin, targetOrg.id)) ?? {

@@ -2,8 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { apiError, apiOk } from "@/lib/api-response";
-import { invitedOrgIdFromMetadata, selectHomeOrgFromCandidates } from "@/lib/pickHomeOrg";
-import { sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
+import { selectHomeOrgFromCandidates } from "@/lib/pickHomeOrg";
 
 export const dynamic = "force-dynamic";
 
@@ -70,16 +69,6 @@ export async function GET(req: NextRequest) {
     const orgIdFromUrl = req.nextUrl.searchParams.get("orgId");
     const home = selectHomeOrgFromCandidates(pool, invitedRaw, orgIdFromUrl);
     if (!home) return apiError("Sin acceso.", 403);
-
-    sprintalServerDebug("api", "session-home", {
-      userId: sprintalShortId(user.id),
-      exceptSlug,
-      poolSlugs: pool.map((c) => c.slug),
-      invitedNorm: invitedOrgIdFromMetadata(invitedRaw),
-      urlOrgNorm: invitedOrgIdFromMetadata(orgIdFromUrl),
-      pickedSlug: home.slug,
-      pickedOrgId: sprintalShortId(home.orgId),
-    });
 
     return apiOk(
       { slug: home.slug, onboarding_complete: home.onboarding_complete, orgId: home.orgId },

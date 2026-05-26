@@ -1,8 +1,13 @@
 {
+  "sidebar": {
+    "expand": "Expandir barra lateral",
+    "collapse": "Recolher barra lateral"
+  },
   "nav": {
     "dashboard": "Dashboard Executivo",
     "sprints": "Enterprise Sprints",
     "betsBoard": "Bets — Quadro",
+    "betsBoardEmptyColumn": "",
     "betsTable": "Bets — Tabela",
     "evidence": "Log de Evidências",
     "settings": "Configurações",
@@ -152,7 +157,10 @@
     "modelUsed": "Modelo",
     "creditsUsedCount": "{count} créditos",
     "creditsRemaining": "{count} restantes",
-    "creditsLimitReached": "limite atingido"
+    "creditsLimitReached": "limite atingido",
+    "creditsConfirmPrompt": "✦ Esta análise usa {count} créditos.",
+    "creditsConfirmBtn": "Confirmar — Analisar",
+    "creditsCancelBtn": "Cancelar"
   },
   "trial": {
     "expired": "Seu período de teste encerrou",
@@ -388,7 +396,8 @@
       "pivotRuleDesc": "A direção muda. Gera um rascunho com hipótese atualizada.",
       "doneRuleDesc": "Chegou à sua conclusão natural.",
       "killRuleDesc": "Sem sinal após tempo suficiente. Parar agora, liberar capacidade.",
-      "reviewCadenceDesc": "3× por sprint. As Verificações de Sinal ocorrem no ponto médio — atualizam a força do sinal mas não mudam o status da bet.",
+      "reviewCadenceDesc": "3× por sprint — aos 33%, 66% e 90% do tempo decorrido. Cada revisão produz uma decisão: Manter, Escalar, Pivotar, Terminar ou Matar.",
+      "ownerCannotBeSupport": "A área responsável não pode ser também uma área de suporte",
       "closureTitle": "Encerramento de Sprint",
       "closureHeading": "Encerre o Sprint",
       "closureDesc": "O encerramento não é um relatório — é reconfiguração. Decida o que levar adiante, o que parar, e o que o próximo ciclo precisa.",

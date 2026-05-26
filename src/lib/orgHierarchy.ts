@@ -1,5 +1,41 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
+/** Walk `parent_org_id` until the root (no parent). Returns null if chain breaks. */
+export async function getOrgRootId(
+  supabase: SupabaseClient,
+  orgId: string
+): Promise<string | null> {
+  let currentId = orgId;
+  const seen = new Set<string>();
+  for (let i = 0; i < 32; i++) {
+    if (seen.has(currentId)) return null;
+    seen.add(currentId);
+    const { data } = await supabase
+      .from("organizations")
+      .select("id, parent_org_id")
+      .eq("id", currentId)
+      .maybeSingle();
+    const row = data as { id: string; parent_org_id: string | null } | null;
+    if (!row) return null;
+    if (!row.parent_org_id) return row.id;
+    currentId = row.parent_org_id;
+  }
+  return null;
+}
+
+/** Same L1 billing tree (shared root org). */
+export async function shareOrgRoot(
+  supabase: SupabaseClient,
+  orgIdA: string,
+  orgIdB: string
+): Promise<boolean> {
+  const [rootA, rootB] = await Promise.all([
+    getOrgRootId(supabase, orgIdA),
+    getOrgRootId(supabase, orgIdB),
+  ]);
+  return !!rootA && rootA === rootB;
+}
+
 /** True if `ancestorId` is a strict ancestor of `descendantId` in parent_org_id chain. */
 export async function isStrictAncestor(
   supabase: SupabaseClient,

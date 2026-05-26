@@ -16,7 +16,6 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { fetchSessionHomeClient } from "@/lib/fetchSessionHomeClient";
-import { sprintalAuthDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 function hardGo(path: string) {
   window.location.replace(path);
@@ -37,13 +36,6 @@ function AuthOAuthCallbackInner() {
       const oauthError = params.get("error");
       const oauthErrorDescription = params.get("error_description");
       const code = params.get("code");
-
-      sprintalAuthDebug("callback:enter", {
-        path: typeof window !== "undefined" ? window.location.pathname : "",
-        searchLen: q.length,
-        hasCode: !!code,
-        plan: plan ?? null,
-      });
 
       if (oauthError) {
         hardGo(
@@ -79,8 +71,6 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
-      sprintalAuthDebug("callback:session", { userId: sprintalShortId(session.user.id) });
-
       if (plan) {
         if (!cancelled) {
           hardGo(
@@ -111,17 +101,6 @@ function AuthOAuthCallbackInner() {
         if (!cancelled) hardGo("/");
         return;
       }
-
-      const target = !homePick.onboarding_complete
-        ? `/onboarding/${homePick.slug}`
-        : `/${homePick.slug}/dashboard`;
-      sprintalAuthDebug("callback:redirect", {
-        pickedSlug: homePick.slug,
-        pickedOrgId: sprintalShortId(homePick.orgId),
-        onboardingComplete: homePick.onboarding_complete,
-        target,
-        via: "session-home",
-      });
 
       if (!homePick.onboarding_complete) {
         if (!cancelled) hardGo(`/onboarding/${homePick.slug}`);

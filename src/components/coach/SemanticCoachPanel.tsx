@@ -112,6 +112,8 @@ export default function SemanticCoachPanel({
   const phaseTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const progressTimer = useRef<ReturnType<typeof setInterval> | null>(null);
   const lastPortfolioRunNonce = useRef(0);
+  const creditsConfirmedRef = useRef(false);
+  const [showCreditsConfirm, setShowCreditsConfirm] = useState(false);
   const portfolioBetIds = useMemo(
     () => safePortfolioBets.map((b) => b.id).sort().join("|"),
     [safePortfolioBets]
@@ -454,10 +456,55 @@ export default function SemanticCoachPanel({
       </div>
       <style>{`@keyframes coachPulse{0%{transform:scale(1);opacity:0.75}50%{transform:scale(1.14);opacity:1}100%{transform:scale(1);opacity:0.75}}`}</style>
 
-      {mode === "bet" && !autoRun && !loading && (
+      {mode === "bet" && !autoRun && !loading && showCreditsConfirm && (
+        <div
+          className="mb-3"
+          style={{
+            padding: "10px 12px",
+            borderRadius: "var(--rs)",
+            background: "var(--raised)",
+            border: "1px solid var(--border-mid)",
+          }}
+        >
+          <p style={{ margin: "0 0 10px", fontSize: "0.8125rem", color: "var(--t2)", lineHeight: 1.5 }}>
+            {t("creditsConfirmPrompt", { count: String(SEMANTIC_CREDIT_WEIGHT) })}
+          </p>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            <button
+              type="button"
+              className="btn-primary py-1.5 px-3 text-sm"
+              style={{ fontFamily: "var(--font-body)" }}
+              disabled={!bet}
+              onClick={() => {
+                creditsConfirmedRef.current = true;
+                setShowCreditsConfirm(false);
+                runFetch();
+              }}
+            >
+              {t("creditsConfirmBtn")}
+            </button>
+            <button
+              type="button"
+              className="btn-ghost py-1.5 px-3 text-sm"
+              style={{ fontFamily: "var(--font-body)" }}
+              onClick={() => setShowCreditsConfirm(false)}
+            >
+              {t("creditsCancelBtn")}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {mode === "bet" && !autoRun && !loading && !showCreditsConfirm && (
         <button
           type="button"
-          onClick={() => runFetch()}
+          onClick={() => {
+            if (creditsConfirmedRef.current) {
+              runFetch();
+              return;
+            }
+            setShowCreditsConfirm(true);
+          }}
           disabled={loading || !bet}
           className="btn-primary py-2 px-3 text-sm mb-3"
           style={{ fontFamily: "var(--font-body)" }}

@@ -7,8 +7,30 @@ import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
 import { useT } from "@/lib/i18n";
+import {
+  IconBrandS,
+  IconDashboard,
+  IconSprints,
+  IconBets,
+  IconBetsTable,
+  IconEvidence,
+  IconNewSprint,
+  IconNewBet,
+  IconSignal,
+  IconReview,
+  IconCloseSprint,
+  IconSettings,
+  IconBilling,
+  IconSignOut,
+} from "@/components/layout/SidebarIcons";
 
 const AREA_DOTS = ["#EC4899","#22C55E","#EAA012","#7C3AED","#2563EB","#0891B2","#F97316","#DC2626"];
+
+type NavItem = {
+  href: string;
+  label: string;
+  icon: React.ReactNode;
+};
 
 export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
   const pathname = usePathname();
@@ -32,23 +54,57 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
     return () => window.removeEventListener("resize", check);
   }, []);
 
-  const coreNav = [
-    { href:`${base}/dashboard`,  label:t("nav.dashboard"), dot:"var(--brand)",   icon:"◉" },
-    { href:`${base}/sprints`,    label:t("nav.sprints"), dot:"var(--active)",  icon:"⚡" },
-    { href:`${base}/bets/board`, label:t("nav.betsBoard"), dot:"var(--unclear)", icon:"⬡" },
-    { href:`${base}/bets/table`, label:t("nav.betsTable"), dot:"var(--t3)",      icon:"≡" },
-    { href:`${base}/evidence`,   label:t("nav.evidence"), dot:"var(--pivoted)", icon:"◎" },
+  const coreNav: NavItem[] = [
+    { href: `${base}/dashboard`, label: t("nav.dashboard"), icon: <IconDashboard /> },
+    { href: `${base}/sprints`, label: t("nav.sprints"), icon: <IconSprints /> },
+    { href: `${base}/bets/board`, label: t("nav.betsBoard"), icon: <IconBets /> },
+    { href: `${base}/bets/table`, label: t("nav.betsTable"), icon: <IconBetsTable /> },
+    { href: `${base}/evidence`, label: t("nav.evidence"), icon: <IconEvidence /> },
   ];
 
-  const actionNav = [
-    { href:`${base}/new/sprint`,  label:t("actions.newSprint"), show: perms.canCreateSprint },
-    { href:`${base}/new/bet`,     label:t("actions.newBet"), show: perms.canCreateBet },
-    { href:`${base}/new/signal`,  label:t("actions.signalCheck"), show: perms.canSignalCheck },
-    { href:`${base}/new/review`,  label:t("actions.strategicReview"), show: perms.canReview },
-    { href:`${base}/new/closure`, label:t("actions.closeSprint"), show: perms.canCloseSprint },
-  ].filter(item => item.show);
+  const actionNav: NavItem[] = [
+    { href: `${base}/new/sprint`, label: t("actions.newSprint"), icon: <IconNewSprint /> },
+    { href: `${base}/new/bet`, label: t("actions.newBet"), icon: <IconNewBet /> },
+    { href: `${base}/new/signal`, label: t("actions.signalCheck"), icon: <IconSignal /> },
+    { href: `${base}/new/review`, label: t("actions.strategicReview"), icon: <IconReview /> },
+    { href: `${base}/new/closure`, label: t("actions.closeSprint"), icon: <IconCloseSprint /> },
+  ].filter((item) => {
+    if (item.href.endsWith("/new/sprint")) return perms.canCreateSprint;
+    if (item.href.endsWith("/new/bet")) return perms.canCreateBet;
+    if (item.href.endsWith("/new/signal")) return perms.canSignalCheck;
+    if (item.href.endsWith("/new/review")) return perms.canReview;
+    if (item.href.endsWith("/new/closure")) return perms.canCloseSprint;
+    return true;
+  });
 
   const sidebarWidth = collapsed ? 52 : 224;
+
+  function renderCollapsedLink(item: NavItem) {
+    const active = pathname === item.href;
+    return (
+      <Link
+        key={item.href}
+        href={item.href}
+        title={item.label}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "10px 0",
+          margin: "1px 0",
+          borderRadius: "var(--rs)",
+          textDecoration: "none",
+          color: active ? "var(--brand)" : "var(--t2)",
+          background: active ? "var(--brand-bg)" : "transparent",
+          transition: "all 0.1s",
+        }}
+      >
+        <span style={{ display: "flex", color: active ? "var(--brand)" : "var(--t2)" }}>
+          {item.icon}
+        </span>
+      </Link>
+    );
+  }
 
   return (
     <aside style={{
@@ -59,11 +115,12 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
       transition: "width 0.2s ease, min-width 0.2s ease",
     }}>
 
-      {/* Brand */}
       <div style={{ padding: collapsed ? "14px 10px 12px" : "14px 16px 12px",
         borderBottom: "1px solid var(--border)",
         display: "flex", alignItems: "center", justifyContent: collapsed ? "center" : "space-between" }}>
-        {!collapsed && (
+        {collapsed ? (
+          <IconBrandS />
+        ) : (
           <div style={{ fontFamily:"var(--font-display)", fontWeight:800, fontSize:"1.25rem",
             color:"var(--brand)", letterSpacing:"-0.03em" }}>
             Sprintal
@@ -72,78 +129,71 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
         <button onClick={() => setCollapsed(c => !c)}
           style={{ background:"none", border:"none", cursor:"pointer",
             color:"var(--t3)", fontSize:"1rem", padding:2, lineHeight:1,
-            display:"flex", alignItems:"center", justifyContent:"center" }}
-          title={collapsed ? "Expand sidebar" : "Collapse sidebar"}>
+            display:"flex", alignItems:"center", justifyContent:"center",
+            marginLeft: collapsed ? 0 : undefined }}
+          title={collapsed ? t("sidebar.expand") : t("sidebar.collapse")}>
           {collapsed ? "→" : "←"}
         </button>
       </div>
 
-      {/* Nav */}
       <nav style={{ flex:1, padding:"8px 0", overflowY:"auto", overflowX:"hidden" }}>
 
-        {/* Core */}
         <div style={{ padding:"8px 0 4px" }}>
           {!collapsed && <div className="nav-group-label">{t("nav.core")}</div>}
-          {coreNav.map(item => {
-            const active = pathname === item.href;
-            return (
-              <Link key={item.href} href={item.href}
-                title={collapsed ? item.label : undefined}
-                style={{
-                  display:"flex", alignItems:"center",
-                  gap: collapsed ? 0 : 8,
-                  padding: collapsed ? "8px 0" : "7px 12px",
-                  margin: collapsed ? "1px 0" : "1px 6px",
-                  justifyContent: collapsed ? "center" : "flex-start",
-                  borderRadius:"var(--rs)", textDecoration:"none",
-                  fontSize:"0.875rem", fontFamily:"var(--font-body)",
-                  fontWeight: active ? 600 : 400,
-                  color: active ? "var(--brand)" : "var(--t2)",
-                  background: active ? "var(--brand-bg)" : "transparent",
-                  transition:"all 0.1s",
-                }}>
-                {collapsed
-                  ? <span style={{ width:6, height:6, borderRadius:"50%",
-                      background: active ? "var(--brand)" : item.dot, flexShrink:0 }}/>
-                  : <>
-                      <span style={{ width:6, height:6, borderRadius:"50%",
-                        background:item.dot, flexShrink:0 }}/>
-                      {item.label}
-                    </>
-                }
-              </Link>
-            );
-          })}
+          {collapsed
+            ? coreNav.map(renderCollapsedLink)
+            : coreNav.map(item => {
+                const active = pathname === item.href;
+                return (
+                  <Link key={item.href} href={item.href}
+                    style={{
+                      display:"flex", alignItems:"center", gap:8,
+                      padding:"7px 12px", margin:"1px 6px",
+                      borderRadius:"var(--rs)", textDecoration:"none",
+                      fontSize:"0.875rem", fontFamily:"var(--font-body)",
+                      fontWeight: active ? 600 : 400,
+                      color: active ? "var(--brand)" : "var(--t2)",
+                      background: active ? "var(--brand-bg)" : "transparent",
+                      transition:"all 0.1s",
+                    }}>
+                    <span style={{ display:"flex", color: active ? "var(--brand)" : "var(--t2)" }}>
+                      {item.icon}
+                    </span>
+                    {item.label}
+                  </Link>
+                );
+              })}
         </div>
 
-        {/* Actions */}
-        {!collapsed && (
+        {actionNav.length > 0 && (
           <div style={{ padding:"8px 0 4px" }}>
-            <div className="nav-group-label">{t("nav.actions")}</div>
-            {actionNav.map(item => {
-              const active = pathname === item.href;
-              return (
-                <Link key={item.href} href={item.href}
-                  style={{
-                    display:"flex", alignItems:"center", gap:8,
-                    padding:"7px 12px", margin:"1px 6px",
-                    borderRadius:"var(--rs)", textDecoration:"none",
-                    fontSize:"0.875rem", fontFamily:"var(--font-body)",
-                    fontWeight: active ? 600 : 400,
-                    color: active ? "var(--brand)" : "var(--t2)",
-                    background: active ? "var(--brand-bg)" : "transparent",
-                    transition:"all 0.1s",
-                  }}>
-                  <span style={{ color:"var(--brand)", fontSize:"1rem", fontWeight:700,
-                    lineHeight:1, width:6, textAlign:"center" }}>+</span>
-                  {item.label}
-                </Link>
-              );
-            })}
+            {!collapsed && <div className="nav-group-label">{t("nav.actions")}</div>}
+            {collapsed
+              ? actionNav.map(renderCollapsedLink)
+              : actionNav.map(item => {
+                  const active = pathname === item.href;
+                  return (
+                    <Link key={item.href} href={item.href}
+                      style={{
+                        display:"flex", alignItems:"center", gap:8,
+                        padding:"7px 12px", margin:"1px 6px",
+                        borderRadius:"var(--rs)", textDecoration:"none",
+                        fontSize:"0.875rem", fontFamily:"var(--font-body)",
+                        fontWeight: active ? 600 : 400,
+                        color: active ? "var(--brand)" : "var(--t2)",
+                        background: active ? "var(--brand-bg)" : "transparent",
+                        transition:"all 0.1s",
+                      }}>
+                      <span style={{ display:"flex", color: active ? "var(--brand)" : "var(--t2)" }}>
+                        {item.icon}
+                      </span>
+                      {item.label}
+                    </Link>
+                  );
+                })}
           </div>
         )}
 
-        {/* By Area */}
         {!collapsed && childOrgs.length > 0 && (
           <div style={{ padding:"8px 0 4px" }}>
             <div className="nav-group-label">{t("nav.byArea")}</div>
@@ -171,47 +221,55 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
         )}
       </nav>
 
-      {/* Footer */}
       <div style={{ padding: collapsed ? "12px 0" : "12px 16px",
         borderTop:"1px solid var(--border)",
-        display:"flex", flexDirection: collapsed ? "column" : "column",
+        display:"flex", flexDirection: "column",
         alignItems: collapsed ? "center" : "flex-start", gap:8 }}>
         {!collapsed ? (
           <>
             {!ancestorReadOnly && (
               <>
                 <Link href={`${base}/settings`}
-                  style={{ display:"block", fontSize:"0.8125rem", fontFamily:"var(--font-body)",
+                  style={{ display:"flex", alignItems:"center", gap:8, fontSize:"0.8125rem", fontFamily:"var(--font-body)",
                     color:"var(--t3)", textDecoration:"none" }}>
-                  ⚙ {t("nav.settings")}
+                  <IconSettings />
+                  {t("nav.settings")}
                 </Link>
                 <Link href={`${base}/billing`}
-                  style={{ display:"block", fontSize:"0.8125rem", fontFamily:"var(--font-body)",
+                  style={{ display:"flex", alignItems:"center", gap:8, fontSize:"0.8125rem", fontFamily:"var(--font-body)",
                     color:"var(--t3)", textDecoration:"none" }}>
-                  $ {t("nav.billing")}
+                  <IconBilling />
+                  {t("nav.billing")}
                 </Link>
               </>
             )}
             <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
-              style={{ fontSize:"0.8125rem", fontFamily:"var(--font-body)", color:"var(--t3)",
+              style={{ display:"flex", alignItems:"center", gap:8, fontSize:"0.8125rem", fontFamily:"var(--font-body)", color:"var(--t3)",
                 background:"none", border:"none", cursor:"pointer", padding:0 }}>
-              ↪ {t("nav.signOut")}
+              <IconSignOut />
+              {t("nav.signOut")}
             </button>
           </>
         ) : (
           <>
             {!ancestorReadOnly && (
               <>
-                <Link href={`${base}/settings`} title="Settings"
-                  style={{ color:"var(--t3)", textDecoration:"none", fontSize:"1rem" }}>{t("nav.settings")}</Link>
-                <Link href={`${base}/billing`} title="Billing"
-                  style={{ color:"var(--t3)", textDecoration:"none", fontSize:"1rem" }}>$</Link>
+                <Link href={`${base}/settings`} title={t("nav.settings")}
+                  style={{ color:"var(--t2)", textDecoration:"none", display:"flex" }}>
+                  <IconSettings />
+                </Link>
+                <Link href={`${base}/billing`} title={t("nav.billing")}
+                  style={{ color:"var(--t2)", textDecoration:"none", display:"flex" }}>
+                  <IconBilling />
+                </Link>
               </>
             )}
             <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
-              title="Sign out"
-              style={{ color:"var(--t3)", background:"none", border:"none", cursor:"pointer",
-                fontSize:"1rem", padding:0 }}>↪</button>
+              title={t("nav.signOut")}
+              style={{ color:"var(--t2)", background:"none", border:"none", cursor:"pointer",
+                padding:0, display:"flex" }}>
+              <IconSignOut />
+            </button>
           </>
         )}
       </div>

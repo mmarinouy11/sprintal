@@ -68,6 +68,7 @@ export default function NewBetPage() {
   // Pre-select first area
   const [error, setError] = useState("");
   const [alignment, setAlignment] = useState<string[]>([]);
+  const [ownerAlignmentConflict, setOwnerAlignmentConflict] = useState("");
   const [parentBetIds, setParentBetIds] = useState<string[]>([]);
   const [parentBets, setParentBets] = useState<Bet[]>([]);
   const [isEnabler, setIsEnabler] = useState(false);
@@ -86,6 +87,23 @@ export default function NewBetPage() {
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
+
+  function setOwnerArea(value: string) {
+    setForm((f) => ({ ...f, owner_area: value }));
+    setAlignment((prev) => prev.filter((a) => a !== value));
+    setOwnerAlignmentConflict("");
+  }
+
+  function toggleAlignmentArea(area: string) {
+    if (area === form.owner_area) {
+      setOwnerAlignmentConflict(t("ownerCannotBeSupport"));
+      return;
+    }
+    setOwnerAlignmentConflict("");
+    setAlignment((prev) =>
+      prev.includes(area) ? prev.filter((x) => x !== area) : [...prev, area]
+    );
+  }
 
   // Load all active bets from parent org
   useEffect(() => {
@@ -234,10 +252,18 @@ export default function NewBetPage() {
             </select>
           </Field>
           <Field label={t("ownerArea")} hint={t("fromThisLevel")}>
-            <select className="input" value={form.owner_area} onChange={set("owner_area")} required>
+            <select
+              className="input"
+              value={form.owner_area}
+              onChange={(e) => setOwnerArea(e.target.value)}
+              required
+            >
               <option value="">{t("selectArea")}</option>
-              <option value="">— Select —</option>
-              {areas.map(a => <option key={a}>{a}</option>)}
+              {areas.map((a) => (
+                <option key={a} value={a}>
+                  {a}
+                </option>
+              ))}
             </select>
           </Field>
         </FieldRow>
@@ -296,7 +322,7 @@ export default function NewBetPage() {
           <div style={{ display:"flex", flexWrap:"wrap", gap:8, marginTop:4 }}>
             {areas.map(a => (
               <button key={a} type="button"
-                onClick={() => setAlignment(prev => prev.includes(a) ? prev.filter(x=>x!==a) : [...prev, a])}
+                onClick={() => toggleAlignmentArea(a)}
                 style={{
                   padding:"4px 12px", borderRadius:"var(--rs)",
                   fontFamily:"var(--font-body)", fontSize:"0.8125rem", border:"1px solid",
@@ -309,17 +335,26 @@ export default function NewBetPage() {
               </button>
             ))}
           </div>
+          {ownerAlignmentConflict && (
+            <p className="t-mono text-xs mt-2" style={{ color: "var(--unclear)" }}>
+              {ownerAlignmentConflict}
+            </p>
+          )}
         </Field>
 
-        <FieldRow>
-          {[[t("revenue"),"revenue"],[t("margin"),"margin"],[t("importance"),"importance"]].map(([label,key]) => (
-            <Field key={key} label={label}>
-              <select className="input" value={form[key as keyof typeof form]} onChange={set(key)}>
-                <option value="High">{t("high")}</option><option value="Medium">{t("medium")}</option><option value="Low">{t("low")}</option>
-              </select>
-            </Field>
-          ))}
-        </FieldRow>
+        <div className="grid grid-cols-3 gap-3">
+          {[[t("revenue"), "revenue"], [t("margin"), "margin"], [t("importance"), "importance"]].map(
+            ([label, key]) => (
+              <Field key={key} label={label}>
+                <select className="input" value={form[key as keyof typeof form]} onChange={set(key)}>
+                  <option value="High">{t("high")}</option>
+                  <option value="Medium">{t("medium")}</option>
+                  <option value="Low">{t("low")}</option>
+                </select>
+              </Field>
+            )
+          )}
+        </div>
 
         {error && (
           <div style={{ padding:"10px 14px", borderRadius:"var(--rs)", marginBottom:8,

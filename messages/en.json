@@ -1,8 +1,13 @@
 {
+  "sidebar": {
+    "expand": "Expand sidebar",
+    "collapse": "Collapse sidebar"
+  },
   "nav": {
     "dashboard": "Executive Dashboard",
     "sprints": "Enterprise Sprints",
     "betsBoard": "Bets — Board",
+    "betsBoardEmptyColumn": "",
     "betsTable": "Bets — Table",
     "evidence": "Evidence Log",
     "settings": "Settings",
@@ -152,7 +157,10 @@
     "modelUsed": "Model",
     "creditsUsedCount": "{count} credits",
     "creditsRemaining": "{count} remaining",
-    "creditsLimitReached": "limit reached"
+    "creditsLimitReached": "limit reached",
+    "creditsConfirmPrompt": "✦ This analysis uses {count} credits.",
+    "creditsConfirmBtn": "Confirm — Analyze",
+    "creditsCancelBtn": "Cancel"
   },
   "trial": {
     "expired": "Your trial has ended",
@@ -388,7 +396,8 @@
       "pivotRuleDesc": "Direction changes. Generates a draft with updated hypothesis.",
       "doneRuleDesc": "Reached its natural conclusion.",
       "killRuleDesc": "No signal after sufficient time. Stop now, free the capacity.",
-      "reviewCadenceDesc": "3× per sprint. Signal Checks happen at the midpoint — they update signal strength but do not change bet status.",
+      "reviewCadenceDesc": "3× per sprint — at 33%, 66%, and 90% of elapsed time. Each review produces a decision: Keep, Scale, Pivot, Done, or Kill.",
+      "ownerCannotBeSupport": "The owner area cannot also be a support area",
       "closureTitle": "Sprint Closure",
       "closureHeading": "Close the Sprint",
       "closureDesc": "Closure is not reporting — it is reconfiguration. Decide what to carry forward, what to stop, and what the next cycle needs.",

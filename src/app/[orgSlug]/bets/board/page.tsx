@@ -71,21 +71,13 @@ export default function BetsBoardPage() {
                 </div>
 
                 {cb.length === 0 ? (
-                  <div style={{
-                    display: "flex", flexDirection: "column", alignItems: "center",
-                    justifyContent: "center", padding: "24px 8px", gap: 6,
-                  }}>
-                    <div style={{
-                      width: 24, height: 24, borderRadius: "50%",
-                      background: `${COLORS[col]}15`,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                    }}>
-                      <div style={{ width: 8, height: 8, borderRadius: "50%",
-                        background: `${COLORS[col]}40` }} />
-                    </div>
-                    <span style={{ fontFamily: "var(--font-body)", fontSize: "0.75rem",
-                      color: "var(--t3)" }}>None</span>
-                  </div>
+                  <div
+                    style={{
+                      minHeight: 48,
+                      padding: "24px 8px",
+                    }}
+                    aria-hidden
+                  />
                 ) : (
                   cb.map(b => (
                     <div key={b.id}
