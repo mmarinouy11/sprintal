@@ -526,6 +526,7 @@
     "strategicCol": "Estratégico",
     "formulationChecks": "Chequeos de formulación",
     "strategicAnalyses": "Análisis estratégicos",
+    "coachCreditEquivalence": "1 análisis estratégico = {weight} créditos",
     "creditsWeight": "(×{weight} = {count} créditos)",
     "rootBadge": "raíz",
     "starterPlan": "Starter"

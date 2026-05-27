@@ -541,8 +541,13 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <div className="t-label mb-2">{t("settings.coachCreditsUsedThisMonth")}</div>
           <UsageBar used={unifiedUsed} limit={limits.totalCredits} />
           <div className="mt-2" style={{ fontSize: "0.75rem", color: "var(--t2)" }}>
-            {t("settings.formulationChecks")}: {formulationUsed > 0 ? formulationUsed : "—"}{" "}
-            · {t("settings.strategicAnalyses")}: {semanticUsed > 0 ? semanticUsed : "—"}
+            {t("settings.formulationChecks")}: {formulationUsed > 0 ? formulationUsed : "—"}
+            {" · "}
+            {t("settings.strategicAnalyses")}: {semanticUsed > 0 ? semanticUsed : "—"}
+            {" · "}
+            <span style={{ color: "var(--t3)" }}>
+              ({t("settings.coachCreditEquivalence", { weight: String(SEMANTIC_CREDIT_WEIGHT) })})
+            </span>
           </div>
         </div>
       </div>

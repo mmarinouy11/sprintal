@@ -526,6 +526,7 @@
     "strategicCol": "Strategic",
     "formulationChecks": "Formulation checks",
     "strategicAnalyses": "Strategic analyses",
+    "coachCreditEquivalence": "1 strategic analysis = {weight} credits",
     "creditsWeight": "(×{weight} = {count} credits)",
     "rootBadge": "root",
     "starterPlan": "Starter"
