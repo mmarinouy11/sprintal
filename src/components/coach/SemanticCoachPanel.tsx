@@ -243,14 +243,26 @@ export default function SemanticCoachPanel({
         body: JSON.stringify(body),
       });
 
-      const data = (await res.json()) as {
+      const data = (await res.json().catch(() => null)) as
+        | {
         observation: string | null;
         sources?: Array<{ title: string; url?: string }>;
         limitReached?: boolean;
         insufficientContext?: boolean;
         modelUsed?: string | null;
         creditsRemaining?: number;
-      };
+      }
+        | null;
+
+      if (process.env.NODE_ENV !== "production") {
+        // eslint-disable-next-line no-console -- temporary diagnostics for regression
+        console.log("[SemanticCoachPanel] semantic response", { status: res.status, data });
+      }
+
+      if (!res.ok || !data) {
+        setError("fetch");
+        return;
+      }
 
       if (data.limitReached) {
         setLimitReached(true);

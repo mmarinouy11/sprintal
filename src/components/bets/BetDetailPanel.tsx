@@ -349,11 +349,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
               {bet.is_draft && <span className="ml-2 badge badge-pivoted" style={{fontSize:"0.6rem", verticalAlign:"middle"}}>DRAFT</span>}
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
-              <button
-                type="button"
-                onClick={() => setEditing(!editing)}
-                className={`btn-secondary${editing ? " btn-secondary--active" : ""}`}
-              >
+              <button type="button" onClick={() => setEditing(!editing)} className="btn-primary py-1.5 px-3 text-xs">
                 {editing ? t("viewMode") : t("edit")}
               </button>
               <button onClick={onClose}
@@ -481,7 +477,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
                 childBets.length > 0 ||
                 (bet.bet_type === "strategic" &&
                   parentBets.length === 0 &&
-                  (org?.cascade_level ?? 1) > 1)) && (
+                  (bet.org_id === org?.id ? (org?.cascade_level ?? 1) : 1) > 1)) && (
                 <Section label={t("cascade")}>
                   {/* Enabler badge */}
                   {bet.bet_type === "enabler" && (
@@ -520,7 +516,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
                   {/* Orphan warning */}
                   {bet.bet_type === "strategic" &&
                     parentBets.length === 0 &&
-                    (org?.cascade_level ?? 1) > 1 && (
+                    (bet.org_id === org?.id ? (org?.cascade_level ?? 1) : 1) > 1 && (
                     <div style={{ display:"flex", alignItems:"center", gap:8, padding:"8px 12px",
                       borderRadius:"var(--rs)", background:"rgba(234,160,18,0.06)",
                       border:"1px solid rgba(234,160,18,0.2)", marginBottom:12 }}>

@@ -1,6 +1,5 @@
 "use client";
-import { useMemo, useState } from "react";
-import { useEffect } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useStore } from "@/lib/store";
 import MetricsBar from "@/components/dashboard/MetricsBar";
 import PortfolioDonut from "@/components/dashboard/PortfolioDonut";
@@ -19,6 +18,7 @@ import { COACH_LIMITS, type Plan } from "@/types";
 import { useParams } from "next/navigation";
 import { formatPlanName } from "@/lib/billing";
 import { orgLoadDebug } from "@/lib/debugOrgLoad";
+import { SEMANTIC_CREDIT_WEIGHT } from "@/types";
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -39,6 +39,8 @@ export default function DashboardPage() {
   const tCoach = useT("coach");
   const [portfolioSlideOpen, setPortfolioSlideOpen] = useState(false);
   const [portfolioRunNonce, setPortfolioRunNonce] = useState(0);
+  const portfolioCreditsConfirmedRef = useRef(false);
+  const [showPortfolioCreditsConfirm, setShowPortfolioCreditsConfirm] = useState(false);
   const [showUpgradeBanner, setShowUpgradeBanner] = useState(false);
   const [riskFilter, setRiskFilter] = useState(false);
   const activeSprint = sprints.find((s) => s.status === "Active");
@@ -146,20 +148,65 @@ export default function DashboardPage() {
       <Section label={t("overdueSignal")}><PendingUpdates type="signal" /></Section>
       {showPortfolioRow && org && (
         <Section label={tCoach("portfolioAnalysis")}>
-          <button
-            type="button"
-            disabled={portfolioOpenDisabled}
-            title={portfolioOpenTitle}
-            onClick={() => {
-              scrollViewportToTop();
-              setPortfolioSlideOpen(true);
-              setPortfolioRunNonce((n) => n + 1);
-            }}
-            className="btn-primary py-2 px-3 text-sm"
-            style={{ fontFamily: "var(--font-body)" }}
-          >
-            {tCoach("analyzePortfolioBtn")}
-          </button>
+          {showPortfolioCreditsConfirm ? (
+            <div
+              style={{
+                padding: "10px 12px",
+                borderRadius: "var(--rs)",
+                background: "var(--raised)",
+                border: "1px solid var(--border-mid)",
+              }}
+            >
+              <p style={{ margin: "0 0 10px", fontSize: "0.8125rem", color: "var(--t2)", lineHeight: 1.5 }}>
+                {tCoach("creditsConfirmPrompt", { count: String(SEMANTIC_CREDIT_WEIGHT) })}
+              </p>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                <button
+                  type="button"
+                  className="btn-primary py-1.5 px-3 text-sm"
+                  style={{ fontFamily: "var(--font-body)" }}
+                  disabled={portfolioOpenDisabled}
+                  title={portfolioOpenTitle}
+                  onClick={() => {
+                    portfolioCreditsConfirmedRef.current = true;
+                    setShowPortfolioCreditsConfirm(false);
+                    scrollViewportToTop();
+                    setPortfolioSlideOpen(true);
+                    setPortfolioRunNonce((n) => n + 1);
+                  }}
+                >
+                  {tCoach("creditsConfirmBtn")}
+                </button>
+                <button
+                  type="button"
+                  className="btn-ghost py-1.5 px-3 text-sm"
+                  style={{ fontFamily: "var(--font-body)" }}
+                  onClick={() => setShowPortfolioCreditsConfirm(false)}
+                >
+                  {tCoach("creditsCancelBtn")}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              disabled={portfolioOpenDisabled}
+              title={portfolioOpenTitle}
+              onClick={() => {
+                if (portfolioCreditsConfirmedRef.current) {
+                  scrollViewportToTop();
+                  setPortfolioSlideOpen(true);
+                  setPortfolioRunNonce((n) => n + 1);
+                  return;
+                }
+                setShowPortfolioCreditsConfirm(true);
+              }}
+              className="btn-primary py-2 px-3 text-sm"
+              style={{ fontFamily: "var(--font-body)" }}
+            >
+              {tCoach("analyzePortfolioBtn")}
+            </button>
+          )}
         </Section>
       )}
       {portfolioSlideOpen && org && semanticPlanOk && portfolioEligible && (

@@ -84,8 +84,11 @@ export default function ActiveBetsTable({ riskFilter = false, onClearRiskFilter 
                 </td></tr>
               : displayAb.map(b => {
                   const incomplete = !b.kill_criteria || !b.scale_trigger || !b.hypothesis;
-                  const isOrphan = b.bet_type !== "enabler" &&
-                    (org?.cascade_level ?? 1) > 1 &&
+                  // Orphan warning should depend on the bet's org level, not any other loaded org.
+                  const betOrgLevel = b.org_id === org?.id ? (org?.cascade_level ?? 1) : 1;
+                  const isOrphan =
+                    b.bet_type !== "enabler" &&
+                    betOrgLevel > 1 &&
                     !betAlignments.some(a => a.child_bet_id === b.id);
                   const isEnabler = b.bet_type === "enabler";
                   return (

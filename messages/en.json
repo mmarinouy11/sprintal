@@ -245,6 +245,7 @@
     "noSprintsDesc": "A sprint defines your strategic focus for a cycle. Create your first sprint to start tracking bets and progress."
   },
   "form": {
+    "ownerCannotBeSupport": "The owner area cannot also be a support area",
     "newSprint": "New Sprint",
     "sprintName": "Sprint Name",
     "startDate": "Start Date",
@@ -397,7 +398,6 @@
       "doneRuleDesc": "Reached its natural conclusion.",
       "killRuleDesc": "No signal after sufficient time. Stop now, free the capacity.",
       "reviewCadenceDesc": "3× per sprint — at 33%, 66%, and 90% of elapsed time. Each review produces a decision: Keep, Scale, Pivot, Done, or Kill.",
-      "ownerCannotBeSupport": "The owner area cannot also be a support area",
       "closureTitle": "Sprint Closure",
       "closureHeading": "Close the Sprint",
       "closureDesc": "Closure is not reporting — it is reconfiguration. Decide what to carry forward, what to stop, and what the next cycle needs.",

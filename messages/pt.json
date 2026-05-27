@@ -245,6 +245,7 @@
     "noSprintsDesc": "Um sprint define o foco estratégico de um ciclo. Crie seu primeiro sprint para começar a acompanhar bets e progresso."
   },
   "form": {
+    "ownerCannotBeSupport": "A área responsável não pode ser também uma área de suporte",
     "newSprint": "Novo Sprint",
     "sprintName": "Nome do Sprint",
     "startDate": "Data de início",
@@ -397,7 +398,6 @@
       "doneRuleDesc": "Chegou à sua conclusão natural.",
       "killRuleDesc": "Sem sinal após tempo suficiente. Parar agora, liberar capacidade.",
       "reviewCadenceDesc": "3× por sprint — aos 33%, 66% e 90% do tempo decorrido. Cada revisão produz uma decisão: Manter, Escalar, Pivotar, Terminar ou Matar.",
-      "ownerCannotBeSupport": "A área responsável não pode ser também uma área de suporte",
       "closureTitle": "Encerramento de Sprint",
       "closureHeading": "Encerre o Sprint",
       "closureDesc": "O encerramento não é um relatório — é reconfiguração. Decida o que levar adiante, o que parar, e o que o próximo ciclo precisa.",
