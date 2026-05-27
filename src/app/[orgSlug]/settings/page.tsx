@@ -490,7 +490,8 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
   const semanticAvailable = limits.semantic > 0 || limits.semantic === -1;
   const semanticUsed = usage?.semantic_calls || 0;
   const unifiedUsed = coachUnifiedCreditsUsed(usage);
-  const strategicCreditsDisplay = semanticUsed * SEMANTIC_CREDIT_WEIGHT;
+  const totalWeighted = usage?.syntactic_calls || 0;
+  const formulationUsed = Math.max(0, totalWeighted - semanticUsed * SEMANTIC_CREDIT_WEIGHT);
 
   function Toggle({ enabled, onClick, disabled }: { enabled: boolean; onClick: () => void; disabled?: boolean }) {
     return (
@@ -540,11 +541,8 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <div className="t-label mb-2">{t("settings.coachCreditsUsedThisMonth")}</div>
           <UsageBar used={unifiedUsed} limit={limits.totalCredits} />
           <div className="mt-2" style={{ fontSize: "0.75rem", color: "var(--t2)" }}>
-            {t("settings.strategicAnalyses")}: {semanticUsed}{" "}
-            {t("settings.creditsWeight", {
-              weight: String(SEMANTIC_CREDIT_WEIGHT),
-              count: String(strategicCreditsDisplay),
-            })}
+            {t("settings.formulationChecks")}: {formulationUsed > 0 ? formulationUsed : "—"}{" "}
+            · {t("settings.strategicAnalyses")}: {semanticUsed > 0 ? semanticUsed : "—"}
           </div>
         </div>
       </div>
@@ -610,8 +608,12 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
           <tbody>
             {allOrgs.map((a, i) => {
               const u = a.isRoot ? usage : areaUsage[a.id];
-              const areaUnifiedUsed = coachUnifiedCreditsUsed(u ?? null);
+              const areaWeightedTotal = u?.syntactic_calls || 0;
               const areaSemanticUsed = u?.semantic_calls || 0;
+              const areaFormulationUsed = Math.max(
+                0,
+                areaWeightedTotal - areaSemanticUsed * SEMANTIC_CREDIT_WEIGHT
+              );
               return (
                 <tr key={a.id}
                   style={{ borderBottom: i < allOrgs.length - 1 ? "1px solid var(--border)" : "none", background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)" }}>
@@ -638,19 +640,12 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
                     </div>
                   </td>
                   <td className="px-5 py-3" style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center", verticalAlign: "middle" }}>
-                    {areaUnifiedUsed > 0 ? areaUnifiedUsed : "—"}
+                    {areaFormulationUsed > 0 ? areaFormulationUsed : "—"}
                   </td>
                   <td className="px-5 py-3" style={{ verticalAlign: "middle" }}>
-                    {areaSemanticUsed > 0 ? (
-                      <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
-                        <span style={{ color: "var(--text)" }}>{areaSemanticUsed}</span>
-                        <span style={{ color: "var(--t3)", marginLeft: 6 }}>
-                          ({areaSemanticUsed * SEMANTIC_CREDIT_WEIGHT} cr)
-                        </span>
-                      </div>
-                    ) : (
-                      <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>—</div>
-                    )}
+                    <div style={{ fontSize: "0.8125rem", color: "var(--t2)", textAlign: "center" }}>
+                      {areaSemanticUsed > 0 ? areaSemanticUsed : "—"}
+                    </div>
                   </td>
                 </tr>
               );
