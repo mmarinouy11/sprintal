@@ -13,6 +13,7 @@ import {
   type SemanticPortfolioContext,
   type SemanticReviewContext,
 } from "@/lib/coach/semanticPrompts";
+import { AI_MODELS } from "@/lib/ai-models";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { apiError, apiOk } from "@/lib/api-response";
 
@@ -288,11 +289,7 @@ export async function POST(req: NextRequest) {
       }
     };
 
-    const models = [
-      "claude-sonnet-4-5-20251022",
-      "claude-sonnet-4-5",
-      "claude-haiku-4-5-20251001",
-    ] as const;
+    const models = [AI_MODELS.semantic, AI_MODELS.semanticFallback] as const;
     let modelUsed: (typeof models)[number] | null = null;
     let text = "";
     let usageData: AnthropicUsageSnapshot | null = null;

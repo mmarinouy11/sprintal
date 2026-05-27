@@ -7,6 +7,7 @@ import { useT } from "@/lib/i18n";
 import type { Bet, Sprint } from "@/types";
 import { COACH_LIMITS, SEMANTIC_CREDIT_WEIGHT } from "@/types";
 import type { Plan } from "@/types";
+import { AI_MODELS } from "@/lib/ai-models";
 import { useStore } from "@/lib/store";
 
 type Mode = "bet" | "portfolio" | "review";
@@ -359,9 +360,9 @@ export default function SemanticCoachPanel({
   const statusLabel =
     phase === 0 ? t("identifyingContext") : phase === 1 ? t("searchingTrends") : t("generatingAnalysis");
   const modelLabel =
-    modelUsed === "claude-sonnet-4-5-20251022" || modelUsed === "claude-sonnet-4-5"
+    modelUsed === AI_MODELS.semantic
       ? "Claude Sonnet 4.5"
-      : modelUsed === "claude-haiku-4-5-20251001"
+      : modelUsed === AI_MODELS.semanticFallback || modelUsed === AI_MODELS.formulation
         ? "Claude Haiku 4.5"
         : modelUsed;
   const creditsLabel = t("creditsUsedCount", {

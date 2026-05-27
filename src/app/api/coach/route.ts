@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { AI_MODELS } from "@/lib/ai-models";
 import { FIELD_PROMPTS, SPRINT_DURATION_CONTEXT } from "@/lib/coach/prompts";
 import { COACH_LIMITS } from "@/types";
 import type { CoachField } from "@/lib/coach/useSyntacticCoach";
@@ -148,7 +149,7 @@ export async function POST(req: NextRequest) {
           "anthropic-version": "2023-06-01",
         },
         body: JSON.stringify({
-          model: "claude-haiku-4-5-20251001",
+          model: AI_MODELS.formulation,
           max_tokens: 150,
           system: systemPrompt,
           messages: [{ role: "user", content: value.trim() }],
@@ -176,7 +177,7 @@ export async function POST(req: NextRequest) {
         JSON.stringify({
           coach: "formulation",
           field,
-          model: "claude-haiku-4-5-20251001",
+          model: AI_MODELS.formulation,
           input_tokens: usage?.input_tokens ?? null,
           output_tokens: usage?.output_tokens ?? null,
           org_id: orgId,

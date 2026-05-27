@@ -1,7 +1,46 @@
 import { createClient } from "@supabase/supabase-js";
 import { NextRequest } from "next/server";
+import { AI_MODELS } from "@/lib/ai-models";
 import { apiError, apiOk } from "@/lib/api-response";
 import { addDays, parseISO } from "date-fns";
+
+async function checkModelHealth(): Promise<{ ok: boolean; failedModels: string[] }> {
+  const failedModels: string[] = [];
+  const modelsToCheck = [AI_MODELS.formulation, AI_MODELS.semantic];
+  const apiKey = process.env.ANTHROPIC_API_KEY?.trim();
+  if (!apiKey) {
+    console.error("cron health check — ANTHROPIC_API_KEY not configured");
+    return { ok: true, failedModels: [] };
+  }
+
+  for (const model of modelsToCheck) {
+    try {
+      const res = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body: JSON.stringify({
+          model,
+          max_tokens: 1,
+          messages: [{ role: "user", content: "ping" }],
+        }),
+        signal: AbortSignal.timeout(5000),
+      });
+
+      if (res.status === 404) {
+        failedModels.push(model);
+        console.error(`cron health check — model 404: ${model}`);
+      }
+    } catch (e) {
+      console.error(`cron health check — model timeout: ${model}`, e);
+    }
+  }
+
+  return { ok: failedModels.length === 0, failedModels };
+}
 
 export const dynamic = "force-dynamic";
 type Priority = "urgent" | "important" | "info";
@@ -218,6 +257,12 @@ export async function GET(req: NextRequest) {
       frontier = next;
     }
     return Array.from(all);
+  }
+
+  // Run model health check — log warnings but don't block cron
+  const health = await checkModelHealth();
+  if (!health.ok) {
+    console.error("cron — AI model health check FAILED:", health.failedModels);
   }
 
   const nowIso = new Date().toISOString();
