@@ -106,7 +106,7 @@ export default function ActiveBetsTable({ riskFilter = false, onClearRiskFilter 
                             <span title="Enabler bet" style={{ fontSize:"0.75rem" }}>⚙</span>
                           )}
                           {!isEnabler && isOrphan && (
-                            <span title="Orphan — not aligned to parent bet"
+                            <span data-testid="orphan-badge" title="Orphan — not aligned to parent bet"
                               style={{ padding:"1px 6px", borderRadius:3, fontSize:"0.6875rem",
                                 fontFamily:"var(--font-body)", fontWeight:500,
                                 background:"rgba(234,160,18,0.1)", color:"var(--unclear)",

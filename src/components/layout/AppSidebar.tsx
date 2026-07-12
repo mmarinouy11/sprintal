@@ -243,7 +243,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
                 </Link>
               </>
             )}
-            <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
+            <button data-testid="logout-btn" onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
               style={{ display:"flex", alignItems:"center", gap:8, fontSize:"0.8125rem", fontFamily:"var(--font-body)", color:"var(--t3)",
                 background:"none", border:"none", cursor:"pointer", padding:0 }}>
               <IconSignOut />
@@ -264,7 +264,7 @@ export default function AppSidebar({ orgSlug }: { orgSlug: string }) {
                 </Link>
               </>
             )}
-            <button onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
+            <button data-testid="logout-btn" onClick={async()=>{ await supabase.auth.signOut(); reset(); router.push("/auth/login"); }}
               title={t("nav.signOut")}
               style={{ color:"var(--t2)", background:"none", border:"none", cursor:"pointer",
                 padding:0, display:"flex" }}>

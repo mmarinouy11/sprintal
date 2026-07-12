@@ -135,6 +135,8 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
         </div>
         <div style={{ position: "relative" }}>
         <button
+          type="button"
+          data-testid="org-switcher"
           onClick={hasNav ? openDropdown : undefined}
           style={{
             display: "flex", alignItems: "center", gap: 8,

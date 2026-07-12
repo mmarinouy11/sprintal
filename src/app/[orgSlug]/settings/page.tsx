@@ -108,7 +108,11 @@ export default function SettingsPage() {
       {/* Tabs */}
       <div className="flex gap-1 mb-8" style={{ borderBottom: "1px solid var(--border)" }}>
         {tabs.map(tab_ => (
-          <button key={tab_.id} onClick={() => setTab(tab_.id)}
+          <button
+            key={tab_.id}
+            type="button"
+            data-testid={`settings-${tab_.id}-tab`}
+            onClick={() => setTab(tab_.id)}
             style={{
               padding: "8px 16px", fontSize: "0.875rem", fontFamily: "var(--font-body)",
               background: "none", border: "none", cursor: "pointer",

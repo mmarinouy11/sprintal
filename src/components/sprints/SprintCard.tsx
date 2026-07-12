@@ -29,7 +29,7 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
   };
 
   if (!active) return (
-    <div style={wrap}>
+    <div data-testid="sprint-card" style={wrap}>
       <p style={{ fontFamily:"var(--font-body)", fontSize:"0.9375rem", color:"var(--t3)" }}>{t("noActiveSprint")}</p>
     </div>
   );
@@ -51,7 +51,7 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
     : "";
 
   return (
-    <div style={wrap}>
+    <div data-testid="sprint-card" style={wrap}>
       {/* Top */}
       <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
         <div>

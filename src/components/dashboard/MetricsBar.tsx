@@ -55,7 +55,7 @@ export default function MetricsBar({ onRiskClick, riskFilterActive }: MetricsBar
   const ab = bets.filter(b => b.sprint_id === active?.id && b.status === "Active");
 
   return (
-    <div style={{
+    <div data-testid="metrics-bar" style={{
       display:"grid", gridTemplateColumns:"repeat(4,1fr)",
       border:"1px solid var(--border)", borderLeft:"3px solid var(--brand)",
       borderRadius:"var(--r)", background:"var(--surface)", overflow:"hidden",

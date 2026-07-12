@@ -1,5 +1,9 @@
 .env.local
 .env
+.env.test
+tests/e2e/.auth/
+playwright-report/
+test-results/
 node_modules/
 .next/
 out/

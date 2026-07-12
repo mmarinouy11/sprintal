@@ -330,7 +330,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
   return (
     <>
       <div className="fixed inset-0 z-40" style={{background:"rgba(10,10,8,0.4)"}} onClick={onClose} />
-      <div className="fixed right-0 top-0 bottom-0 z-50 flex flex-col overflow-hidden"
+      <div data-testid="bet-detail-panel" className="fixed right-0 top-0 bottom-0 z-50 flex flex-col overflow-hidden"
         style={{
           width:520, maxWidth:"92vw",
           background:"var(--bg)",

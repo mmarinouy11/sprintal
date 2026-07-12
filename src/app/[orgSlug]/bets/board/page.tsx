@@ -81,6 +81,7 @@ export default function BetsBoardPage() {
                 ) : (
                   cb.map(b => (
                     <div key={b.id}
+                      data-testid="bet-card"
                       onClick={() => setSelectedBet(b)}
                       className="rounded p-3 mb-2 cursor-pointer card-hover"
                       style={{

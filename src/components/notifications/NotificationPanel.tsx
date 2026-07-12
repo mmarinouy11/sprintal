@@ -102,6 +102,7 @@ export default function NotificationPanel({
   return (
     <div
       ref={panelRef}
+      data-testid="notification-panel"
       style={{
         position: "absolute",
         top: "calc(100% + 8px)",
