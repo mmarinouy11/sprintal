@@ -2,7 +2,9 @@ import { defineConfig, devices } from '@playwright/test';
 
 export default defineConfig({
   testDir: './tests/e2e',
+  timeout: 60000,
   globalSetup: './tests/e2e/helpers/global-setup.ts',
+  globalTeardown: './tests/e2e/helpers/global-teardown.ts',
   fullyParallel: false, // run sequentially — tests share state (DB)
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,

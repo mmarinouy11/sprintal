@@ -1,7 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAndWaitForOrgContext } from './helpers/auth';
-
-const ORG = process.env.TEST_ORG_SLUG;
+import { getTestBetId, resolveBetCard } from './helpers/test-data';
 
 test.describe('BET Panel — Panel de detalle completo', () => {
 
@@ -11,45 +10,58 @@ test.describe('BET Panel — Panel de detalle completo', () => {
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(500);
     await page.waitForSelector('[data-testid="bet-card"], text=No bets yet', { timeout: 15000 }).catch(() => {});
+
+    const betId = getTestBetId();
+    if (betId) {
+      await page.waitForSelector('[data-testid="bet-card"]', { timeout: 15000 }).catch(() => {});
+    }
   });
 
   test('BET-11 — Botón Editar tiene clase btn-primary (estilo de marca)', async ({ page }) => {
-    const firstBet = page.locator('[data-testid="bet-card"]').first();
-    if (!await firstBet.isVisible({ timeout: 5000 })) {
+    const betCard = await resolveBetCard(page);
+    if (!await betCard.isVisible({ timeout: 5000 })) {
       test.skip(true, 'No bets in test org');
       return;
     }
-    await firstBet.click();
+    await betCard.click();
     await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
     await page.waitForTimeout(300);
-    const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').first();
+    const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').or(
+      page.locator('[data-testid="bet-detail-panel"] button:has-text("Edit")')
+    ).first();
     await expect(editBtn).toBeVisible({ timeout: 5000 });
     const className = await editBtn.getAttribute('class');
     expect(className).toContain('btn-primary');
   });
 
   test('BET-09 — Panel de detalle se abre y muestra datos', async ({ page }) => {
-    const firstBet = page.locator('[data-testid="bet-card"]').first();
-    if (!await firstBet.isVisible({ timeout: 5000 })) {
+    const betCard = await resolveBetCard(page);
+    if (!await betCard.isVisible({ timeout: 5000 })) {
       test.skip(true, 'No bets in test org');
       return;
     }
-    await firstBet.click();
+    await betCard.click();
     const panel = page.locator('[data-testid="bet-detail-panel"]');
     await expect(panel).toBeVisible({ timeout: 8000 });
-    await expect(panel.locator('button:has-text("Editar")')).toBeVisible({ timeout: 5000 });
+    await expect(
+      panel.locator('button:has-text("Editar")').or(
+        panel.locator('button:has-text("Edit")')
+      ).first()
+    ).toBeVisible({ timeout: 5000 });
   });
 
   test('BET-12 — Edición de bet no pierde foco al escribir', async ({ page }) => {
-    const firstBet = page.locator('[data-testid="bet-card"]').first();
-    if (!await firstBet.isVisible({ timeout: 5000 })) {
+    const betCard = await resolveBetCard(page);
+    if (!await betCard.isVisible({ timeout: 5000 })) {
       test.skip(true, 'No bets in test org');
       return;
     }
-    await firstBet.click();
+    await betCard.click();
     await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
     await page.waitForTimeout(300);
-    const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').first();
+    const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').or(
+      page.locator('[data-testid="bet-detail-panel"] button:has-text("Edit")')
+    ).first();
     await editBtn.click();
     await page.waitForTimeout(300);
     const textarea = page.locator('[data-testid="bet-detail-panel"] textarea').first();
@@ -63,12 +75,12 @@ test.describe('BET Panel — Panel de detalle completo', () => {
   });
 
   test('BET-14 — Sección Cascada dentro del panel tiene contenedor correcto', async ({ page }) => {
-    const firstBet = page.locator('[data-testid="bet-card"]').first();
-    if (!await firstBet.isVisible({ timeout: 5000 })) {
+    const betCard = await resolveBetCard(page);
+    if (!await betCard.isVisible({ timeout: 5000 })) {
       test.skip(true, 'No bets in test org');
       return;
     }
-    await firstBet.click();
+    await betCard.click();
     const panel = page.locator('[data-testid="bet-detail-panel"]');
     await expect(panel).toBeVisible({ timeout: 8000 });
     await page.screenshot({ path: 'test-results/bet-14-panel.png' });

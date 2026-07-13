@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAndWaitForOrgContext, TEST_USER } from './helpers/auth';
+import { resolveBetCard } from './helpers/test-data';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
@@ -64,12 +65,12 @@ test.describe('CASCADE — Alineación en cascada', () => {
     });
 
     test('CASCADE — Panel de bet muestra sección de alineación', async ({ page }) => {
-      const firstBet = page.locator('[data-testid="bet-card"]').first();
-      if (!await firstBet.isVisible({ timeout: 5000 })) {
+      const betCard = await resolveBetCard(page);
+      if (!await betCard.isVisible({ timeout: 5000 })) {
         test.skip(true, 'No bets in test org');
         return;
       }
-      await firstBet.click();
+      await betCard.click();
       await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
       await page.screenshot({ path: 'test-results/cascade-bet-panel.png' });
       await expect(page.locator('text=Something went wrong')).not.toBeVisible();
