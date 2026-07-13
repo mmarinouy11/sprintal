@@ -13,7 +13,7 @@ export default function NewSubOrgPage() {
   const tg = useT();
   const router = useRouter();
   const params = useParams();
-  const { org, setChildOrgs, childOrgs, rootPlan } = useStore();
+  const { org, rootPlan } = useStore();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [upgradeGate, setUpgradeGate] = useState<"subareas" | "depth" | null>(null);
@@ -98,9 +98,9 @@ export default function NewSubOrgPage() {
         setSaving(false); return;
       }
 
-      setChildOrgs([...childOrgs, data.org]);
-      // Stay on parent — sub-org is a sub-unit, not where you operate from
-      router.push(`/${params.orgSlug}/dashboard`);
+      useStore.getState().setChildOrgs([]);
+      const orgSlug = typeof params.orgSlug === "string" ? params.orgSlug : org?.slug;
+      router.push(`/${orgSlug}/dashboard?refresh=true`);
     } catch {
       setError(t("connectionError"));
       setSaving(false);

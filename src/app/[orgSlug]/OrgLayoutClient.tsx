@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import {
@@ -45,6 +45,11 @@ async function fetchAncestorBundle(accessToken: string, orgSlug: string, fromSlu
 function readFromQueryParam(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("from");
+}
+
+function readRefreshParam(): boolean {
+  if (typeof window === "undefined") return false;
+  return new URLSearchParams(window.location.search).get("refresh") === "true";
 }
 
 async function loadOrgBundle(accessToken: string, orgSlug: string, fromSlug: string | null) {
@@ -97,6 +102,7 @@ export default function OrgLayoutClient({
     ancestorReadOnly, memberContextSlug, memberContextName,
   } = useStore();
   const router = useRouter();
+  const pathname = usePathname();
   const t = useT();
   /** Slug changes → full-screen load; same org, new path (p. ej. vuelta desde /pricing) → refresh sin bloquear UI */
   const lastLoadedSlugRef = useRef<string | null>(null);
@@ -107,6 +113,7 @@ export default function OrgLayoutClient({
     const gen = ++loadGenerationRef.current;
     async function load() {
       const fromParam = readFromQueryParam();
+      const refreshRequested = readRefreshParam();
       const slugChanged =
         lastLoadedSlugRef.current !== null && lastLoadedSlugRef.current !== params.orgSlug;
       const isInitial = lastLoadedSlugRef.current === null;
@@ -116,7 +123,9 @@ export default function OrgLayoutClient({
       orgLoadDebug("layout:load start", {
         gen,
         paramsSlug: params.orgSlug,
+        pathname,
         fromParam,
+        refreshRequested,
         slugChanged,
         isInitial,
         showedFullScreenLoad,
@@ -367,6 +376,13 @@ export default function OrgLayoutClient({
       }
       orgLoadDebug("layout:setLoading false (success)", { gen, orgSlug: params.orgSlug });
       setLoading(false);
+
+      if (refreshRequested && typeof window !== "undefined") {
+        const url = new URL(window.location.href);
+        url.searchParams.delete("refresh");
+        const next = `${url.pathname}${url.search}${url.hash}`;
+        router.replace(next, { scroll: false });
+      }
     }
     void load().catch((err: unknown) => {
       orgLoadDebug("layout:load threw", {
@@ -376,7 +392,7 @@ export default function OrgLayoutClient({
       });
       if (gen === loadGenerationRef.current) setLoading(false);
     });
-  }, [params.orgSlug, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
+  }, [params.orgSlug, pathname, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -430,7 +446,7 @@ export default function OrgLayoutClient({
       window.removeEventListener("focus", scheduleRefresh);
       document.removeEventListener("visibilitychange", scheduleRefresh);
     };
-  }, [params.orgSlug, setOrg, setRootPlan, setCurrentRole, setChildOrgs, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
+  }, [params.orgSlug, pathname, setOrg, setRootPlan, setCurrentRole, setChildOrgs, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>
