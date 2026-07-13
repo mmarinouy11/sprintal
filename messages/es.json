@@ -529,18 +529,7 @@
     "coachCreditEquivalence": "1 análisis estratégico = {weight} créditos",
     "creditsWeight": "(×{weight} = {count} créditos)",
     "rootBadge": "raíz",
-    "starterPlan": "Starter",
-    "areas": {
-      "title": "Áreas",
-      "listTitle": "Áreas de {org}",
-      "empty": "No hay áreas creadas aún.",
-      "createTitle": "Nueva área",
-      "namePlaceholder": "Nombre del área",
-      "createBtn": "Crear área",
-      "successMsg": "Área creada correctamente.",
-      "errorPlan": "Actualizá tu plan para crear sub-áreas.",
-      "nameMinError": "El nombre debe tener al menos 2 caracteres."
-    }
+    "starterPlan": "Starter"
   },
   "onboarding": {
     "areasGuide": "Las áreas representan los equipos, funciones o unidades de negocio que correrán sus propios sprints estratégicos. Ejemplos: Marketing, Producto, Operaciones, Ventas. Podés agregar más después desde Configuración.",

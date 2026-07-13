@@ -1,16 +1,14 @@
 "use client";
 import { useState, useEffect, useMemo } from "react";
-import { useRouter, useParams } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { useT, useLocale, setLocale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { writePendingPrimary } from "@/lib/orgPendingPrimary";
-import UpgradeModal from "@/components/ui/UpgradeModal";
 import { COACH_LIMITS, SEMANTIC_CREDIT_WEIGHT, coachUnifiedCreditsUsed } from "@/types";
-import type { Plan, OrgRole, OrgMember, CoachUsage, Organization } from "@/types";
+import type { Plan, OrgRole, OrgMember, CoachUsage } from "@/types";
 
 // ── Tab navigation ───────────────────────────────────────────
-type Tab = "org" | "members" | "areas" | "coach" | "language";
+type Tab = "org" | "members" | "coach" | "language";
 
 // ── Plan display helpers ─────────────────────────────────────
 const PLAN_LABELS: Record<Plan, string> = {
@@ -53,14 +51,9 @@ export default function SettingsPage() {
   const t = useT();
   const [tab, setTab] = useState<Tab>("org");
   const [displayPlan, setDisplayPlan] = useState<Plan>("trial");
-  const isOwner = role === "owner";
   const isAdmin = role === "owner" || role === "admin";
   const orgId = org?.id;
   const orgPlan = org?.plan;
-
-  useEffect(() => {
-    if (!isOwner && tab === "areas") setTab("org");
-  }, [isOwner, tab]);
 
   useEffect(() => {
     if (!orgId) return;
@@ -94,7 +87,6 @@ export default function SettingsPage() {
   const tabs: { id: Tab; label: string }[] = [
     { id: "org", label: t("settings.org") },
     { id: "members", label: t("settings.members") },
-    ...(isOwner ? [{ id: "areas" as const, label: t("settings.areas.title") }] : []),
     { id: "coach", label: t("settings.coach") },
     { id: "language", label: t("settings.language") },
   ];
@@ -136,7 +128,6 @@ export default function SettingsPage() {
       {/* Tab content */}
       {tab === "org" && <OrgTab org={org} isAdmin={isAdmin} />}
       {tab === "members" && <MembersTab org={org} isAdmin={isAdmin} />}
-      {tab === "areas" && isOwner && <AreasTab org={org} />}
       {tab === "coach" && <CoachTab org={org} childOrgs={childOrgs} isAdmin={isAdmin} />}
       {tab === "language" && <LanguageTab />}
     </div>
@@ -440,172 +431,6 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
           ))}
         </div>
       )}
-    </div>
-  );
-}
-
-// ── Areas Tab ────────────────────────────────────────────────
-function AreasTab({ org }: { org: Organization }) {
-  const t = useT();
-  const router = useRouter();
-  const params = useParams();
-  const orgSlug = typeof params.orgSlug === "string" ? params.orgSlug : org.slug;
-  const { setChildOrgs, rootPlan } = useStore();
-  const [areas, setAreas] = useState<Organization[]>([]);
-  const [name, setName] = useState("");
-  const [creating, setCreating] = useState(false);
-  const [msg, setMsg] = useState("");
-  const [nameError, setNameError] = useState("");
-  const [showUpgrade, setShowUpgrade] = useState(false);
-  const [loading, setLoading] = useState(true);
-
-  async function refreshAreas() {
-    const { data } = await supabase
-      .from("organizations")
-      .select("*")
-      .eq("parent_org_id", org.id)
-      .order("name");
-    if (data) {
-      setAreas(data as Organization[]);
-      setChildOrgs(data as Organization[]);
-    }
-    setLoading(false);
-  }
-
-  useEffect(() => {
-    void refreshAreas();
-  }, [org.id]);
-
-  async function createArea(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = name.trim();
-    if (trimmed.length < 2) {
-      setNameError(t("settings.areas.nameMinError"));
-      return;
-    }
-    setNameError("");
-
-    if (rootPlan === "trial") {
-      setShowUpgrade(true);
-      return;
-    }
-
-    setCreating(true);
-    setMsg("");
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.access_token) {
-      setCreating(false);
-      return;
-    }
-
-    const res = await fetch("/api/org/create-sub", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${session.access_token}`,
-      },
-      body: JSON.stringify({
-        name: trimmed,
-        parentOrgId: org.id,
-        parentArea: null,
-        levelName: "area",
-        childLevel: (org.cascade_level || 1) + 1,
-        plan: org.plan,
-        parentOrgPlan: rootPlan,
-        primaryColor: org.primary_color,
-        trialEndsAt: rootPlan === "trial" ? org.trial_ends_at : null,
-        coachSyntacticEnabled: true,
-        coachSemanticEnabled: false,
-      }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      if (data.code === "TRIAL_LIMIT") {
-        setShowUpgrade(true);
-      } else {
-        setMsg(data.error || t("settings.saveError"));
-      }
-      setCreating(false);
-      return;
-    }
-
-    setName("");
-    setMsg(t("settings.areas.successMsg"));
-    await refreshAreas();
-    setCreating(false);
-  }
-
-  if (showUpgrade) {
-    return (
-      <UpgradeModal
-        requiredPlan="starter"
-        featureName={t("settings.areas.createTitle")}
-        orgSlug={orgSlug}
-        onClose={() => setShowUpgrade(false)}
-      />
-    );
-  }
-
-  return (
-    <div>
-      <div className="mb-8">
-        <div className="t-label mb-3">{t("settings.areas.listTitle", { org: org.name })}</div>
-        <div style={{ border: "1px solid var(--border)", borderRadius: "var(--r)", overflow: "hidden" }}>
-          {loading ? (
-            <div className="px-5 py-4" style={{ color: "var(--t2)", fontSize: "0.875rem" }}>{t("common.loading")}</div>
-          ) : areas.length === 0 ? (
-            <div className="px-5 py-4" style={{ color: "var(--t2)", fontSize: "0.875rem" }}>{t("settings.areas.empty")}</div>
-          ) : (
-            areas.map((area, i) => (
-              <button
-                key={area.id}
-                type="button"
-                onClick={() => router.push(`/${area.slug}/dashboard`)}
-                className="flex items-center justify-between w-full px-5 py-3 text-left"
-                style={{
-                  borderBottom: i < areas.length - 1 ? "1px solid var(--border)" : "none",
-                  background: i % 2 === 0 ? "var(--bg)" : "var(--sidebar)",
-                  border: "none",
-                  cursor: "pointer",
-                  fontFamily: "var(--font-body)",
-                }}
-              >
-                <span style={{ fontSize: "0.875rem", color: "var(--text)", fontWeight: 500 }}>{area.name}</span>
-                <span style={{ display: "flex", alignItems: "center", gap: 12, fontSize: "0.8125rem", color: "var(--t2)" }}>
-                  L{area.cascade_level ?? 2}
-                  <span style={{ color: "var(--brand)" }}>→</span>
-                </span>
-              </button>
-            ))
-          )}
-        </div>
-      </div>
-
-      <div className="p-5 rounded-lg" style={{ background: "var(--sidebar)", border: "1px solid var(--border)" }}>
-        <div className="t-label mb-3">{t("settings.areas.createTitle")}</div>
-        <form onSubmit={createArea}>
-          <label className="t-label mb-2 block">{t("settings.areas.namePlaceholder")}</label>
-          <input
-            className="input mb-3"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder={t("settings.areas.namePlaceholder")}
-            style={{ maxWidth: 400 }}
-          />
-          {nameError && (
-            <p style={{ fontSize: "0.8125rem", color: "var(--killed)", marginBottom: 8 }}>{nameError}</p>
-          )}
-          <button type="submit" disabled={creating || name.trim().length < 2} className="btn-primary">
-            {creating ? t("common.loading") : t("settings.areas.createBtn")}
-          </button>
-          {msg && (
-            <p style={{ fontSize: "0.875rem", marginTop: 8, color: msg.includes("Error") || msg.includes("error") ? "var(--killed)" : "var(--scaled)" }}>
-              {msg}
-            </p>
-          )}
-        </form>
-      </div>
     </div>
   );
 }
