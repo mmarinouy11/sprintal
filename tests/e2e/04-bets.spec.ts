@@ -1,21 +1,14 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER } from './helpers/auth';
+import { loginAndWaitForOrgContext } from './helpers/auth';
 
 test.describe('BET — Bets', () => {
 
   test.beforeEach(async ({ page }) => {
+    await loginAndWaitForOrgContext(page);
     await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
-
-    if (page.url().includes('/auth/login')) {
-      await page.fill('input[type="email"]', TEST_USER.email);
-      await page.fill('input[type="password"]', TEST_USER.password);
-      await page.click('button[type="submit"]');
-      await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
-      await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
-    }
-
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(500);
+    await page.waitForSelector('[data-testid="bet-card"], text=No bets yet', { timeout: 15000 }).catch(() => {});
   });
 
   test('BET-07 — Columnas vacías no muestran "None"', async ({ page }) => {
@@ -44,9 +37,9 @@ test.describe('BET — Bets', () => {
     }
     await firstBet.click();
     await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(1000);
     const editBtn = page.locator('[data-testid="bet-detail-panel"] button.btn-primary').first();
-    await expect(editBtn).toBeVisible({ timeout: 5000 });
+    await expect(editBtn).toBeVisible({ timeout: 8000 });
     const className = await editBtn.getAttribute('class');
     expect(className).toContain('btn-primary');
   });

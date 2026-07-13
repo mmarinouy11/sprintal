@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { loginAndWaitForOrgContext } from './helpers/auth';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
 test.describe('SPR — Sprints completo', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await loginAndWaitForOrgContext(page);
+  });
 
   test('SPR-01 — Formulario de nuevo sprint accesible', async ({ page }) => {
     await page.goto(`/${ORG}/new/sprint`);

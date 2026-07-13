@@ -1,21 +1,13 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER } from './helpers/auth';
+import { loginAndWaitForOrgContext } from './helpers/auth';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
 test.describe('BET — Bets completo', () => {
 
   test.beforeEach(async ({ page }) => {
+    await loginAndWaitForOrgContext(page);
     await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
-
-    if (page.url().includes('/auth/login')) {
-      await page.fill('input[type="email"]', TEST_USER.email);
-      await page.fill('input[type="password"]', TEST_USER.password);
-      await page.click('button[type="submit"]');
-      await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
-      await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
-    }
-
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(500);
   });

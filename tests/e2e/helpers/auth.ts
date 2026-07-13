@@ -6,6 +6,43 @@ export const TEST_USER = {
   orgSlug: process.env.TEST_ORG_SLUG || 'test-org',
 };
 
+export async function loginAndWaitForOrgContext(page: Page) {
+  await page.goto(`/${process.env.TEST_ORG_SLUG}/dashboard`);
+
+  // Wait for navigation to settle — could redirect to login
+  await page.waitForURL(/\/(dashboard|auth\/login|onboarding)/, { timeout: 10000 });
+
+  // If redirected to login, do explicit login
+  if (page.url().includes('/auth/login')) {
+    await page.fill('input[type="email"]', TEST_USER.email);
+    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
+
+    if (page.url().includes('/onboarding')) {
+      await page.goto(`/${process.env.TEST_ORG_SLUG}/dashboard`);
+      await page.waitForURL(/\/dashboard/, { timeout: 10000 });
+    }
+  }
+
+  // Wait for org context to be established
+  await expect(page.locator('[data-testid="org-switcher"]')).toBeVisible({ timeout: 10000 });
+  await page.waitForTimeout(500);
+}
+
+export async function gotoWithConditionalAuth(page: Page, path: string) {
+  await page.goto(path);
+  if (page.url().includes('/auth/login')) {
+    await page.fill('input[type="email"]', TEST_USER.email);
+    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
+    await page.goto(path);
+  }
+  await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
+  await page.waitForTimeout(500);
+}
+
 export async function loginAs(page: Page, email = TEST_USER.email, password = TEST_USER.password) {
   await page.goto('/auth/login');
   await page.fill('input[type="email"]', email);

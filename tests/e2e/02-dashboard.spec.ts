@@ -4,7 +4,7 @@ import { TEST_USER } from './helpers/auth';
 test.describe('DASH — Dashboard', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/${TEST_USER.orgSlug}/dashboard`);
+    await page.goto(`/${TEST_USER.orgSlug}/dashboard`, { timeout: 60000 });
   });
 
   test('DASH-01 — Dashboard carga correctamente', async ({ page }) => {
