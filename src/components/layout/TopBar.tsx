@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { Organization } from "@/types";
+import { Organization, SUBAREAS_LIMITS, type Plan } from "@/types";
 import NotificationPanel from "@/components/notifications/NotificationPanel";
 
 export default function TopBar({ orgSlug }: { orgSlug: string }) {
@@ -16,9 +16,13 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
   const memberContextSlug = store.memberContextSlug;
   const memberContextName = store.memberContextName;
   const isRootOwnerAdmin = store.isRootOwnerAdmin;
+  const rootPlan = store.rootPlan;
   const setParentOrg = store.setParentOrg;
   const t = useT();
   const router = useRouter();
+  const plan = (rootPlan || org?.plan || "trial") as Plan;
+  const subAreaLimit = SUBAREAS_LIMITS[plan] ?? SUBAREAS_LIMITS.trial;
+  const atSubAreaLimit = Number.isFinite(subAreaLimit) && childOrgs.length >= subAreaLimit;
   const [open, setOpen] = useState(false);
   const [notifOpen, setNotifOpen] = useState(false);
   const [siblings, setSiblings] = useState<Organization[]>([]);
@@ -284,19 +288,26 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
               {!ancestorReadOnly && (
               <div style={{ padding: "4px 0 8px", borderTop: "1px solid var(--border)" }}>
                 <button
-                  onClick={() => { setOpen(false); router.push(`/${orgSlug}/new/sub-org`); }}
+                  type="button"
+                  onClick={() => {
+                    if (atSubAreaLimit) return;
+                    setOpen(false);
+                    router.push(`/${orgSlug}/new/sub-org`);
+                  }}
+                  disabled={atSubAreaLimit}
                   style={{
                     display: "flex", alignItems: "center", justifyContent: "space-between",
                     width: "100%", padding: "7px 16px",
                     background: "none", border: "none",
-                    cursor: "pointer",
+                    cursor: atSubAreaLimit ? "not-allowed" : "pointer",
                     fontFamily: "var(--font-body)", fontSize: "0.875rem",
-                    color: org?.plan === "trial" ? "var(--t3)" : "var(--brand)",
+                    color: atSubAreaLimit ? "var(--t3)" : "var(--brand)",
+                    opacity: atSubAreaLimit ? 0.65 : 1,
                   }}>
                   <span style={{ display:"flex", alignItems:"center", gap:8 }}>
                     <span style={{ fontWeight: 700 }}>+</span> {t("nav.newArea")}
                   </span>
-                  {org?.plan === "trial" && (
+                  {atSubAreaLimit && (
                     <span style={{ fontSize:"0.6875rem", fontFamily:"var(--font-body)",
                       padding:"1px 6px", borderRadius:3,
                       background:"var(--raised)", border:"1px solid var(--border-mid)",
