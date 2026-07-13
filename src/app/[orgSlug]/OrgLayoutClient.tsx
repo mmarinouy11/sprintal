@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import {
@@ -97,9 +97,11 @@ export default function OrgLayoutClient({
     ancestorReadOnly, memberContextSlug, memberContextName,
   } = useStore();
   const router = useRouter();
+  const pathname = usePathname();
   const t = useT();
   /** Slug changes → full-screen load; same org, new path (p. ej. vuelta desde /pricing) → refresh sin bloquear UI */
   const lastLoadedSlugRef = useRef<string | null>(null);
+  const prevPathnameRef = useRef<string | null>(null);
 
   const loadGenerationRef = useRef(0);
 
@@ -377,6 +379,74 @@ export default function OrgLayoutClient({
       if (gen === loadGenerationRef.current) setLoading(false);
     });
   }, [params.orgSlug, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
+
+  useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = pathname;
+
+    const onDashboard =
+      pathname.includes("/dashboard") || pathname === `/${params.orgSlug}`;
+    if (!onDashboard || prev === null || prev === pathname) return;
+
+    orgLoadDebug("layout:pathname dashboard refresh", {
+      prev,
+      pathname,
+      slug: params.orgSlug,
+    });
+
+    async function refreshOnDashboard() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (!session) return;
+
+      const bundle = await loadOrgBundle(
+        session.access_token,
+        params.orgSlug,
+        readFromQueryParam()
+      );
+      if (!bundle.ok || !("data" in bundle)) {
+        orgLoadDebug("layout:pathname refresh skip (not ok)", {
+          slug: params.orgSlug,
+          status: bundle.ok ? 200 : bundle.status,
+        });
+        return;
+      }
+
+      const d = bundle.data as BundleData;
+      orgLoadDebug("layout:pathname refresh ok", {
+        slug: params.orgSlug,
+        childCount: d.children?.length ?? 0,
+      });
+      setOrg(d.org);
+      setRootPlan(d.rootPlan || d.org.plan);
+      setCurrentRole(d.role as OrgRole | null);
+      setChildOrgs(d.children);
+      setParentOrg(d.parentOrg ?? null);
+      setAncestorReadOnly(!!d.ancestorReadOnly);
+      setMemberContextSlug(d.memberContextSlug ?? null);
+      setMemberContextName(d.memberContextName ?? null);
+      setIsRootOwnerAdmin(!!d.isRootOwnerAdmin);
+      if (d.isRootOwnerAdmin) {
+        setAncestorReadOnly(false);
+        setMemberContextSlug(null);
+        setMemberContextName(null);
+      }
+    }
+
+    void refreshOnDashboard();
+  }, [
+    pathname,
+    params.orgSlug,
+    setOrg,
+    setRootPlan,
+    setCurrentRole,
+    setChildOrgs,
+    setParentOrg,
+    setAncestorReadOnly,
+    setMemberContextSlug,
+    setMemberContextName,
+    setIsRootOwnerAdmin,
+  ]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;

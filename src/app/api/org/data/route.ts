@@ -12,6 +12,7 @@ import { apiError, apiOk } from "@/lib/api-response";
 import { sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 export const dynamic = "force-dynamic";
+export const revalidate = 0;
 
 type OrgRow = Record<string, unknown> & {
   id: string;
@@ -60,6 +61,14 @@ async function buildOrgDataResponse(
   }
 
   const parentOrg = parentOrgRes.data ?? null;
+  const children = childrenRes.data || [];
+
+  sprintalServerDebug("api", "org/data children", {
+    orgSlug: org.slug,
+    orgId: sprintalShortId(org.id),
+    count: children.length,
+    slugs: children.map((c: { slug?: string }) => c.slug).filter(Boolean),
+  });
 
   return apiOk({
     org,
@@ -70,7 +79,7 @@ async function buildOrgDataResponse(
     bets,
     evidence: evidenceRes.data || [],
     signalChecks: signalChecksRes.data || [],
-    children: childrenRes.data || [],
+    children,
     betAlignments,
     parentOrg,
     ancestorReadOnly: meta.ancestorReadOnly,
@@ -106,6 +115,8 @@ export async function GET(req: NextRequest) {
 
     const slug = req.nextUrl.searchParams.get("slug");
     if (!slug) return apiError("slug requerido.", 400);
+
+    sprintalServerDebug("api", "org/data request", { slug });
 
     const { data: memberRows } = await supabaseAdmin
       .from("org_members")
