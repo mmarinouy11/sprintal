@@ -537,7 +537,8 @@
     "areasLimitReached": "Máximo 4 áreas en plan Trial. Actualizá a Starter para áreas ilimitadas."
   },
   "upgrade": {
-    "subAreasLimit": "Alcanzaste el límite de 4 sub-áreas en tu plan actual. Actualizá a Starter para áreas ilimitadas."
+    "subAreasLimit": "Alcanzaste el límite de 4 sub-áreas en tu plan actual. Actualizá a Starter para áreas ilimitadas.",
+    "depthLimit": "Tu plan no soporta esta profundidad organizacional. Actualizá a Growth para agregar un tercer nivel."
   },
   "billing": {
     "pageTitle": "Facturación",

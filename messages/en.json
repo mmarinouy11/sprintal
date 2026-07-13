@@ -537,7 +537,8 @@
     "areasLimitReached": "Maximum 4 areas for Trial plan. Upgrade to Starter for unlimited areas."
   },
   "upgrade": {
-    "subAreasLimit": "You've reached the limit of 4 sub-areas on your current plan. Upgrade to Starter for unlimited areas."
+    "subAreasLimit": "You've reached the limit of 4 sub-areas on your current plan. Upgrade to Starter for unlimited areas.",
+    "depthLimit": "Your plan doesn't support this organizational depth. Upgrade to Growth to add a third level."
   },
   "billing": {
     "pageTitle": "Billing",

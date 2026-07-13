@@ -537,7 +537,8 @@
     "areasLimitReached": "Máximo de 4 áreas no plano Trial. Faça upgrade para Starter para áreas ilimitadas."
   },
   "upgrade": {
-    "subAreasLimit": "Você atingiu o limite de 4 sub-áreas no seu plano atual. Faça upgrade para Starter para áreas ilimitadas."
+    "subAreasLimit": "Você atingiu o limite de 4 sub-áreas no seu plano atual. Faça upgrade para Starter para áreas ilimitadas.",
+    "depthLimit": "Seu plano não suporta essa profundidade organizacional. Faça upgrade para Growth para adicionar um terceiro nível."
   },
   "billing": {
     "pageTitle": "Faturamento",

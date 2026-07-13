@@ -16,7 +16,7 @@ export default function NewSubOrgPage() {
   const { org, setChildOrgs, childOrgs, rootPlan } = useStore();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
-  const [showSubAreasUpgrade, setShowSubAreasUpgrade] = useState(false);
+  const [upgradeGate, setUpgradeGate] = useState<"subareas" | "depth" | null>(null);
   const [name, setName] = useState("");
   const [parentArea, setParentArea] = useState("");
   const [localAreas, setLocalAreas] = useState<{ id: string; name: string; cascade_level: number }[]>([]);
@@ -85,7 +85,12 @@ export default function NewSubOrgPage() {
       const data = await res.json();
       if (!res.ok) {
         if (data.code === "SUBAREAS_LIMIT") {
-          setShowSubAreasUpgrade(true);
+          setUpgradeGate("subareas");
+          setSaving(false);
+          return;
+        }
+        if (data.code === "DEPTH_LIMIT") {
+          setUpgradeGate("depth");
           setSaving(false);
           return;
         }
@@ -152,7 +157,7 @@ export default function NewSubOrgPage() {
     </div>
   );
 
-  if (showSubAreasUpgrade) {
+  if (upgradeGate === "subareas") {
     return (
       <UpgradeModal
         requiredPlan="starter"
@@ -160,7 +165,22 @@ export default function NewSubOrgPage() {
         bodyOverride={tg("upgrade.subAreasLimit")}
         orgSlug={typeof params.orgSlug === "string" ? params.orgSlug : undefined}
         onClose={() => {
-          setShowSubAreasUpgrade(false);
+          setUpgradeGate(null);
+          router.back();
+        }}
+      />
+    );
+  }
+
+  if (upgradeGate === "depth") {
+    return (
+      <UpgradeModal
+        requiredPlan="growth"
+        featureName={t("newArea")}
+        bodyOverride={tg("upgrade.depthLimit")}
+        orgSlug={typeof params.orgSlug === "string" ? params.orgSlug : undefined}
+        onClose={() => {
+          setUpgradeGate(null);
           router.back();
         }}
       />

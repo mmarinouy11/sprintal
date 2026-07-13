@@ -4,7 +4,7 @@ import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { apiError, apiOk } from "@/lib/api-response";
 import { sanitizeText, sanitizeColor, sanitizeInt } from "@/lib/sanitize";
 import { getOrgRootId, countSubOrgsUnderRoot } from "@/lib/orgHierarchy";
-import { COACH_LIMITS, SUBAREAS_LIMITS, type Plan } from "@/types";
+import { COACH_LIMITS, SUBAREAS_LIMITS, DEPTH_LIMITS, type Plan } from "@/types";
 
 function planSupportsSemantic(planVal: string): boolean {
   const lim = COACH_LIMITS[planVal as Plan];
@@ -127,6 +127,24 @@ export async function POST(req: NextRequest) {
     const role = member?.role;
     if (role && !["owner", "admin"].includes(role)) {
       return apiError("Se requiere rol owner o admin.", 403);
+    }
+
+    const { data: parentOrg } = await supabaseAdmin
+      .from("organizations")
+      .select("cascade_level, parent_org_id")
+      .eq("id", parentOrgId)
+      .maybeSingle();
+
+    const newLevel = (parentOrg?.cascade_level ?? 1) + 1;
+    const maxLevel = DEPTH_LIMITS[plan as Plan] ?? DEPTH_LIMITS.trial;
+    if (newLevel > maxLevel) {
+      return apiOk(
+        {
+          error: "Your plan does not support this depth",
+          code: "DEPTH_LIMIT",
+        },
+        { status: 403 }
+      );
     }
 
     // Sub-area count limit (Trial / Solo = 4 sub-areas under root)

@@ -209,6 +209,15 @@ export const SUBAREAS_LIMITS: Record<Plan, number> = {
   scale: Infinity,
 };
 
+/** Max cascade level (L1–L4) allowed per billing root plan. */
+export const DEPTH_LIMITS: Record<Plan, number> = {
+  trial: 2,
+  solo: 2,
+  starter: 2,
+  growth: 3,
+  scale: 4,
+};
+
 /** Total unified credits consumed this month (authoritative: syntactic_calls column). */
 export function coachUnifiedCreditsUsed(
   u: Pick<CoachUsage, "syntactic_calls" | "semantic_calls"> | null | undefined
