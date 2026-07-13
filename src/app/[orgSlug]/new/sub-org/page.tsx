@@ -98,10 +98,31 @@ export default function NewSubOrgPage() {
         setSaving(false); return;
       }
 
-      useStore.getState().setChildOrgs([]);
-      const orgSlug = typeof params.orgSlug === "string" ? params.orgSlug : org?.slug;
-      router.push(`/${orgSlug}/dashboard?refresh=true`);
-    } catch {
+      const orgSlug = typeof params.orgSlug === "string" ? params.orgSlug : org.slug;
+
+      try {
+        const refreshRes = await fetch(
+          `/api/org/data?slug=${encodeURIComponent(orgSlug)}&_ts=${Date.now()}`,
+          {
+            cache: "no-store",
+            headers: {
+              Authorization: `Bearer ${session.access_token}`,
+              "Cache-Control": "no-cache",
+            },
+          }
+        );
+        if (refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          useStore.getState().setChildOrgs(refreshData.children ?? []);
+        }
+      } catch (refreshErr) {
+        console.error("sub-org refresh error:", refreshErr);
+      }
+
+      await new Promise((r) => setTimeout(r, 100));
+      router.push(`/${orgSlug}/dashboard`);
+    } catch (e) {
+      console.error("sub-org creation error:", e);
       setError(t("connectionError"));
       setSaving(false);
     }
