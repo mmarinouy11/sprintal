@@ -32,6 +32,21 @@ export async function resolveBetCard(page: Page): Promise<Locator> {
   return anyBetCard;
 }
 
+export async function expandActivaColumn(page: Page) {
+  // The bets board collapses columns by default
+  // Click the ACTIVA column header to expand it
+  const activaHeader = page.locator('text=ACTIVA').or(
+    page.locator('text=ACTIVE').or(
+      page.locator('text=Activa')
+    )
+  ).first();
+
+  if (await activaHeader.isVisible({ timeout: 3000 })) {
+    await activaHeader.click();
+    await page.waitForTimeout(500);
+  }
+}
+
 const supabaseUrl =
   process.env.SUPABASE_URL ||
   process.env.NEXT_PUBLIC_SUPABASE_URL;

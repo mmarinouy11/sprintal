@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAndWaitForOrgContext, TEST_USER } from './helpers/auth';
-import { resolveBetCard } from './helpers/test-data';
+import { resolveBetCard, expandActivaColumn } from './helpers/test-data';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
@@ -61,7 +61,8 @@ test.describe('CASCADE — Alineación en cascada', () => {
       await loginAndWaitForOrgContext(page);
       await page.goto(`/${ORG}/bets/board`);
       await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-      await page.waitForTimeout(500);
+      await expandActivaColumn(page);
+      await page.waitForTimeout(300);
     });
 
     test('CASCADE — Panel de bet muestra sección de alineación', async ({ page }) => {

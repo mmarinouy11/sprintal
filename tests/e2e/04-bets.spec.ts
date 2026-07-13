@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAndWaitForOrgContext } from './helpers/auth';
-import { resolveBetCard } from './helpers/test-data';
+import { resolveBetCard, expandActivaColumn } from './helpers/test-data';
 
 test.describe('BET — Bets', () => {
 
@@ -8,7 +8,8 @@ test.describe('BET — Bets', () => {
     await loginAndWaitForOrgContext(page);
     await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(500);
+    await expandActivaColumn(page);
+    await page.waitForTimeout(300);
     await page.waitForSelector('[data-testid="bet-card"], text=No bets yet', { timeout: 15000 }).catch(() => {});
   });
 
