@@ -1,4 +1,4 @@
-import { Page } from '@playwright/test';
+import { Page, expect } from '@playwright/test';
 
 export const TEST_USER = {
   email: process.env.TEST_USER_EMAIL || 'test@sprintal.dev',
@@ -20,6 +20,16 @@ export async function loginAs(page: Page, email = TEST_USER.email, password = TE
       `Test user landed on onboarding — complete the onboarding manually first.\nURL: ${url}`
     );
   }
+}
+
+export async function loginAndGo(page: Page, path: string) {
+  await page.goto('/auth/login');
+  await page.fill('input[type="email"]', TEST_USER.email);
+  await page.fill('input[type="password"]', TEST_USER.password);
+  await page.click('button[type="submit"]');
+  await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
+  await page.goto(path);
+  await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
 }
 
 export async function logout(page: Page) {

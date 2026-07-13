@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { waitForLoadingOverlay } from './helpers/page';
+import { loginAndGo } from './helpers/auth';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
@@ -11,9 +11,8 @@ test.describe('SET — Configuración', () => {
   });
 
   test('SET-03 — Tab de miembros muestra lista', async ({ page }) => {
-    await page.goto(`/${ORG}/settings`);
-    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    await waitForLoadingOverlay(page);
+    await loginAndGo(page, `/${ORG}/settings`);
+    await page.waitForTimeout(500);
     const membersTab = page.getByTestId('settings-members-tab');
     await expect(membersTab).toBeVisible({ timeout: 15000 });
     await membersTab.click();
@@ -23,9 +22,8 @@ test.describe('SET — Configuración', () => {
   });
 
   test('SET-10 — Cambiar idioma a español', async ({ page }) => {
-    await page.goto(`/${ORG}/settings`);
-    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    await waitForLoadingOverlay(page);
+    await loginAndGo(page, `/${ORG}/settings`);
+    await page.waitForTimeout(500);
     const langTab = page.getByTestId('settings-language-tab');
     await expect(langTab).toBeVisible({ timeout: 15000 });
     await langTab.click();

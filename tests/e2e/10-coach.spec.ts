@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { loginAndGo } from './helpers/auth';
 import { waitForLoadingOverlay } from './helpers/page';
 
 const ORG = process.env.TEST_ORG_SLUG;
@@ -45,9 +46,8 @@ test.describe('COA — Coach IA', () => {
   });
 
   test('COA-09 — Créditos de coach visibles en configuración', async ({ page }) => {
-    await page.goto(`/${ORG}/settings`);
-    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    await waitForLoadingOverlay(page);
+    await loginAndGo(page, `/${ORG}/settings`);
+    await page.waitForTimeout(500);
     const coachTab = page.getByTestId('settings-coach-tab');
     await expect(coachTab).toBeVisible({ timeout: 15000 });
     await coachTab.click();

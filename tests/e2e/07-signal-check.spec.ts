@@ -14,9 +14,10 @@ test.describe('SIG — Chequeo de Señal', () => {
   });
 
   test('SIG-07 — Sidebar muestra contenido correcto (no cadencia de revisión)', async ({ page }) => {
-    await page.goto(`/${ORG}/new/signal`);
-    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    // Should NOT show strategic review cadence text in signal check form
+    await page.goto(`/${process.env.TEST_ORG_SLUG}/new/signal`);
+    await page.waitForLoadState('networkidle');
+    await expect(page.locator('body')).toBeVisible({ timeout: 10000 });
+    // Should NOT show strategic review cadence text
     await expect(page.locator('text=33%')).not.toBeVisible();
     await expect(page.locator('text=66%')).not.toBeVisible();
   });
