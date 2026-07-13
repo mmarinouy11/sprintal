@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getBillingRootOrgRow } from "@/lib/orgBillingRoot";
 import { isStrictAncestor, shareOrgRoot } from "@/lib/orgHierarchy";
+import { getRootOwnerAdminFromMemberships, roleForOrgDataApi } from "@/lib/orgAccess";
 import { apiError, apiOk } from "@/lib/api-response";
 
 export const dynamic = "force-dynamic";
@@ -97,6 +98,34 @@ export async function GET(req: NextRequest) {
 
     const parentOrg = parentOrgRes.data ?? null;
 
+    const rootAccess = await getRootOwnerAdminFromMemberships(
+      supabaseAdmin,
+      targetOrg.id as string,
+      memberByOrgId
+    );
+
+    if (rootAccess.isRootOwnerAdmin) {
+      return apiOk({
+        org: targetOrg,
+        rootPlan,
+        billingRoot,
+        role: roleForOrgDataApi(rootAccess.rootRole),
+        sprints: sprintsRes.data || [],
+        bets,
+        evidence: evidenceRes.data || [],
+        signalChecks: signalChecksRes.data || [],
+        children: childrenRes.data || [],
+        betAlignments,
+        parentOrg,
+        ancestorReadOnly: false,
+        memberContextSlug: null,
+        memberContextName: null,
+        isRootOwnerAdmin: true,
+      }, {
+        headers: { "Cache-Control": "no-store, max-age=0" },
+      });
+    }
+
     return apiOk({
       org: targetOrg,
       rootPlan,
@@ -112,6 +141,7 @@ export async function GET(req: NextRequest) {
       ancestorReadOnly: true,
       memberContextSlug: fromSlug,
       memberContextName: fromOrgRow.name as string,
+      isRootOwnerAdmin: false,
     }, {
       headers: { "Cache-Control": "no-store, max-age=0" },
     });

@@ -1,0 +1,83 @@
+import { test, expect } from '@playwright/test';
+import { TEST_USER } from './helpers/auth';
+
+const ORG = process.env.TEST_ORG_SLUG;
+
+test.describe('BET Panel — Panel de detalle completo', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await page.goto(`/${ORG}/bets/board`);
+    if (page.url().includes('/auth/login')) {
+      await page.fill('input[type="email"]', TEST_USER.email);
+      await page.fill('input[type="password"]', TEST_USER.password);
+      await page.click('button[type="submit"]');
+      await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
+      await page.goto(`/${ORG}/bets/board`);
+    }
+    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
+    await page.waitForTimeout(500);
+  });
+
+  test('BET-11 — Botón Editar tiene clase btn-primary (estilo de marca)', async ({ page }) => {
+    const firstBet = page.locator('[data-testid="bet-card"]').first();
+    if (!await firstBet.isVisible({ timeout: 5000 })) {
+      test.skip(true, 'No bets in test org');
+      return;
+    }
+    await firstBet.click();
+    await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
+    await page.waitForTimeout(300);
+    const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').first();
+    await expect(editBtn).toBeVisible({ timeout: 5000 });
+    const className = await editBtn.getAttribute('class');
+    expect(className).toContain('btn-primary');
+  });
+
+  test('BET-09 — Panel de detalle se abre y muestra datos', async ({ page }) => {
+    const firstBet = page.locator('[data-testid="bet-card"]').first();
+    if (!await firstBet.isVisible({ timeout: 5000 })) {
+      test.skip(true, 'No bets in test org');
+      return;
+    }
+    await firstBet.click();
+    const panel = page.locator('[data-testid="bet-detail-panel"]');
+    await expect(panel).toBeVisible({ timeout: 8000 });
+    await expect(panel.locator('button:has-text("Editar")')).toBeVisible({ timeout: 5000 });
+  });
+
+  test('BET-12 — Edición de bet no pierde foco al escribir', async ({ page }) => {
+    const firstBet = page.locator('[data-testid="bet-card"]').first();
+    if (!await firstBet.isVisible({ timeout: 5000 })) {
+      test.skip(true, 'No bets in test org');
+      return;
+    }
+    await firstBet.click();
+    await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
+    await page.waitForTimeout(300);
+    const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').first();
+    await editBtn.click();
+    await page.waitForTimeout(300);
+    const textarea = page.locator('[data-testid="bet-detail-panel"] textarea').first();
+    await expect(textarea).toBeVisible({ timeout: 5000 });
+    await textarea.click();
+    await textarea.type('xyz');
+    await expect(textarea).toBeFocused();
+    const value = await textarea.inputValue();
+    expect(value).toContain('xyz');
+    for (let i = 0; i < 3; i++) await textarea.press('Backspace');
+  });
+
+  test('BET-14 — Sección Cascada dentro del panel tiene contenedor correcto', async ({ page }) => {
+    const firstBet = page.locator('[data-testid="bet-card"]').first();
+    if (!await firstBet.isVisible({ timeout: 5000 })) {
+      test.skip(true, 'No bets in test org');
+      return;
+    }
+    await firstBet.click();
+    const panel = page.locator('[data-testid="bet-detail-panel"]');
+    await expect(panel).toBeVisible({ timeout: 8000 });
+    await page.screenshot({ path: 'test-results/bet-14-panel.png' });
+    await expect(page.locator('text=Something went wrong')).not.toBeVisible();
+  });
+
+});

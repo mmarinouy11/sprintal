@@ -3,20 +3,15 @@ import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { getBillingRootOrgRow } from "@/lib/orgBillingRoot";
 import { isStrictAncestor } from "@/lib/orgHierarchy";
+import {
+  getRootOwnerAdminFromMemberships,
+  isInOrgTree,
+  roleForOrgDataApi,
+} from "@/lib/orgAccess";
 import { apiError, apiOk } from "@/lib/api-response";
 import { sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 export const dynamic = "force-dynamic";
-
-/** org_members.role can be null/empty; legacy schema used default "member". */
-function roleForOrgDataApi(raw: unknown): string {
-  if (raw == null) return "viewer";
-  const s = String(raw).trim();
-  if (!s) return "viewer";
-  const lower = s.toLowerCase();
-  if (lower === "owner" || lower === "admin" || lower === "editor" || lower === "viewer") return lower;
-  return "viewer";
-}
 
 type OrgRow = Record<string, unknown> & {
   id: string;
@@ -35,6 +30,7 @@ async function buildOrgDataResponse(
     ancestorReadOnly: boolean;
     memberContextSlug: string | null;
     memberContextName: string | null;
+    isRootOwnerAdmin: boolean;
   }
 ) {
   const parentOrgPromise = org.parent_org_id
@@ -80,6 +76,7 @@ async function buildOrgDataResponse(
     ancestorReadOnly: meta.ancestorReadOnly,
     memberContextSlug: meta.memberContextSlug,
     memberContextName: meta.memberContextName,
+    isRootOwnerAdmin: meta.isRootOwnerAdmin,
   }, {
     headers: { "Cache-Control": "no-store, max-age=0" },
   });
@@ -136,6 +133,12 @@ export async function GET(req: NextRequest) {
       return apiError("Org no encontrada.", 404);
     }
 
+    const rootAccess = await getRootOwnerAdminFromMemberships(
+      supabaseAdmin,
+      org.id,
+      memberByOrgId
+    );
+
     if (memberByOrgId.has(org.id)) {
       const billingRoot =
         (await getBillingRootOrgRow(supabaseAdmin, org.id)) ?? {
@@ -149,6 +152,7 @@ export async function GET(req: NextRequest) {
         ancestorReadOnly: false,
         memberContextSlug: null,
         memberContextName: null,
+        isRootOwnerAdmin: rootAccess.isRootOwnerAdmin,
       });
     }
 
@@ -158,7 +162,29 @@ export async function GET(req: NextRequest) {
       )
     );
     const candidateIds = checks.filter((x): x is string => x != null);
+
     if (!candidateIds.length) {
+      if (
+        rootAccess.isRootOwnerAdmin &&
+        rootAccess.rootOrgId &&
+        (await isInOrgTree(supabaseAdmin, rootAccess.rootOrgId, org.id))
+      ) {
+        const billingRoot =
+          (await getBillingRootOrgRow(supabaseAdmin, org.id)) ?? {
+            id: org.id,
+            slug: org.slug,
+            plan: org.plan,
+          };
+        const rootPlan = billingRoot.plan;
+        return buildOrgDataResponse(supabaseAdmin, org, billingRoot, rootPlan, {
+          role: roleForOrgDataApi(rootAccess.rootRole),
+          ancestorReadOnly: false,
+          memberContextSlug: null,
+          memberContextName: null,
+          isRootOwnerAdmin: true,
+        });
+      }
+
       sprintalServerDebug("api", "org/data 403 no ancestor", {
         slug,
         orgId: sprintalShortId(org.id),
@@ -190,11 +216,22 @@ export async function GET(req: NextRequest) {
       };
     const rootPlan = billingRoot.plan;
 
+    if (rootAccess.isRootOwnerAdmin) {
+      return buildOrgDataResponse(supabaseAdmin, org, billingRoot, rootPlan, {
+        role: roleForOrgDataApi(rootAccess.rootRole),
+        ancestorReadOnly: false,
+        memberContextSlug: null,
+        memberContextName: null,
+        isRootOwnerAdmin: true,
+      });
+    }
+
     return buildOrgDataResponse(supabaseAdmin, org, billingRoot, rootPlan, {
       role: null,
       ancestorReadOnly: true,
       memberContextSlug: fromOrgRow.slug as string,
       memberContextName: (fromOrgRow.name as string) || null,
+      isRootOwnerAdmin: false,
     });
 
   } catch (err) {

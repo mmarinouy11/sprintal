@@ -529,7 +529,22 @@
     "coachCreditEquivalence": "1 análise estratégica = {weight} créditos",
     "creditsWeight": "(×{weight} = {count} créditos)",
     "rootBadge": "raiz",
-    "starterPlan": "Starter"
+    "starterPlan": "Starter",
+    "areas": {
+      "title": "Áreas",
+      "listTitle": "Áreas de {org}",
+      "empty": "Nenhuma área criada ainda.",
+      "createTitle": "Nova área",
+      "namePlaceholder": "Nome da área",
+      "createBtn": "Criar área",
+      "successMsg": "Área criada com sucesso.",
+      "errorPlan": "Atualize seu plano para criar sub-áreas.",
+      "nameMinError": "O nome deve ter pelo menos 2 caracteres."
+    }
+  },
+  "onboarding": {
+    "areasGuide": "As áreas representam as equipes, funções ou unidades de negócio que executarão seus próprios sprints estratégicos. Exemplos: Marketing, Produto, Operações, Vendas. Você pode adicionar mais depois em Configurações.",
+    "areasMinRequired": "Adicione pelo menos uma área para continuar."
   },
   "billing": {
     "pageTitle": "Faturamento",

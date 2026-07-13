@@ -29,6 +29,8 @@ interface Store {
   /** Slug of the org where the user has membership (context for read-only ancestor view) */
   memberContextSlug: string | null;
   memberContextName: string | null;
+  /** True when user is owner/admin of the L1 root org for the current tree */
+  isRootOwnerAdmin: boolean;
 
   // ── Setters ──────────────────────────────────────────
   setOrg:          (org: Organization) => void;
@@ -53,6 +55,7 @@ interface Store {
   setAncestorReadOnly: (v: boolean) => void;
   setMemberContextSlug: (slug: string | null) => void;
   setMemberContextName: (name: string | null) => void;
+  setIsRootOwnerAdmin: (v: boolean) => void;
 
   // ── Mutations ────────────────────────────────────────
   addSprint:      (sprint: Sprint) => void;
@@ -84,6 +87,7 @@ const initialState = {
   ancestorReadOnly: false,
   memberContextSlug: null,
   memberContextName: null,
+  isRootOwnerAdmin: false,
 };
 
 export const useStore = create<Store>((set) => ({
@@ -130,6 +134,7 @@ export const useStore = create<Store>((set) => ({
   setAncestorReadOnly: (ancestorReadOnly) => set({ ancestorReadOnly }),
   setMemberContextSlug: (memberContextSlug) => set({ memberContextSlug }),
   setMemberContextName: (memberContextName) => set({ memberContextName }),
+  setIsRootOwnerAdmin: (isRootOwnerAdmin) => set({ isRootOwnerAdmin }),
 
   // Mutations
   addSprint:      (sprint) => set(s => ({ sprints: [...s.sprints, sprint] })),

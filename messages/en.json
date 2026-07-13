@@ -529,7 +529,22 @@
     "coachCreditEquivalence": "1 strategic analysis = {weight} credits",
     "creditsWeight": "(×{weight} = {count} credits)",
     "rootBadge": "root",
-    "starterPlan": "Starter"
+    "starterPlan": "Starter",
+    "areas": {
+      "title": "Areas",
+      "listTitle": "Areas of {org}",
+      "empty": "No areas created yet.",
+      "createTitle": "New area",
+      "namePlaceholder": "Area name",
+      "createBtn": "Create area",
+      "successMsg": "Area created successfully.",
+      "errorPlan": "Upgrade your plan to create sub-areas.",
+      "nameMinError": "Name must be at least 2 characters."
+    }
+  },
+  "onboarding": {
+    "areasGuide": "Areas represent the teams, functions, or business units that will run their own strategic sprints. Examples: Marketing, Product, Operations, Sales. You can add more later from Settings.",
+    "areasMinRequired": "Add at least one area to continue."
   },
   "billing": {
     "pageTitle": "Billing",

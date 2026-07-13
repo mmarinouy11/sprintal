@@ -67,41 +67,5 @@ test.describe('BET — Bets completo', () => {
     }
   });
 
-  test('BET-12 — Edición de bet no pierde foco al escribir', async ({ page }) => {
-    // beforeEach already logged in and navigated to /bets/board
-    const firstBet = page.locator('[data-testid="bet-card"]').first();
-    if (await firstBet.isVisible({ timeout: 5000 })) {
-      await firstBet.click();
-      await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
-      await page.waitForTimeout(500);
-      const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').first();
-      await expect(editBtn).toBeVisible({ timeout: 5000 });
-      await editBtn.click();
-      await page.waitForTimeout(300);
-      const textarea = page.locator('[data-testid="bet-detail-panel"] textarea').first();
-      await expect(textarea).toBeVisible({ timeout: 5000 });
-      await textarea.click();
-      await textarea.type('test focus check');
-      await expect(textarea).toBeFocused();
-      const value = await textarea.inputValue();
-      expect(value).toContain('test focus check');
-      await textarea.selectText();
-      await textarea.press('Backspace');
-    } else {
-      test.skip(true, 'No bets in test org');
-    }
-  });
-
-  test('BET-14 — No aparece texto "Cascada" suelto en panel', async ({ page }) => {
-    const firstBet = page.locator('[data-testid="bet-card"]').first();
-    if (await firstBet.isVisible({ timeout: 5000 })) {
-      await firstBet.click();
-      await page.screenshot({ path: 'test-results/bet-14-panel.png' });
-      // The "Cascada" text appearing loose was already fixed — just verify panel renders without errors
-      await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 5000 });
-    } else {
-      test.skip(true, 'No bets in test org');
-    }
-  });
 
 });

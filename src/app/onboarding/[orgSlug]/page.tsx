@@ -3,6 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
+import { useT } from "@/lib/i18n";
 
 const BRAND_PRESETS = [
   { label:"Indigo",      hex:"#5C6AC4" },
@@ -13,14 +14,6 @@ const BRAND_PRESETS = [
   { label:"Sky",         hex:"#0284C7" },
   { label:"Emerald",     hex:"#22C55E" },
   { label:"Slate",       hex:"#475569" },
-];
-
-const DEFAULT_AREAS = [
-  { id:"1", name:"MU-1", type:"Market Unit" },
-  { id:"2", name:"MU-2", type:"Market Unit" },
-  { id:"3", name:"HR",   type:"Function" },
-  { id:"4", name:"TAG",  type:"Function" },
-  { id:"5", name:"L&D",  type:"Function" },
 ];
 
 type Area = { id: string; name: string; type: string };
@@ -34,6 +27,7 @@ const STEPS = [
 
 export default function OnboardingPage() {
   const params = useParams();
+  const t = useT();
   const { org: storeOrg, setOrg, addSprint, addBet } = useStore();
   const [org, setLocalOrg] = useState(storeOrg);
   const [step, setStep] = useState(1);
@@ -66,9 +60,10 @@ export default function OnboardingPage() {
   const fileRef = useRef<HTMLInputElement>(null);
 
   // Step 2 — Areas
-  const [areas, setAreas] = useState<Area[]>(DEFAULT_AREAS);
+  const [areas, setAreas] = useState<Area[]>([]);
   const [newAreaName, setNewAreaName] = useState("");
   const [newAreaType, setNewAreaType] = useState("Market Unit");
+  const [areasError, setAreasError] = useState(false);
 
   // Step 3 — Sprint
   const [sprint, setSprint] = useState({
@@ -96,6 +91,7 @@ export default function OnboardingPage() {
 
   function addArea() {
     if (!newAreaName.trim()) return;
+    setAreasError(false);
     setAreas(prev => [...prev, { id: Date.now().toString(), name: newAreaName.trim(), type: newAreaType }]);
     setNewAreaName("");
   }
@@ -333,6 +329,9 @@ export default function OnboardingPage() {
                     Define your areas
                   </div>
                   <div className="t-mono">Market units, functions, or any organizational unit that owns bets.</div>
+                  <p className="text-sm mt-4" style={{ color: "var(--t2)", lineHeight: 1.6 }}>
+                    {t("onboarding.areasGuide")}
+                  </p>
                 </div>
 
                 <div className="space-y-2 mb-4">
@@ -381,6 +380,11 @@ export default function OnboardingPage() {
                   <button type="button" onClick={() => setStep(1)} className="btn-ghost flex-1">Back</button>
                   <button onClick={async () => {
                     if (!org) return;
+                    if (areas.length === 0) {
+                      setAreasError(true);
+                      return;
+                    }
+                    setAreasError(false);
                     setSaving(true);
                     // Get current session token
                     const { data: { session } } = await supabase.auth.getSession();
@@ -416,6 +420,11 @@ export default function OnboardingPage() {
                     {saving ? "Creating areas..." : "Continue →"}
                   </button>
                 </div>
+                {areasError && (
+                  <p className="text-sm mt-3" style={{ color: "var(--killed)" }}>
+                    {t("onboarding.areasMinRequired")}
+                  </p>
+                )}
               </div>
             )}
 

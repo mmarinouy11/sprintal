@@ -27,7 +27,7 @@ test.describe('SIG — Chequeo de Señal', () => {
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
     await page.screenshot({ path: 'test-results/sig-08-state.png', fullPage: true });
     // Check for any signal-related text
-    const signalLabel = page.locator('[data-testid="signal-option"], label, .signal-option').first();
+    const signalLabel = page.locator('[data-testid^="signal-option-"], label, .signal-option').first();
     if (await signalLabel.isVisible({ timeout: 3000 })) {
       const text = await signalLabel.textContent();
       // Verify it's not in English

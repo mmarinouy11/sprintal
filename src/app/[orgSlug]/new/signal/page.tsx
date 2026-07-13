@@ -97,7 +97,7 @@ export default function SignalCheckPage() {
         <Field label={t("updatedSignal")}>
           <div className="flex gap-2">
             {SIGNALS.map(s => (
-              <button key={s.value} type="button" data-testid="signal-option" onClick={()=>setSignal(s.value)}
+              <button key={s.value} type="button" data-testid={`signal-option-${s.value.toLowerCase()}`} onClick={()=>setSignal(s.value)}
                 className="flex-1 py-2 rounded text-sm font-medium transition-colors"
                 style={{
                   fontFamily:"var(--font-body)", border:"1.5px solid",

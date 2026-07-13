@@ -81,6 +81,7 @@ type BundleData = {
   ancestorReadOnly?: boolean;
   memberContextSlug?: string | null;
   memberContextName?: string | null;
+  isRootOwnerAdmin?: boolean;
 };
 
 export default function OrgLayoutClient({
@@ -92,7 +93,7 @@ export default function OrgLayoutClient({
   const {
     setOrg, setSprints, setBets, setEvidence, setSignalChecks,
     setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, org, setNotifications,
-    setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName,
+    setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin,
     ancestorReadOnly, memberContextSlug, memberContextName,
   } = useStore();
   const router = useRouter();
@@ -180,7 +181,14 @@ export default function OrgLayoutClient({
         ancestorReadOnly = false,
         memberContextSlug = null,
         memberContextName = null,
+        isRootOwnerAdmin = false,
       } = data;
+
+      if (isRootOwnerAdmin) {
+        ancestorReadOnly = false;
+        memberContextSlug = null;
+        memberContextName = null;
+      }
 
       orgLoadDebug("layout:bundle ok", {
         gen,
@@ -221,6 +229,12 @@ export default function OrgLayoutClient({
           ancestorReadOnly = !!data.ancestorReadOnly;
           memberContextSlug = data.memberContextSlug ?? null;
           memberContextName = data.memberContextName ?? null;
+          isRootOwnerAdmin = !!data.isRootOwnerAdmin;
+          if (isRootOwnerAdmin) {
+            ancestorReadOnly = false;
+            memberContextSlug = null;
+            memberContextName = null;
+          }
           if (normalizeHexColor(orgData.primary_color) === normalizeHexColor(pending.hex)) {
             clearPendingPrimary(orgData.id);
             break;
@@ -265,6 +279,12 @@ export default function OrgLayoutClient({
           ancestorReadOnly = !!data.ancestorReadOnly;
           memberContextSlug = data.memberContextSlug ?? null;
           memberContextName = data.memberContextName ?? null;
+          isRootOwnerAdmin = !!data.isRootOwnerAdmin;
+          if (isRootOwnerAdmin) {
+            ancestorReadOnly = false;
+            memberContextSlug = null;
+            memberContextName = null;
+          }
           const subNow = orgData.paddle_subscription_id ?? null;
           if (
             orgData.plan !== initialPlan ||
@@ -292,6 +312,7 @@ export default function OrgLayoutClient({
       setAncestorReadOnly(!!ancestorReadOnly);
       setMemberContextSlug(memberContextSlug ?? null);
       setMemberContextName(memberContextName ?? null);
+      setIsRootOwnerAdmin(!!isRootOwnerAdmin);
 
       if (orgData.plan === "trial" && orgData.trial_ends_at) {
         const trialEnd = new Date(orgData.trial_ends_at);
@@ -355,7 +376,7 @@ export default function OrgLayoutClient({
       });
       if (gen === loadGenerationRef.current) setLoading(false);
     });
-  }, [params.orgSlug, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
+  }, [params.orgSlug, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -386,6 +407,12 @@ export default function OrgLayoutClient({
       setAncestorReadOnly(!!d.ancestorReadOnly);
       setMemberContextSlug(d.memberContextSlug ?? null);
       setMemberContextName(d.memberContextName ?? null);
+      setIsRootOwnerAdmin(!!d.isRootOwnerAdmin);
+      if (d.isRootOwnerAdmin) {
+        setAncestorReadOnly(false);
+        setMemberContextSlug(null);
+        setMemberContextName(null);
+      }
     }
 
     function scheduleRefresh() {
@@ -403,7 +430,7 @@ export default function OrgLayoutClient({
       window.removeEventListener("focus", scheduleRefresh);
       document.removeEventListener("visibilitychange", scheduleRefresh);
     };
-  }, [params.orgSlug, setOrg, setRootPlan, setCurrentRole, setChildOrgs, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName]);
+  }, [params.orgSlug, setOrg, setRootPlan, setCurrentRole, setChildOrgs, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
 
   return (
     <div className="flex h-screen overflow-hidden" style={{ background: "var(--bg)" }}>

@@ -15,6 +15,7 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
   const ancestorReadOnly = store.ancestorReadOnly;
   const memberContextSlug = store.memberContextSlug;
   const memberContextName = store.memberContextName;
+  const isRootOwnerAdmin = store.isRootOwnerAdmin;
   const setParentOrg = store.setParentOrg;
   const t = useT();
   const router = useRouter();
@@ -51,11 +52,15 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
   function navigateToOrg(target: Organization) {
     setOpen(false);
     const hasMembership = memberOrgIds.has(target.id);
-    if (hasMembership) {
+    if (hasMembership || isRootOwnerAdmin) {
       router.push(`/${target.slug}/dashboard`);
     } else {
       router.push(`/${target.slug}/dashboard?from=${encodeURIComponent(orgSlug)}`);
     }
+  }
+
+  function showViewOnlyForOrg(orgId: string): boolean {
+    return !isRootOwnerAdmin && !memberOrgIds.has(orgId);
   }
 
   function navigateToParentReadOnly() {
@@ -214,11 +219,20 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                   <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                     fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
                     textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.parentOrg")}</div>
-                  <ParentReadOnlyItem
-                    org={parentOrg}
-                    label={t("nav.viewOnly")}
-                    onClick={navigateToParentReadOnly}
-                  />
+                  {isRootOwnerAdmin ? (
+                    <AreaItem
+                      org={parentOrg}
+                      current={false}
+                      navigable
+                      onClick={() => navigateToOrg(parentOrg)}
+                    />
+                  ) : (
+                    <ParentReadOnlyItem
+                      org={parentOrg}
+                      label={t("nav.viewOnly")}
+                      onClick={navigateToParentReadOnly}
+                    />
+                  )}
                 </div>
               )}
 
@@ -240,7 +254,7 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                       org={s}
                       current={false}
                       navigable
-                      viewOnly={!memberOrgIds.has(s.id)}
+                      viewOnly={showViewOnlyForOrg(s.id)}
                       viewOnlyLabel={t("nav.viewOnly")}
                       onClick={() => navigateToOrg(s)}
                     />
@@ -253,20 +267,17 @@ export default function TopBar({ orgSlug }: { orgSlug: string }) {
                   <div style={{ padding: "4px 16px 2px", fontFamily: "var(--font-body)",
                     fontSize: "0.6875rem", fontWeight: 700, letterSpacing: "0.05em",
                     textTransform: "uppercase", color: "var(--t3)" }}>{t("nav.areas")}</div>
-                  {childOrgs.map((c) => {
-                    const hasMembership = memberOrgIds.has(c.id);
-                    return (
+                  {childOrgs.map((c) => (
                       <AreaItem
                         key={c.id}
                         org={c}
                         current={false}
                         navigable
-                        viewOnly={!hasMembership}
+                        viewOnly={showViewOnlyForOrg(c.id)}
                         viewOnlyLabel={t("nav.viewOnly")}
                         onClick={() => navigateToOrg(c)}
                       />
-                    );
-                  })}
+                  ))}
                 </div>
               )}
 
