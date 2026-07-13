@@ -200,6 +200,15 @@ export const COACH_LIMITS: Record<
   scale: { totalCredits: 3000, semantic: 300 },
 };
 
+/** Max sub-areas (non-root orgs) per billing root plan. */
+export const SUBAREAS_LIMITS: Record<Plan, number> = {
+  trial: 4,
+  solo: 4,
+  starter: Infinity,
+  growth: Infinity,
+  scale: Infinity,
+};
+
 /** Total unified credits consumed this month (authoritative: syntactic_calls column). */
 export function coachUnifiedCreditsUsed(
   u: Pick<CoachUsage, "syntactic_calls" | "semantic_calls"> | null | undefined

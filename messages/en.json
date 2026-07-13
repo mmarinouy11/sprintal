@@ -533,7 +533,11 @@
   },
   "onboarding": {
     "areasGuide": "Areas represent the teams, functions, or business units that will run their own strategic sprints. Examples: Marketing, Product, Operations, Sales. You can add more later from Settings.",
-    "areasMinRequired": "Add at least one area to continue."
+    "areasMinRequired": "Add at least one area to continue.",
+    "areasLimitReached": "Maximum 4 areas for Trial plan. Upgrade to Starter for unlimited areas."
+  },
+  "upgrade": {
+    "subAreasLimit": "You've reached the limit of 4 sub-areas on your current plan. Upgrade to Starter for unlimited areas."
   },
   "billing": {
     "pageTitle": "Billing",

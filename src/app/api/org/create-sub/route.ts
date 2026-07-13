@@ -3,7 +3,8 @@ import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { apiError, apiOk } from "@/lib/api-response";
 import { sanitizeText, sanitizeColor, sanitizeInt } from "@/lib/sanitize";
-import { COACH_LIMITS, type Plan } from "@/types";
+import { getOrgRootId, countSubOrgsUnderRoot } from "@/lib/orgHierarchy";
+import { COACH_LIMITS, SUBAREAS_LIMITS, type Plan } from "@/types";
 
 function planSupportsSemantic(planVal: string): boolean {
   const lim = COACH_LIMITS[planVal as Plan];
@@ -128,15 +129,24 @@ export async function POST(req: NextRequest) {
       return apiError("Se requiere rol owner o admin.", 403);
     }
 
-    // Trial limit — no sub-areas post-onboarding (root plan from DB, not client)
-    if (!fromOnboarding && plan === "trial") {
-      return apiOk(
-        {
-          error: "Tu plan trial no incluye sub-áreas. Activá Pro para crear una estructura multinivel.",
-          code: "TRIAL_LIMIT",
-        },
-        { status: 403 }
-      );
+    // Sub-area count limit (Trial / Solo = 4 sub-areas under root)
+    const rootOrgId = await getOrgRootId(supabaseAdmin, parentOrgId);
+    if (!rootOrgId) {
+      return apiError("Organización raíz no encontrada.", 400);
+    }
+
+    const limit = SUBAREAS_LIMITS[plan as Plan] ?? SUBAREAS_LIMITS.trial;
+    if (Number.isFinite(limit)) {
+      const subCount = await countSubOrgsUnderRoot(supabaseAdmin, rootOrgId);
+      if (subCount >= limit) {
+        return apiOk(
+          {
+            error: "Sub-area limit reached for your plan",
+            code: "SUBAREAS_LIMIT",
+          },
+          { status: 403 }
+        );
+      }
     }
 
     // Unique slug

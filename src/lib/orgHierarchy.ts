@@ -61,3 +61,27 @@ export async function isStrictAncestor(
   }
   return false;
 }
+
+/** Count all descendant orgs under `rootOrgId` (excludes the root). */
+export async function countSubOrgsUnderRoot(
+  supabase: SupabaseClient,
+  rootOrgId: string
+): Promise<number> {
+  let count = 0;
+  let frontier = [rootOrgId];
+  const seen = new Set<string>([rootOrgId]);
+  for (let i = 0; i < 4; i++) {
+    if (!frontier.length) break;
+    const { data } = await supabase
+      .from("organizations")
+      .select("id")
+      .in("parent_org_id", frontier);
+    const children = (data ?? [])
+      .map((r) => (r as { id: string }).id)
+      .filter((id) => !seen.has(id));
+    for (const id of children) seen.add(id);
+    count += children.length;
+    frontier = children;
+  }
+  return count;
+}

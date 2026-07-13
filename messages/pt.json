@@ -533,7 +533,11 @@
   },
   "onboarding": {
     "areasGuide": "As áreas representam as equipes, funções ou unidades de negócio que executarão seus próprios sprints estratégicos. Exemplos: Marketing, Produto, Operações, Vendas. Você pode adicionar mais depois em Configurações.",
-    "areasMinRequired": "Adicione pelo menos uma área para continuar."
+    "areasMinRequired": "Adicione pelo menos uma área para continuar.",
+    "areasLimitReached": "Máximo de 4 áreas no plano Trial. Faça upgrade para Starter para áreas ilimitadas."
+  },
+  "upgrade": {
+    "subAreasLimit": "Você atingiu o limite de 4 sub-áreas no seu plano atual. Faça upgrade para Starter para áreas ilimitadas."
   },
   "billing": {
     "pageTitle": "Faturamento",

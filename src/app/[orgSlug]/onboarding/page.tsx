@@ -4,6 +4,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { useT } from "@/lib/i18n";
+import { SUBAREAS_LIMITS, type Plan } from "@/types";
 
 const BRAND_PRESETS = [
   { label:"Indigo",      hex:"#5C6AC4" },
@@ -64,6 +65,7 @@ export default function OnboardingPage() {
   const [newAreaName, setNewAreaName] = useState("");
   const [newAreaType, setNewAreaType] = useState("Market Unit");
   const [areasError, setAreasError] = useState(false);
+  const [areasLimitError, setAreasLimitError] = useState(false);
 
   // Step 3 — Sprint
   const [sprint, setSprint] = useState({
@@ -91,6 +93,8 @@ export default function OnboardingPage() {
 
   function addArea() {
     if (!newAreaName.trim()) return;
+    const limit = SUBAREAS_LIMITS[(org?.plan || "trial") as Plan] ?? SUBAREAS_LIMITS.trial;
+    if (Number.isFinite(limit) && areas.length >= limit) return;
     setAreasError(false);
     setAreas(prev => [...prev, { id: Date.now().toString(), name: newAreaName.trim(), type: newAreaType }]);
     setNewAreaName("");
@@ -200,6 +204,8 @@ export default function OnboardingPage() {
   }
 
   const bc = brandColor;
+  const areaLimit = SUBAREAS_LIMITS[(org?.plan || "trial") as Plan] ?? SUBAREAS_LIMITS.trial;
+  const atAreaLimit = Number.isFinite(areaLimit) && areas.length >= areaLimit;
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--bg)" }}>
@@ -371,9 +377,14 @@ export default function OnboardingPage() {
                       </select>
                     </div>
                   </div>
-                  <button type="button" onClick={addArea} className="btn-primary w-full mt-1">
+                  <button type="button" onClick={addArea} disabled={atAreaLimit} className="btn-primary w-full mt-1">
                     + Add Area
                   </button>
+                  {atAreaLimit && (
+                    <p className="text-sm mt-3" style={{ color: "var(--t2)" }}>
+                      {t("onboarding.areasLimitReached")}
+                    </p>
+                  )}
                 </div>
 
                 <div className="flex gap-3">
@@ -392,7 +403,7 @@ export default function OnboardingPage() {
 
                     // Create each area as a sub-org
                     for (const a of areas) {
-                      await fetch("/api/org/create-sub", {
+                      const res = await fetch("/api/org/create-sub", {
                         method: "POST",
                         headers: {
                           "Content-Type": "application/json",
@@ -413,6 +424,14 @@ export default function OnboardingPage() {
                           userId:         session.user.id,
                         }),
                       });
+                      if (!res.ok) {
+                        const data = await res.json().catch(() => ({}));
+                        if (data.code === "SUBAREAS_LIMIT") {
+                          setAreasLimitError(true);
+                          setSaving(false);
+                          return;
+                        }
+                      }
                     }
                     setSaving(false);
                     setStep(3);
@@ -423,6 +442,11 @@ export default function OnboardingPage() {
                 {areasError && (
                   <p className="text-sm mt-3" style={{ color: "var(--killed)" }}>
                     {t("onboarding.areasMinRequired")}
+                  </p>
+                )}
+                {areasLimitError && (
+                  <p className="text-sm mt-3" style={{ color: "var(--killed)" }}>
+                    {t("onboarding.areasLimitReached")}
                   </p>
                 )}
               </div>

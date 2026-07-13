@@ -10,11 +10,13 @@ import UpgradeModal from "@/components/ui/UpgradeModal";
 
 export default function NewSubOrgPage() {
   const t = useT("form");
+  const tg = useT();
   const router = useRouter();
   const params = useParams();
-  const { org, setChildOrgs, childOrgs, currentRole, rootPlan } = useStore();
+  const { org, setChildOrgs, childOrgs, rootPlan } = useStore();
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showSubAreasUpgrade, setShowSubAreasUpgrade] = useState(false);
   const [name, setName] = useState("");
   const [parentArea, setParentArea] = useState("");
   const [localAreas, setLocalAreas] = useState<{ id: string; name: string; cascade_level: number }[]>([]);
@@ -38,7 +40,6 @@ export default function NewSubOrgPage() {
   const effectiveParentId = selectedParentOrg?.id || org?.id;
   const effectiveParentLevel = selectedParentOrg?.cascade_level || org?.cascade_level || 1;
   const childLevel = effectiveParentLevel + 1;
-  const isTrialOrg = rootPlan === "trial";
 
   const childLevelName = "Area";
 
@@ -83,6 +84,11 @@ export default function NewSubOrgPage() {
 
       const data = await res.json();
       if (!res.ok) {
+        if (data.code === "SUBAREAS_LIMIT") {
+          setShowSubAreasUpgrade(true);
+          setSaving(false);
+          return;
+        }
         setError(data.error || t("errorCreating"));
         setSaving(false); return;
       }
@@ -146,13 +152,17 @@ export default function NewSubOrgPage() {
     </div>
   );
 
-  if (isTrialOrg) {
+  if (showSubAreasUpgrade) {
     return (
       <UpgradeModal
         requiredPlan="starter"
         featureName={t("newArea")}
+        bodyOverride={tg("upgrade.subAreasLimit")}
         orgSlug={typeof params.orgSlug === "string" ? params.orgSlug : undefined}
-        onClose={() => router.back()}
+        onClose={() => {
+          setShowSubAreasUpgrade(false);
+          router.back();
+        }}
       />
     );
   }
