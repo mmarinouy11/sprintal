@@ -1,7 +1,11 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER } from './helpers/auth';
+import { loginAndWaitForOrgContext, TEST_USER } from './helpers/auth';
 
 test.describe('SPR — Sprints', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await loginAndWaitForOrgContext(page);
+  });
 
   test('SPR-04 — No hay opción para activar sprint planificado (bug conocido)', async ({ page }) => {
     await page.goto(`/${TEST_USER.orgSlug}/sprints`);

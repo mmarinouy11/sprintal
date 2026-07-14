@@ -1,8 +1,13 @@
 import { test, expect } from '@playwright/test';
+import { loginAndWaitForOrgContext } from './helpers/auth';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
 test.describe('CLO — Cierre de Sprint', () => {
+
+  test.beforeEach(async ({ page }) => {
+    await loginAndWaitForOrgContext(page);
+  });
 
   test('CLO-01 — Cierre de Sprint accesible (plan Solo+)', async ({ page }) => {
     await page.goto(`/${ORG}/new/closure`);

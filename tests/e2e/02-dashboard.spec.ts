@@ -1,10 +1,17 @@
 import { test, expect } from '@playwright/test';
-import { TEST_USER } from './helpers/auth';
+import { loginAndWaitForOrgContext, TEST_USER } from './helpers/auth';
 
 test.describe('DASH — Dashboard', () => {
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`/${TEST_USER.orgSlug}/dashboard`, { timeout: 60000 });
+    await loginAndWaitForOrgContext(page);
+    // loginAndWaitForOrgContext already lands on dashboard
+    // but ensure we're on the correct URL
+    await expect(page).toHaveURL(/\/dashboard/, { timeout: 5000 }).catch(async () => {
+      // If not on dashboard, navigate explicitly
+      await page.goto(`/${process.env.TEST_ORG_SLUG}/dashboard`);
+      await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
+    });
   });
 
   test('DASH-01 — Dashboard carga correctamente', async ({ page }) => {

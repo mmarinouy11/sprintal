@@ -1,8 +1,21 @@
-import { test, expect } from '@playwright/test';
-import { loginAndWaitForOrgContext } from './helpers/auth';
+import { test, expect, type Page } from '@playwright/test';
+import { loginAndWaitForOrgContext, TEST_USER } from './helpers/auth';
 import { resolveBetCard } from './helpers/test-data';
 
 const ORG = process.env.TEST_ORG_SLUG;
+
+async function gotoWithSessionRecovery(page: Page, path: string) {
+  await page.goto(path);
+
+  // Handle session loss after navigation
+  if (page.url().includes('login')) {
+    await page.fill('input[type="email"]', TEST_USER.email);
+    await page.fill('input[type="password"]', TEST_USER.password);
+    await page.click('button[type="submit"]');
+    await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
+    await page.goto(path);
+  }
+}
 
 test.describe('BET — Bets completo', () => {
 
@@ -14,14 +27,14 @@ test.describe('BET — Bets completo', () => {
   });
 
   test('BET-01 — Formulario de nueva bet accesible', async ({ page }) => {
-    await page.goto(`/${ORG}/new/bet`);
+    await gotoWithSessionRecovery(page, `/${ORG}/new/bet`);
     await expect(page.locator('form, [data-testid="new-bet-form"]')).toBeVisible({ timeout: 10000 });
     // Key fields present
     await expect(page.locator('textarea, input').first()).toBeVisible();
   });
 
   test('BET-06 — Tablero de bets carga con columnas de estado', async ({ page }) => {
-    await page.goto(`/${ORG}/bets/board`);
+    await gotoWithSessionRecovery(page, `/${ORG}/bets/board`);
     // Board should have status columns — check actual status label from i18n
     const activeCol = page.locator('text=Activo').or(
       page.locator('text=Activa').or(
@@ -36,15 +49,14 @@ test.describe('BET — Bets completo', () => {
   });
 
   test('BET-07 — Columnas vacías no muestran "None"', async ({ page }) => {
-    await page.goto(`/${ORG}/bets/board`);
+    await gotoWithSessionRecovery(page, `/${ORG}/bets/board`);
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text="None"').first()).not.toBeVisible();
   });
 
   test('BET-08 — Tabla de bets carga con filtro de área', async ({ page }) => {
-    await page.goto(`/${ORG}/bets/table`);
+    await gotoWithSessionRecovery(page, `/${ORG}/bets/table`);
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    // Table or empty state visible
     const table = page.locator('table, [data-testid="bets-table"]');
     const emptyState = page.locator('text=No hay bets').or(page.locator('text=No bets'));
     await expect(table.or(emptyState).first()).toBeVisible({ timeout: 8000 });
@@ -59,6 +71,5 @@ test.describe('BET — Bets completo', () => {
       test.skip(true, 'No bets in test org');
     }
   });
-
 
 });
