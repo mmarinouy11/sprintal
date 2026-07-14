@@ -7,7 +7,7 @@ export default defineConfig({
   globalTeardown: './tests/e2e/helpers/global-teardown.ts',
   fullyParallel: false, // run sequentially — tests share state (DB)
   forbidOnly: !!process.env.CI,
-  retries: 1,
+  retries: process.env.CI ? 1 : 0,
   workers: 1,
   reporter: [['html', { outputFolder: 'playwright-report' }], ['list']],
   use: {

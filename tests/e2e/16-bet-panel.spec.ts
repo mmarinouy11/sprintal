@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { loginAndWaitForOrgContext } from './helpers/auth';
-import { getTestBetId, resolveBetCard, expandActivaColumn } from './helpers/test-data';
+import { getTestBetId, resolveBetCard } from './helpers/test-data';
 
 test.describe('BET Panel — Panel de detalle completo', () => {
 
@@ -8,8 +8,7 @@ test.describe('BET Panel — Panel de detalle completo', () => {
     await loginAndWaitForOrgContext(page);
     await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    await expandActivaColumn(page);
-    await page.waitForTimeout(300);
+    await page.waitForTimeout(500);
     await page.waitForSelector('[data-testid="bet-card"], text=No bets yet', { timeout: 15000 }).catch(() => {});
 
     const betId = getTestBetId();
