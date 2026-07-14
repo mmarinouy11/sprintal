@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { loginAndWaitForOrgContext } from './helpers/auth';
+import { loginAndWaitForOrgContext, TEST_USER } from './helpers/auth';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
@@ -11,6 +11,15 @@ test.describe('CLO — Cierre de Sprint', () => {
 
   test('CLO-01 — Cierre de Sprint accesible (plan Solo+)', async ({ page }) => {
     await page.goto(`/${ORG}/new/closure`);
+
+    if (page.url().includes('login')) {
+      await page.fill('input[type="email"]', TEST_USER.email);
+      await page.fill('input[type="password"]', TEST_USER.password);
+      await page.click('button[type="submit"]');
+      await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
+      await page.goto(`/${ORG}/new/closure`);
+    }
+
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
     // Either the wizard loads or a feature gate is shown
     const wizard = page.locator('form, [data-testid="closure-form"]');
@@ -22,6 +31,15 @@ test.describe('CLO — Cierre de Sprint', () => {
 
   test('CLO-07 — Página de cierre carga sin errores', async ({ page }) => {
     await page.goto(`/${ORG}/new/closure`);
+
+    if (page.url().includes('login')) {
+      await page.fill('input[type="email"]', TEST_USER.email);
+      await page.fill('input[type="password"]', TEST_USER.password);
+      await page.click('button[type="submit"]');
+      await page.waitForURL(/\/(dashboard|onboarding)/, { timeout: 15000 });
+      await page.goto(`/${ORG}/new/closure`);
+    }
+
     await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('text=Something went wrong')).not.toBeVisible();
     await expect(page.locator('text=500')).not.toBeVisible();
