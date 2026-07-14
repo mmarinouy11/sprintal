@@ -91,7 +91,7 @@ export default function BetsTablePage() {
                         <div className="flex items-center gap-2">
                           <div className="font-medium text-sm" style={{ color: "var(--text)" }}>
                             {b.name}
-                            {b.is_draft && <span className="ml-1 t-mono" style={{ fontSize: "0.6rem", color: "var(--pivoted)" }}>DRAFT</span>}
+                            {b.is_draft && <span className="ml-1 t-mono" style={{ fontSize: "0.6rem", color: "var(--pivoted)" }}>{t("bet.draft")}</span>}
                           </div>
                           {incomplete && (
                             <span title="Incomplete bet — missing fields"

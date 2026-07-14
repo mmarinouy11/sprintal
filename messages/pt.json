@@ -32,7 +32,7 @@
   },
   "layout": {
     "readOnlyAncestor": "Você está vendo {org} em somente leitura.",
-    "readOnlySwitchTo": "Abra {member} para agir"
+    "readOnlySwitchTo": "Ir para {member} para editar"
   },
   "actions": {
     "newSprint": "Novo Sprint",
@@ -126,7 +126,10 @@
     "oauthFailed": "Não foi possível entrar com o Google. Tente novamente.",
     "completingOAuth": "Concluindo o login…",
     "oauthSessionLoading": "Conectando sua conta do Google…",
-    "oauthNewUserHint": "Sua conta do Google está pronta. Toque em «Continuar com Google» abaixo para entrar."
+    "oauthNewUserHint": "Sua conta do Google está pronta. Toque em «Continuar com Google» abaixo para entrar.",
+    "invalidCredentials": "Email ou senha incorretos.",
+    "genericError": "Ocorreu um erro. Por favor tente novamente.",
+    "emailNotConfirmed": "Confirme seu email antes de entrar. Verifique sua caixa de entrada."
   },
   "errors": {
     "orgBoundaryTitle": "Algo deu errado",
@@ -183,7 +186,7 @@
     "notDefined": "Não definido",
     "orphan": "órfã",
     "enabler": "habilitador",
-    "draft": "RASCUNHO"
+    "draft": "Rascunho"
   },
   "signal": {
     "strong": "Forte",
@@ -242,7 +245,10 @@
     "whatWorked": "O que funcionou",
     "whatDidnt": "O que não funcionou",
     "surprises": "Surpresas",
-    "noSprintsDesc": "Um sprint define o foco estratégico de um ciclo. Crie seu primeiro sprint para começar a acompanhar bets e progresso."
+    "noSprintsDesc": "Um sprint define o foco estratégico de um ciclo. Crie seu primeiro sprint para começar a acompanhar bets e progresso.",
+    "activate": "Ativar",
+    "alreadyActive": "Esta área já tem um sprint ativo.",
+    "activating": "Ativando..."
   },
   "form": {
     "ownerCannotBeSupport": "A área responsável não pode ser também uma área de suporte",
@@ -534,7 +540,9 @@
   "onboarding": {
     "areasGuide": "As áreas representam as equipes, funções ou unidades de negócio que executarão seus próprios sprints estratégicos. Exemplos: Marketing, Produto, Operações, Vendas. Você pode adicionar mais depois em Configurações.",
     "areasMinRequired": "Adicione pelo menos uma área para continuar.",
-    "areasLimitReached": "Máximo de 4 áreas no plano Trial. Faça upgrade para Starter para áreas ilimitadas."
+    "areasLimitReached": "Máximo de 4 áreas no plano Trial. Faça upgrade para Starter para áreas ilimitadas.",
+    "outcomePlaceholder": "Mensurável em {days} dias",
+    "sprintDurationHint": "Este sprint durará {days} dias."
   },
   "upgrade": {
     "subAreasLimit": "Você atingiu o limite de 4 sub-áreas no seu plano atual. Faça upgrade para Starter para áreas ilimitadas.",

@@ -4,6 +4,17 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { fetchSessionHomeClient } from "@/lib/fetchSessionHomeClient";
 
+async function resolveHomeWithRetry(accessToken: string, orgId: string | null) {
+  let last = await fetchSessionHomeClient(accessToken, { orgId });
+  if (last.ok) return last;
+  // Memberships can lag briefly after OAuth for returning Google users
+  for (let i = 0; i < 3 && !last.ok && last.status === 403; i++) {
+    await new Promise((r) => setTimeout(r, 400));
+    last = await fetchSessionHomeClient(accessToken, { orgId });
+  }
+  return last;
+}
+
 function AuthCallbackCompleteInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,9 +52,7 @@ function AuthCallbackCompleteInner() {
       }
 
       const orgIdFromUrl = searchParams.get("orgId");
-      const homePick = await fetchSessionHomeClient(session.access_token, {
-        orgId: orgIdFromUrl,
-      });
+      const homePick = await resolveHomeWithRetry(session.access_token, orgIdFromUrl);
       if (!homePick.ok) {
         if (homePick.status === 401) {
           setStatus("error");
@@ -133,14 +142,17 @@ function AuthCallbackCompleteInner() {
               color: "var(--t2)", marginBottom: 24 }}>
               {message}
             </div>
-            <a href="/auth/login" style={{
-              display: "inline-block", padding: "10px 24px",
-              background: "var(--brand)", color: "#fff", borderRadius: "var(--r)",
-              fontFamily: "var(--font-body)", fontSize: "0.875rem", fontWeight: 600,
-              textDecoration: "none",
-            }}>
-              Volver al login
-            </a>
+            <button
+              type="button"
+              onClick={() => router.push("/auth/login")}
+              style={{
+                background: "var(--brand)", color: "#fff", borderRadius: "var(--r)",
+                padding: "10px 20px", border: "none", cursor: "pointer",
+                fontFamily: "var(--font-body)", fontWeight: 600,
+              }}
+            >
+              Ir al login
+            </button>
           </>
         )}
       </div>
@@ -150,11 +162,7 @@ function AuthCallbackCompleteInner() {
 
 export default function AuthCallbackCompletePage() {
   return (
-    <Suspense fallback={
-      <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--bg)" }}>
-        <div style={{ fontFamily: "var(--font-body)", color: "var(--t2)" }}>Loading…</div>
-      </div>
-    }>
+    <Suspense fallback={null}>
       <AuthCallbackCompleteInner />
     </Suspense>
   );

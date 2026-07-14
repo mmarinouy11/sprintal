@@ -3,7 +3,7 @@ import { useState, useRef, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
-import { useT } from "@/lib/i18n";
+import { useT, ensureBrowserLocaleCookie } from "@/lib/i18n";
 import { SUBAREAS_LIMITS, type Plan } from "@/types";
 
 const BRAND_PRESETS = [
@@ -33,6 +33,10 @@ export default function OnboardingPage() {
   const [org, setLocalOrg] = useState(storeOrg);
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    ensureBrowserLocaleCookie();
+  }, []);
 
   // Load org directly if not in store (onboarding is outside the layout)
   useEffect(() => {
@@ -81,6 +85,13 @@ export default function OnboardingPage() {
     { id:"1", name:"", outcome:"", hypothesis:"", owner_area:"", signal:"Unclear" },
   ]);
   const [sprintId, setSprintId] = useState("");
+
+  const sprintDays = Math.max(
+    1,
+    Math.round(
+      (new Date(sprint.end_date).getTime() - new Date(sprint.start_date).getTime()) / 86400000
+    )
+  );
 
   function handleLogoChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -320,8 +331,7 @@ export default function OnboardingPage() {
                   </div>
                 </div>
 
-                <button onClick={saveBrand} disabled={saving} className="btn-primary w-full py-3"
-                  style={{ background: bc }}>
+                <button onClick={saveBrand} disabled={saving} className="btn-primary w-full py-3">
                   {saving ? "Saving..." : "Continue →"}
                 </button>
               </div>
@@ -530,6 +540,9 @@ export default function OnboardingPage() {
                       onChange={e => setSprint(s => ({ ...s, end_date: e.target.value }))} />
                   </div>
                 </div>
+                <p className="t-mono text-xs mb-4" style={{ color: "var(--t2)" }}>
+                  {t("onboarding.sprintDurationHint", { days: sprintDays })}
+                </p>
                 <div className="mb-4">
                   <div className="t-label mb-2">Strategic Focus</div>
                   <textarea className="input" rows={3} value={sprint.focus}
@@ -591,7 +604,7 @@ export default function OnboardingPage() {
                           <div>
                             <div className="t-label mb-1">Outcome</div>
                             <input className="input" value={b.outcome} onChange={e => updateBet(b.id, "outcome", e.target.value)}
-                              placeholder="Measurable in 90 days" />
+                              placeholder={t("onboarding.outcomePlaceholder", { days: sprintDays })} />
                           </div>
                         </div>
                         <div>

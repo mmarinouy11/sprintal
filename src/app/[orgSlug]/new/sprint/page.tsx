@@ -44,7 +44,7 @@ export default function NewSprintPage() {
   const tg = useT();
   const router = useRouter();
   const params = useParams();
-  const { org, addSprint } = useStore();
+  const { org, addSprint, sprints } = useStore();
   const level = org?.cascade_level || 1;
   const config = getLevelConfig(level);
   const today = new Date().toISOString().split("T")[0];
@@ -58,12 +58,21 @@ export default function NewSprintPage() {
     status: "Planned",
   });
   const [saving, setSaving] = useState(false);
+  const [createError, setCreateError] = useState("");
   const [parentSprint, setParentSprint] = useState<{
     name: string; start_date: string; end_date: string;
   } | null>(null);
 
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
+
+  // Default to Active when no active sprint exists in this org
+  useEffect(() => {
+    const hasActiveSprint = sprints?.some(s => s.status === "Active");
+    if (!hasActiveSprint) {
+      setForm(f => (f.status === "Active" ? f : { ...f, status: "Active" }));
+    }
+  }, [sprints]);
 
   // Load parent sprint for context
   useEffect(() => {
@@ -106,7 +115,20 @@ export default function NewSprintPage() {
   async function save(e: React.FormEvent) {
     e.preventDefault();
     if (!org) return;
+    setCreateError("");
     setSaving(true);
+    if (form.status === "Active") {
+      const { count } = await supabase
+        .from("sprints")
+        .select("id", { count: "exact", head: true })
+        .eq("org_id", org.id)
+        .eq("status", "Active");
+      if ((count ?? 0) > 0) {
+        setCreateError(tg("sprints.alreadyActive"));
+        setSaving(false);
+        return;
+      }
+    }
     const { data } = await supabase.from("sprints")
       .insert({ ...form, org_id: org.id }).select().limit(1).maybeSingle();
     if (data) { addSprint(data); router.push(`/${params.orgSlug}/sprints`); }
@@ -258,6 +280,10 @@ export default function NewSprintPage() {
             <option value="Planned">{t("statusPlanned")}</option><option value="Active">{t("statusActive")}</option>
           </select>
         </Field>
+
+        {createError && (
+          <div className="mb-4 text-sm" style={{ color: "var(--killed)" }}>{createError}</div>
+        )}
 
         <ModalFooter>
           <button type="button" onClick={() => router.back()} className="btn-ghost flex-1">{t("cancel")}</button>

@@ -1,15 +1,52 @@
 "use client";
 import { useStore } from "@/lib/store";
 import { StatusBadge } from "@/components/ui/Badge";
-import { sprintProgress, daysRemaining } from "@/lib/utils";
+import { sprintProgress } from "@/lib/utils";
 import Link from "next/link";
 import { useT } from "@/lib/i18n";
 import { useParams } from "next/navigation";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 export default function SprintsPage() {
-  const { sprints, bets } = useStore();
+  const { sprints, bets, org, updateSprint } = useStore();
   const params = useParams();
   const t = useT();
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+  const [activateError, setActivateError] = useState("");
+
+  const hasActiveSprint = sprints.some(s => s.status === "Active");
+
+  async function activateSprint(sprintId: string) {
+    if (!org) return;
+    setActivateError("");
+    setActivatingId(sprintId);
+    const { count } = await supabase
+      .from("sprints")
+      .select("id", { count: "exact", head: true })
+      .eq("org_id", org.id)
+      .eq("status", "Active");
+    if ((count ?? 0) > 0) {
+      setActivateError(t("sprints.alreadyActive"));
+      setActivatingId(null);
+      return;
+    }
+    const { data, error } = await supabase
+      .from("sprints")
+      .update({ status: "Active" })
+      .eq("id", sprintId)
+      .eq("org_id", org.id)
+      .select()
+      .limit(1)
+      .maybeSingle();
+    if (error || !data) {
+      setActivateError(t("sprints.alreadyActive"));
+      setActivatingId(null);
+      return;
+    }
+    updateSprint(data);
+    setActivatingId(null);
+  }
 
   return (
     <div className="w-full px-10 py-8">
@@ -22,6 +59,10 @@ export default function SprintsPage() {
           + {t("actions.newSprint")}
         </Link>
       </div>
+
+      {activateError && (
+        <div className="mb-4 text-sm" style={{ color: "var(--killed)" }}>{activateError}</div>
+      )}
 
       {sprints.length === 0 ? (
         <div style={{
@@ -58,7 +99,20 @@ export default function SprintsPage() {
                     <div className="text-xs mt-0.5" style={{ color:"var(--t3)",
                       fontFamily:"var(--font-mono)" }}>{s.start_date} → {s.end_date}</div>
                   </div>
-                  <StatusBadge status={s.status as any} />
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={s.status as any} />
+                    {s.status === "Planned" && !hasActiveSprint && (
+                      <button
+                        type="button"
+                        onClick={() => activateSprint(s.id)}
+                        disabled={activatingId === s.id}
+                        className="btn-ghost"
+                        style={{ padding: "4px 10px", fontSize: "0.75rem" }}
+                      >
+                        {activatingId === s.id ? t("sprints.activating") : t("sprints.activate")}
+                      </button>
+                    )}
+                  </div>
                 </div>
                 {s.focus && (
                   <>

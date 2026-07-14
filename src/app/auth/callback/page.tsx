@@ -81,9 +81,16 @@ function AuthOAuthCallbackInner() {
       }
 
       const orgIdFromUrl = params.get("orgId");
-      const homePick = await fetchSessionHomeClient(session.access_token, {
+      let homePick = await fetchSessionHomeClient(session.access_token, {
         orgId: orgIdFromUrl,
       });
+      // Retry briefly — memberships can lag right after Google OAuth for existing users
+      for (let i = 0; i < 3 && !homePick.ok && homePick.status === 403; i++) {
+        await new Promise((r) => setTimeout(r, 400));
+        homePick = await fetchSessionHomeClient(session.access_token, {
+          orgId: orgIdFromUrl,
+        });
+      }
       if (!homePick.ok) {
         if (homePick.status === 401) {
           if (!cancelled) hardGo("/auth/login?error=oauth");

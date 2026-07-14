@@ -32,7 +32,7 @@
   },
   "layout": {
     "readOnlyAncestor": "You're viewing {org} in read-only.",
-    "readOnlySwitchTo": "Open {member} to take actions"
+    "readOnlySwitchTo": "Go to {member} to edit"
   },
   "actions": {
     "newSprint": "New Sprint",
@@ -126,7 +126,10 @@
     "oauthFailed": "Google sign-in failed. Please try again.",
     "completingOAuth": "Completing sign-in…",
     "oauthSessionLoading": "Connecting your Google account…",
-    "oauthNewUserHint": "Your Google account is ready. Tap “Continue with Google” below to finish signing in."
+    "oauthNewUserHint": "Your Google account is ready. Tap “Continue with Google” below to finish signing in.",
+    "invalidCredentials": "Invalid email or password.",
+    "genericError": "An error occurred. Please try again.",
+    "emailNotConfirmed": "Please confirm your email before logging in. Check your inbox for the confirmation link."
   },
   "errors": {
     "orgBoundaryTitle": "Something went wrong",
@@ -183,7 +186,7 @@
     "notDefined": "Not defined",
     "orphan": "orphan",
     "enabler": "enabler",
-    "draft": "DRAFT"
+    "draft": "Draft"
   },
   "signal": {
     "strong": "Strong",
@@ -242,7 +245,10 @@
     "whatWorked": "What worked",
     "whatDidnt": "What didn't",
     "surprises": "Surprises",
-    "noSprintsDesc": "A sprint defines your strategic focus for a cycle. Create your first sprint to start tracking bets and progress."
+    "noSprintsDesc": "A sprint defines your strategic focus for a cycle. Create your first sprint to start tracking bets and progress.",
+    "activate": "Activate",
+    "alreadyActive": "This area already has an active sprint.",
+    "activating": "Activating..."
   },
   "form": {
     "ownerCannotBeSupport": "The owner area cannot also be a support area",
@@ -534,7 +540,9 @@
   "onboarding": {
     "areasGuide": "Areas represent the teams, functions, or business units that will run their own strategic sprints. Examples: Marketing, Product, Operations, Sales. You can add more later from Settings.",
     "areasMinRequired": "Add at least one area to continue.",
-    "areasLimitReached": "Maximum 4 areas for Trial plan. Upgrade to Starter for unlimited areas."
+    "areasLimitReached": "Maximum 4 areas for Trial plan. Upgrade to Starter for unlimited areas.",
+    "outcomePlaceholder": "Measurable in {days} days",
+    "sprintDurationHint": "This sprint will last {days} days."
   },
   "upgrade": {
     "subAreasLimit": "You've reached the limit of 4 sub-areas on your current plan. Upgrade to Starter for unlimited areas.",

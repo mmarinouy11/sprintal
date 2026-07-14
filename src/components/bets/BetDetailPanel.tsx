@@ -346,7 +346,7 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
             <div className="font-bold text-lg tracking-tight leading-tight"
               style={{color:"var(--text)", letterSpacing:"-0.02em"}}>
               {bet.name}
-              {bet.is_draft && <span className="ml-2 badge badge-pivoted" style={{fontSize:"0.6rem", verticalAlign:"middle"}}>DRAFT</span>}
+              {bet.is_draft && <span className="ml-2 badge badge-pivoted" style={{fontSize:"0.6rem", verticalAlign:"middle"}}>{tg("bet.draft")}</span>}
             </div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               <button type="button" onClick={() => setEditing(!editing)} className="btn-primary py-1.5 px-3 text-xs">

@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect, Suspense } from "react";
-import { useT } from "@/lib/i18n";
+import { useT, ensureBrowserLocaleCookie } from "@/lib/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
@@ -22,6 +22,10 @@ function SignupPageInner() {
   const [oauthWaiting, setOauthWaiting] = useState(oauthMode);
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
+
+  useEffect(() => {
+    ensureBrowserLocaleCookie();
+  }, []);
 
   /** After OAuth redirect, cookies/session may not be visible to the browser client immediately. */
   useEffect(() => {
@@ -119,7 +123,14 @@ function SignupPageInner() {
         email: form.email,
         password: form.password,
         options: {
-          emailRedirectTo: `${getBrowserAppOrigin()}/auth/callback/complete`,
+          emailRedirectTo: (() => {
+            const base = `${getBrowserAppOrigin()}/auth/callback/complete`;
+            if (!planQ) return base;
+            const qs = new URLSearchParams();
+            qs.set("plan", planQ);
+            qs.set("period", periodQ || "monthly");
+            return `${base}?${qs.toString()}`;
+          })(),
         },
       });
 

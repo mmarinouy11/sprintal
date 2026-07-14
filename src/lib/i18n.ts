@@ -122,3 +122,24 @@ export function setLocale(locale: string) {
   }
   window.location.reload();
 }
+
+/**
+ * Persist browser locale to NEXT_LOCALE cookie when missing.
+ * Returns true if a reload was triggered.
+ */
+export function ensureBrowserLocaleCookie(): boolean {
+  if (typeof document === "undefined") return false;
+  const existing = document.cookie
+    .split(";")
+    .map((c) => c.trim())
+    .find((c) => c.startsWith("NEXT_LOCALE="));
+  if (existing) return false;
+
+  const browserLang = navigator.language?.substring(0, 2).toLowerCase() || "en";
+  const locale = VALID_LOCALES.includes(browserLang as Locale) ? (browserLang as Locale) : "en";
+  document.cookie = `NEXT_LOCALE=${locale};path=/;max-age=31536000`;
+  currentLocale = locale;
+  localeInitialized = true;
+  window.location.reload();
+  return true;
+}

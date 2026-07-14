@@ -42,6 +42,10 @@ export function selectHomeOrgFromCandidates(
     if (hit) return hit;
   }
   const sorted = [...candidates].sort((a, b) => {
+    // Prefer orgs that finished onboarding so returning Google users land on dashboard
+    if (a.onboarding_complete !== b.onboarding_complete) {
+      return a.onboarding_complete ? -1 : 1;
+    }
     const d = Number(b.cascade_level ?? 0) - Number(a.cascade_level ?? 0);
     if (!Number.isFinite(d) || d !== 0) return Number.isFinite(d) ? d : 0;
     const aIsParent = candidates.some(

@@ -178,7 +178,8 @@ body {
   align-items: center;
   justify-content: center;
   gap: 6px;
-  background: var(--brand);
+  /* Fixed indigo — org accent (var(--brand)) must not recolor primary actions */
+  background: #5C6AC4;
   color: #FFFFFF;
   font-family: var(--font-display);
   font-size: 0.875rem;
@@ -190,7 +191,7 @@ body {
   cursor: pointer;
   transition: background 0.12s, transform 0.08s;
 }
-.btn-primary:hover  { background: var(--brand-dk); }
+.btn-primary:hover  { background: #4A57A8; }
 .btn-primary:active { transform: scale(0.98); }
 .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
 

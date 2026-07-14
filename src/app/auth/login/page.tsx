@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { useT } from "@/lib/i18n";
+import { useT, ensureBrowserLocaleCookie } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -17,6 +17,7 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (ensureBrowserLocaleCookie()) return;
     const params = new URLSearchParams(window.location.search);
     const e = params.get("error");
     if (e) {
@@ -32,10 +33,13 @@ export default function LoginPage() {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      if (error.message.toLowerCase().includes("email not confirmed")) {
-        setError("Please confirm your email before logging in. Check your inbox for the confirmation link.");
+      const errorMsg = error.message?.toLowerCase() || "";
+      if (errorMsg.includes("email not confirmed")) {
+        setError(t("emailNotConfirmed"));
+      } else if (errorMsg.includes("invalid login") || errorMsg.includes("invalid credentials")) {
+        setError(t("invalidCredentials"));
       } else {
-        setError(error.message);
+        setError(t("genericError"));
       }
       setLoading(false);
       return;

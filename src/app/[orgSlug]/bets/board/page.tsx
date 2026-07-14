@@ -96,7 +96,7 @@ export default function BetsBoardPage() {
                             fontSize: "0.6rem", color: "var(--pivoted)",
                             fontFamily: "var(--font-body)", fontWeight: 600,
                             textTransform: "uppercase", letterSpacing: "0.04em",
-                          }}>DRAFT</span>
+                          }}>{t("bet.draft")}</span>
                         )}
                       </div>
                       <div className="mb-2" style={{
