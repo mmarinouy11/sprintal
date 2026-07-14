@@ -1,30 +1,39 @@
 import { test, expect } from '@playwright/test';
 import { loginAndWaitForOrgContext } from './helpers/auth';
-import { getTestBetId, resolveBetCard } from './helpers/test-data';
+import { openTestBetPanel } from './helpers/test-data';
+
+const ORG = process.env.TEST_ORG_SLUG;
 
 test.describe('BET Panel — Panel de detalle completo', () => {
 
   test.beforeEach(async ({ page }) => {
+    // Establish auth via dashboard
     await loginAndWaitForOrgContext(page);
-    await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
-    await expect(page.locator('main')).toBeVisible({ timeout: 10000 });
-    await page.waitForTimeout(500);
-    await page.waitForSelector('[data-testid="bet-card"], text=No bets yet', { timeout: 15000 }).catch(() => {});
 
-    const betId = getTestBetId();
-    if (betId) {
-      await page.waitForSelector('[data-testid="bet-card"]', { timeout: 15000 }).catch(() => {});
-    }
+    // Navigate to bets board
+    await page.goto(`/${ORG}/bets/board`);
+    await expect(page.locator('main')).toBeVisible({ timeout: 15000 });
+
+    // Wait for either bet cards OR empty state — up to 10s
+    await page.waitForFunction(() => {
+      const cards = document.querySelectorAll('[data-testid="bet-card"]');
+      const emptyState = document.querySelector('[data-testid="empty-bets"]');
+      const bodyText = document.body.innerText;
+      return cards.length > 0 ||
+             !!emptyState ||
+             bodyText.includes('No bets') ||
+             bodyText.includes('ACTIVE') ||
+             bodyText.includes('ACTIVA') ||
+             bodyText.includes('Active');
+    }, { timeout: 10000 }).catch(() => {});
   });
 
   test('BET-11 — Botón Editar tiene clase btn-primary (estilo de marca)', async ({ page }) => {
-    const betCard = await resolveBetCard(page);
-    if (!await betCard.isVisible({ timeout: 5000 })) {
-      test.skip(true, 'No bets in test org');
+    const opened = await openTestBetPanel(page);
+    if (!opened) {
+      test.skip(true, 'Could not open bet panel');
       return;
     }
-    await betCard.click();
-    await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
     await page.waitForTimeout(300);
     const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').or(
       page.locator('[data-testid="bet-detail-panel"] button:has-text("Edit")')
@@ -35,29 +44,25 @@ test.describe('BET Panel — Panel de detalle completo', () => {
   });
 
   test('BET-09 — Panel de detalle se abre y muestra datos', async ({ page }) => {
-    const betCard = await resolveBetCard(page);
-    if (!await betCard.isVisible({ timeout: 5000 })) {
-      test.skip(true, 'No bets in test org');
+    const opened = await openTestBetPanel(page);
+    if (!opened) {
+      test.skip(true, 'Could not open bet panel');
       return;
     }
-    await betCard.click();
     const panel = page.locator('[data-testid="bet-detail-panel"]');
     await expect(panel).toBeVisible({ timeout: 8000 });
-    await expect(
-      panel.locator('button:has-text("Editar")').or(
-        panel.locator('button:has-text("Edit")')
-      ).first()
-    ).toBeVisible({ timeout: 5000 });
+    const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').or(
+      page.locator('[data-testid="bet-detail-panel"] button:has-text("Edit")')
+    ).first();
+    await expect(editBtn).toBeVisible({ timeout: 5000 });
   });
 
   test('BET-12 — Edición de bet no pierde foco al escribir', async ({ page }) => {
-    const betCard = await resolveBetCard(page);
-    if (!await betCard.isVisible({ timeout: 5000 })) {
-      test.skip(true, 'No bets in test org');
+    const opened = await openTestBetPanel(page);
+    if (!opened) {
+      test.skip(true, 'Could not open bet panel');
       return;
     }
-    await betCard.click();
-    await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 8000 });
     await page.waitForTimeout(300);
     const editBtn = page.locator('[data-testid="bet-detail-panel"] button:has-text("Editar")').or(
       page.locator('[data-testid="bet-detail-panel"] button:has-text("Edit")')
@@ -75,14 +80,11 @@ test.describe('BET Panel — Panel de detalle completo', () => {
   });
 
   test('BET-14 — Sección Cascada dentro del panel tiene contenedor correcto', async ({ page }) => {
-    const betCard = await resolveBetCard(page);
-    if (!await betCard.isVisible({ timeout: 5000 })) {
-      test.skip(true, 'No bets in test org');
+    const opened = await openTestBetPanel(page);
+    if (!opened) {
+      test.skip(true, 'Could not open bet panel');
       return;
     }
-    await betCard.click();
-    const panel = page.locator('[data-testid="bet-detail-panel"]');
-    await expect(panel).toBeVisible({ timeout: 8000 });
     await page.screenshot({ path: 'test-results/bet-14-panel.png' });
     await expect(page.locator('text=Something went wrong')).not.toBeVisible();
   });

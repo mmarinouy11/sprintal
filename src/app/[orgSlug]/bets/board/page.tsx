@@ -1,11 +1,12 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useStore } from "@/lib/store";
 import { SignalBadge, AreaTag } from "@/components/ui/Badge";
-import { useRouter, useParams } from "next/navigation";
+import { useRouter, useParams, useSearchParams } from "next/navigation";
 import type { BetStatus, Bet } from "@/types";
 import BetDetailPanel from "@/components/bets/BetDetailPanel";
 import { useT } from "@/lib/i18n";
+import { supabase } from "@/lib/supabase";
 
 const COLS: BetStatus[] = ["Active","Scaled","Pivoted","Done","Killed"];
 const COLORS: Record<BetStatus,string> = {
@@ -18,6 +19,26 @@ export default function BetsBoardPage() {
   const router = useRouter();
   const t = useT();
   const params = useParams();
+  const searchParams = useSearchParams();
+
+  // Deep-link: /bets/board?bet=<id> opens the detail panel without relying on store hydration
+  useEffect(() => {
+    const betId = searchParams.get("bet");
+    if (!betId) return;
+
+    const fromStore = bets.find(b => b.id === betId);
+    if (fromStore) {
+      setSelectedBet(fromStore);
+      return;
+    }
+
+    let cancelled = false;
+    supabase.from("bets").select("*").eq("id", betId).maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled && data) setSelectedBet(data as Bet);
+      });
+    return () => { cancelled = true; };
+  }, [searchParams, bets]);
 
   const totalBets = bets.length;
 

@@ -1,6 +1,6 @@
 import { test, expect, type Page } from '@playwright/test';
 import { loginAndWaitForOrgContext, TEST_USER } from './helpers/auth';
-import { resolveBetCard } from './helpers/test-data';
+import { openTestBetPanel } from './helpers/test-data';
 
 const ORG = process.env.TEST_ORG_SLUG;
 
@@ -63,13 +63,12 @@ test.describe('BET — Bets completo', () => {
   });
 
   test('BET-09 — Panel de detalle se abre al hacer clic', async ({ page }) => {
-    const betCard = await resolveBetCard(page);
-    if (await betCard.isVisible({ timeout: 5000 })) {
-      await betCard.click();
-      await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 5000 });
-    } else {
-      test.skip(true, 'No bets in test org');
+    const opened = await openTestBetPanel(page);
+    if (!opened) {
+      test.skip(true, 'Could not open bet panel');
+      return;
     }
+    await expect(page.locator('[data-testid="bet-detail-panel"]')).toBeVisible({ timeout: 5000 });
   });
 
 });

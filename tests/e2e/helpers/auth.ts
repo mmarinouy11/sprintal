@@ -31,35 +31,11 @@ export async function loginAndWaitForOrgContext(page: Page) {
 }
 
 export async function loginAndGoToBetsBoard(page: Page) {
-  // Step 1: establish org context via dashboard
   await loginAndWaitForOrgContext(page);
-
-  // Step 2: wait for dashboard to fully load — metrics bar confirms org data loaded
   await expect(page.locator('[data-testid="metrics-bar"]')).toBeVisible({ timeout: 15000 });
-  await page.waitForTimeout(3000); // give store extra time to fully populate
-
-  // Step 3: navigate to bets board
   await page.goto(`/${process.env.TEST_ORG_SLUG}/bets/board`);
   await expect(page.locator('main')).toBeVisible({ timeout: 15000 });
-
-  // Step 4: wait up to 15s for bet content to appear
-  // Poll every 500ms — board may show "No bets yet" briefly while store loads
-  let attempts = 0;
-  while (attempts < 30) {
-    const betCards = await page.locator('[data-testid="bet-card"]').count();
-    if (betCards > 0) break;
-
-    // Check if we see column headers (board loaded but bets collapsed)
-    const hasColumns = await page.locator('text=ACTIVE').or(
-      page.locator('text=ACTIVA')
-    ).isVisible().catch(() => false);
-    if (hasColumns) break;
-
-    await page.waitForTimeout(500);
-    attempts++;
-  }
-
-  await page.waitForTimeout(300);
+  await page.waitForTimeout(2000);
 }
 
 export async function gotoWithConditionalAuth(page: Page, path: string) {
