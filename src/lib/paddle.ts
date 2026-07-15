@@ -90,17 +90,19 @@ export async function getPaddle() {
     const token = process.env.NEXT_PUBLIC_PADDLE_CLIENT_TOKEN ?? "";
     const misconfigured = getPaddleClientTokenMisconfigurationMessage(token);
     if (misconfigured) {
-      // eslint-disable-next-line no-console -- intentional diagnostics
+      // eslint-disable-next-line no-console -- production monitoring for misconfigured billing
       console.error("[Paddle] misconfigured client token:", misconfigured);
       return undefined;
     }
-    // eslint-disable-next-line no-console -- intentional diagnostics
-    console.info("[Paddle] initializePaddle", {
-      environment,
-      NODE_ENV: process.env.NODE_ENV,
-      NEXT_PUBLIC_PADDLE_ENVIRONMENT: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT ?? "(unset)",
-      clientTokenPrefix: redactTokenPrefix(token),
-    });
+    if (process.env.NEXT_PUBLIC_PADDLE_DEBUG === "1") {
+      // eslint-disable-next-line no-console -- opt-in billing diagnostics
+      console.info("[Paddle] initializePaddle", {
+        environment,
+        NODE_ENV: process.env.NODE_ENV,
+        NEXT_PUBLIC_PADDLE_ENVIRONMENT: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT ?? "(unset)",
+        clientTokenPrefix: redactTokenPrefix(token),
+      });
+    }
     paddle = await initializePaddle({
       environment,
       token,

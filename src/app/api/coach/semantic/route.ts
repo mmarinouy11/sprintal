@@ -80,12 +80,6 @@ type CallOnceResult =
   | { ok: false; status: number; error: string }
   | { ok: false; aborted: true };
 
-type AnthropicUsageSnapshot = {
-  input_tokens?: number;
-  output_tokens?: number;
-  cache_read_input_tokens?: number;
-};
-
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
   const { allowed } = rateLimit({ key: `coach-semantic:${ip}`, limit: 10, windowMs: 60_000 });
@@ -292,18 +286,13 @@ export async function POST(req: NextRequest) {
     const models = [AI_MODELS.semantic, AI_MODELS.semanticFallback] as const;
     let modelUsed: (typeof models)[number] | null = null;
     let text = "";
-    let usageData: AnthropicUsageSnapshot | null = null;
     for (const model of models) {
       const first = await callOnce(true, model);
       if ("aborted" in first && first.aborted) {
         return apiOk({ observation: null, sources: [] });
       }
       if (first.ok && extractAnthropicText(first.data)) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("anthropic usage object:", JSON.stringify(first.data?.usage));
-        }
         text = extractAnthropicText(first.data);
-        usageData = (first.data?.usage as AnthropicUsageSnapshot) ?? null;
         modelUsed = model;
         break;
       }
@@ -312,11 +301,7 @@ export async function POST(req: NextRequest) {
         return apiOk({ observation: null, sources: [] });
       }
       if (second.ok && extractAnthropicText(second.data)) {
-        if (process.env.NODE_ENV === "development") {
-          console.log("anthropic usage object:", JSON.stringify(second.data?.usage));
-        }
         text = extractAnthropicText(second.data);
-        usageData = (second.data?.usage as AnthropicUsageSnapshot) ?? null;
         modelUsed = model;
         break;
       }
@@ -335,21 +320,6 @@ export async function POST(req: NextRequest) {
     const parsed = parseSemanticAssistantText(text);
     const observation =
       parsed.observation || text.replace(/\nSOURCES:[\s\S]*$/i, "").trim() || null;
-    const usage = usageData;
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        JSON.stringify({
-          coach: "semantic",
-          analysis_type: analysisType,
-          model: modelUsed,
-          input_tokens: usage?.input_tokens ?? null,
-          output_tokens: usage?.output_tokens ?? null,
-          org_id: orgId,
-          had_observation: observation !== null,
-          sources_count: parsed.sources.length,
-        })
-      );
-    }
 
     let creditsRemaining =
       totalCap < 0

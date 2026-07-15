@@ -21,28 +21,34 @@ function verifyWebhookSignature(rawBody: string, header: string | null, secret: 
   return crypto.timingSafeEqual(Buffer.from(h1, "utf8"), Buffer.from(digest, "utf8"));
 }
 
-function extractPriceId(data: any): string | null {
+function extractPriceId(data: Record<string, unknown>): string | null {
+  // TODO: type this properly against Paddle webhook payload schema
+  const d = data as any;
   return (
-    data?.items?.[0]?.price?.id ??
-    data?.items?.[0]?.price_id ??
-    data?.price_id ??
+    d?.items?.[0]?.price?.id ??
+    d?.items?.[0]?.price_id ??
+    d?.price_id ??
     null
   );
 }
 
-function extractOrgId(data: any): string | null {
+function extractOrgId(data: Record<string, unknown>): string | null {
+  // TODO: type this properly against Paddle webhook payload schema
+  const d = data as any;
   return (
-    data?.custom_data?.orgId ??
-    data?.custom_data?.org_id ??
-    data?.transaction?.custom_data?.orgId ??
+    d?.custom_data?.orgId ??
+    d?.custom_data?.org_id ??
+    d?.transaction?.custom_data?.orgId ??
     null
   );
 }
 
 /** Subscription id for org lookup / storage — never use transaction ids (`txn_`). */
-function extractSubscriptionId(eventType: string | undefined, data: any): string | null {
-  const id = data?.id;
-  const subField = data?.subscription_id;
+function extractSubscriptionId(eventType: string | undefined, data: Record<string, unknown>): string | null {
+  // TODO: type this properly against Paddle webhook payload schema
+  const d = data as any;
+  const id = d?.id;
+  const subField = d?.subscription_id;
   if (eventType?.startsWith("subscription.")) {
     if (typeof id === "string" && id.startsWith("sub_")) return id;
     if (typeof subField === "string" && subField.startsWith("sub_")) return subField;
@@ -105,13 +111,13 @@ export async function POST(req: NextRequest) {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    const priceId = extractPriceId(data);
+    const priceId = extractPriceId(data as Record<string, unknown>);
     const plan = getPlanFromPriceId(priceId);
     const period = getPeriodFromPriceId(priceId);
     const customerId = data?.customer_id ?? data?.customer?.id ?? null;
-    const subscriptionId = extractSubscriptionId(eventType, data);
+    const subscriptionId = extractSubscriptionId(eventType, data as Record<string, unknown>);
     const status = data?.status ?? null;
-    const orgIdFromCustomData = extractOrgId(data);
+    const orgIdFromCustomData = extractOrgId(data as Record<string, unknown>);
 
     let orgId = orgIdFromCustomData;
     if (!orgId && subscriptionId) {

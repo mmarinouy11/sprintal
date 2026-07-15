@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef } from "react";
 import Link from "next/link";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useStore } from "@/lib/store";
 import { supabase } from "@/lib/supabase";
 import {
@@ -14,7 +14,6 @@ import TrialBanner from "@/components/layout/TrialBanner";
 import TopBar from "@/components/layout/TopBar";
 import { useT } from "@/lib/i18n";
 import type { Organization, Sprint, Bet, Evidence, SignalCheck, BetAlignment, OrgRole } from "@/types";
-import { orgLoadDebug } from "@/lib/debugOrgLoad";
 
 async function fetchOrgDataBundle(accessToken: string, orgSlug: string) {
   const res = await fetch(
@@ -49,20 +48,9 @@ function readFromQueryParam(): string | null {
 
 async function loadOrgBundle(accessToken: string, orgSlug: string, fromSlug: string | null) {
   let bundle = await fetchOrgDataBundle(accessToken, orgSlug);
-  orgLoadDebug("bundle: /api/org/data", {
-    slug: orgSlug,
-    ok: bundle.ok,
-    status: bundle.ok ? 200 : bundle.status,
-  });
   // Parent / ancestor slugs are not in the user's membership list → org/data returns 404 (not 403).
   if (!bundle.ok && fromSlug && (bundle.status === 403 || bundle.status === 404)) {
-    orgLoadDebug("bundle: fallback /api/org/ancestor-preview", { slug: orgSlug, from: fromSlug });
     bundle = await fetchAncestorBundle(accessToken, orgSlug, fromSlug);
-    orgLoadDebug("bundle: ancestor-preview result", {
-      slug: orgSlug,
-      ok: bundle.ok,
-      status: bundle.ok ? 200 : bundle.status,
-    });
   }
   return bundle;
 }
@@ -97,11 +85,9 @@ export default function OrgLayoutClient({
     ancestorReadOnly, memberContextSlug, memberContextName,
   } = useStore();
   const router = useRouter();
-  const pathname = usePathname();
   const t = useT();
-  /** Slug changes → full-screen load; same org, new path (p. ej. vuelta desde /pricing) → refresh sin bloquear UI */
+  /** Slug changes → full-screen load; soft refresh on ?refresh=true without blocking UI */
   const lastLoadedSlugRef = useRef<string | null>(null);
-  const prevPathnameRef = useRef<string | null>(null);
 
   const loadGenerationRef = useRef(0);
 
@@ -115,29 +101,17 @@ export default function OrgLayoutClient({
       const showedFullScreenLoad = slugChanged || isInitial;
       lastLoadedSlugRef.current = params.orgSlug;
 
-      orgLoadDebug("layout:load start", {
-        gen,
-        paramsSlug: params.orgSlug,
-        fromParam,
-        slugChanged,
-        isInitial,
-        showedFullScreenLoad,
-        href: typeof window !== "undefined" ? window.location.href : "(ssr)",
-      });
 
       if (showedFullScreenLoad) {
         setLoading(true);
-        orgLoadDebug("layout:setLoading true", { gen, reason: "full-screen load" });
       }
 
       const { data: { session } } = await supabase.auth.getSession();
       if (gen !== loadGenerationRef.current) {
-        orgLoadDebug("layout:aborted stale (post-session)", { gen, current: loadGenerationRef.current });
         if (showedFullScreenLoad) setLoading(false);
         return;
       }
       if (!session) {
-        orgLoadDebug("layout:redirect no session → /auth/login", { gen });
         router.replace("/auth/login");
         setLoading(false);
         return;
@@ -145,13 +119,11 @@ export default function OrgLayoutClient({
 
       const first = await loadOrgBundle(session.access_token, params.orgSlug, fromParam);
       if (gen !== loadGenerationRef.current) {
-        orgLoadDebug("layout:aborted stale (post-bundle)", { gen, current: loadGenerationRef.current });
         if (showedFullScreenLoad) setLoading(false);
         return;
       }
       if (!first.ok) {
         if (first.status === 401) {
-          orgLoadDebug("layout:bundle failed → redirect", { gen, status: first.status, to: "/auth/login" });
           router.replace("/auth/login");
           setLoading(false);
           return;
@@ -159,11 +131,6 @@ export default function OrgLayoutClient({
         // Full page navigation: avoids ping-pong when session-home picks another slug that also
         // 403s (e.g. user only belongs to marketing but URL is hr-ioss — sibling picks flip forever).
         // Server `/` uses the same pickHome + invited_to_org rules with a fresh RSC load.
-        orgLoadDebug("layout:bundle failed → hard navigate to /", {
-          gen,
-          status: first.status,
-          slug: params.orgSlug,
-        });
         window.location.replace("/");
         return;
       }
@@ -192,14 +159,6 @@ export default function OrgLayoutClient({
         memberContextName = null;
       }
 
-      orgLoadDebug("layout:bundle ok", {
-        gen,
-        orgId: orgData.id,
-        orgSlug: orgData.slug,
-        ancestorReadOnly,
-        memberContextSlug,
-        onboardingComplete: orgData.onboarding_complete,
-      });
 
       const pending = readPendingPrimary(orgData.id);
       if (
@@ -321,7 +280,6 @@ export default function OrgLayoutClient({
         const pathNow =
           typeof window !== "undefined" ? window.location.pathname : "";
         if (trialEnd < new Date() && pathNow !== "/trial-expired") {
-          orgLoadDebug("layout:redirect trial expired", { gen, pathNow });
           router.replace("/trial-expired");
           setLoading(false);
           return;
@@ -329,7 +287,6 @@ export default function OrgLayoutClient({
       }
 
       if (!ancestorReadOnly && !orgData.onboarding_complete) {
-        orgLoadDebug("layout:redirect onboarding", { gen, slug: params.orgSlug });
         router.replace(`/onboarding/${params.orgSlug}`);
         setLoading(false);
         return;
@@ -367,56 +324,30 @@ export default function OrgLayoutClient({
         if (showedFullScreenLoad) setLoading(false);
         return;
       }
-      orgLoadDebug("layout:setLoading false (success)", { gen, orgSlug: params.orgSlug });
       setLoading(false);
     }
     void load().catch((err: unknown) => {
-      orgLoadDebug("layout:load threw", {
-        gen,
-        currentGen: loadGenerationRef.current,
-        message: err instanceof Error ? err.message : String(err),
-      });
       if (gen === loadGenerationRef.current) setLoading(false);
     });
   }, [params.orgSlug, router, setOrg, setSprints, setBets, setEvidence, setSignalChecks, setLoading, setChildOrgs, setCurrentRole, setBetAlignments, setRootPlan, setNotifications, setParentOrg, setAncestorReadOnly, setMemberContextSlug, setMemberContextName, setIsRootOwnerAdmin]);
 
+
+  // Soft re-fetch when returning from sub-org create with ?refresh=true (no loading flash)
   useEffect(() => {
-    const prev = prevPathnameRef.current;
-    prevPathnameRef.current = pathname;
+    if (typeof window === "undefined") return;
+    if (new URLSearchParams(window.location.search).get("refresh") !== "true") return;
 
-    const onDashboard =
-      pathname.includes("/dashboard") || pathname === `/${params.orgSlug}`;
-    if (!onDashboard || prev === null || prev === pathname) return;
-
-    orgLoadDebug("layout:pathname dashboard refresh", {
-      prev,
-      pathname,
-      slug: params.orgSlug,
-    });
-
-    async function refreshOnDashboard() {
+    async function softRefresh() {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
       if (!session) return;
-
       const bundle = await loadOrgBundle(
         session.access_token,
         params.orgSlug,
         readFromQueryParam()
       );
-      if (!bundle.ok || !("data" in bundle)) {
-        orgLoadDebug("layout:pathname refresh skip (not ok)", {
-          slug: params.orgSlug,
-          status: bundle.ok ? 200 : bundle.status,
-        });
-        return;
-      }
-
+      if (!bundle.ok || !("data" in bundle)) return;
       const d = bundle.data as BundleData;
-      orgLoadDebug("layout:pathname refresh ok", {
-        slug: params.orgSlug,
-        childCount: d.children?.length ?? 0,
-      });
       setOrg(d.org);
       setRootPlan(d.rootPlan || d.org.plan);
       setCurrentRole(d.role as OrgRole | null);
@@ -431,11 +362,15 @@ export default function OrgLayoutClient({
         setMemberContextSlug(null);
         setMemberContextName(null);
       }
+      // Strip refresh param without remount flash
+      const qs = new URLSearchParams(window.location.search);
+      qs.delete("refresh");
+      const next = `${window.location.pathname}${qs.toString() ? `?${qs}` : ""}${window.location.hash}`;
+      window.history.replaceState({}, "", next);
     }
 
-    void refreshOnDashboard();
+    void softRefresh();
   }, [
-    pathname,
     params.orgSlug,
     setOrg,
     setRootPlan,
@@ -455,17 +390,12 @@ export default function OrgLayoutClient({
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
       if (!session) return;
-      orgLoadDebug("layout:pullOrgBundle (focus/visibility)", { slug: params.orgSlug });
       const bundle = await loadOrgBundle(
         session.access_token,
         params.orgSlug,
         readFromQueryParam()
       );
       if (!bundle.ok || !("data" in bundle)) {
-        orgLoadDebug("layout:pullOrgBundle skip (not ok)", {
-          slug: params.orgSlug,
-          status: bundle.ok ? 200 : bundle.status,
-        });
         return;
       }
       const d = bundle.data as BundleData;

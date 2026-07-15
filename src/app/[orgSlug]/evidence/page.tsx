@@ -51,7 +51,7 @@ export default function EvidencePage() {
                     <td style={{ fontWeight: 500, color: "var(--text)" }}>{bet?.name || "—"}</td>
                     <td style={{ color: "var(--t2)" }}>{e.actual}</td>
                     <td style={{ color: "var(--t2)" }}>{e.insight}</td>
-                    <td>{e.new_status && <StatusBadge status={e.new_status as any} />}</td>
+                    <td>{e.new_status && <StatusBadge status={e.new_status} />}</td>
                   </tr>
                 );
               })}

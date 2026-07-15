@@ -100,7 +100,7 @@ export default function SprintsPage() {
                       fontFamily:"var(--font-mono)" }}>{s.start_date} → {s.end_date}</div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <StatusBadge status={s.status as any} />
+                    <StatusBadge status={s.status} />
                     {s.status === "Planned" && !hasActiveSprint && (
                       <button
                         type="button"

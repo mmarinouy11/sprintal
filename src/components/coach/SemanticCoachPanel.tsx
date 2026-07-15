@@ -255,11 +255,6 @@ export default function SemanticCoachPanel({
       }
         | null;
 
-      if (process.env.NODE_ENV !== "production") {
-        // eslint-disable-next-line no-console -- temporary diagnostics for regression
-        console.log("[SemanticCoachPanel] semantic response", { status: res.status, data });
-      }
-
       if (!res.ok || !data) {
         setError("fetch");
         return;

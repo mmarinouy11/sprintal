@@ -9,7 +9,6 @@ import {
   roleForOrgDataApi,
 } from "@/lib/orgAccess";
 import { apiError, apiOk } from "@/lib/api-response";
-import { sprintalServerDebug, sprintalShortId } from "@/lib/debugOrgLoad";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -63,13 +62,6 @@ async function buildOrgDataResponse(
   const parentOrg = parentOrgRes.data ?? null;
   const children = childrenRes.data || [];
 
-  sprintalServerDebug("api", "org/data children", {
-    orgSlug: org.slug,
-    orgId: sprintalShortId(org.id),
-    count: children.length,
-    slugs: children.map((c: { slug?: string }) => c.slug).filter(Boolean),
-  });
-
   return apiOk({
     org,
     rootPlan,
@@ -116,8 +108,6 @@ export async function GET(req: NextRequest) {
     const slug = req.nextUrl.searchParams.get("slug");
     if (!slug) return apiError("slug requerido.", 400);
 
-    sprintalServerDebug("api", "org/data request", { slug });
-
     const { data: memberRows } = await supabaseAdmin
       .from("org_members")
       .select("org_id, role")
@@ -137,10 +127,6 @@ export async function GET(req: NextRequest) {
 
     const org = (orgRows?.[0] ?? null) as OrgRow | null;
     if (!org) {
-      sprintalServerDebug("api", "org/data 404 slug", {
-        slug,
-        userId: sprintalShortId(user.id),
-      });
       return apiError("Org no encontrada.", 404);
     }
 
@@ -196,12 +182,6 @@ export async function GET(req: NextRequest) {
         });
       }
 
-      sprintalServerDebug("api", "org/data 403 no ancestor", {
-        slug,
-        orgId: sprintalShortId(org.id),
-        userId: sprintalShortId(user.id),
-        memberOrgCount: memberRows.length,
-      });
       return apiError("Sin acceso.", 403);
     }
 

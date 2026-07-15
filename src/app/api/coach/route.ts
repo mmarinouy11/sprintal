@@ -166,25 +166,8 @@ export async function POST(req: NextRequest) {
       clearTimeout(timeout);
     }
 
-    if (process.env.NODE_ENV === "development") {
-      console.log("anthropic usage object:", JSON.stringify(data.usage));
-    }
     const text = data.content?.[0]?.text?.trim() || "";
     const observation = text === "NULL" || text === "" ? null : text;
-    const usage = data.usage;
-    if (process.env.NODE_ENV === "development") {
-      console.log(
-        JSON.stringify({
-          coach: "formulation",
-          field,
-          model: AI_MODELS.formulation,
-          input_tokens: usage?.input_tokens ?? null,
-          output_tokens: usage?.output_tokens ?? null,
-          org_id: orgId,
-          had_observation: observation !== null,
-        })
-      );
-    }
 
     // Record usage if we got a real response
     if (observation !== null && orgId) {

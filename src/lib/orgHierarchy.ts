@@ -67,6 +67,15 @@ export async function countSubOrgsUnderRoot(
   supabase: SupabaseClient,
   rootOrgId: string
 ): Promise<number> {
+  // Prefer SQL recursive CTE via RPC when available (single round trip).
+  const { data: rpcCount, error: rpcError } = await supabase.rpc("count_sub_orgs", {
+    root_id: rootOrgId,
+  });
+  if (!rpcError && typeof rpcCount === "number") {
+    return rpcCount;
+  }
+
+  // Fallback: BFS by level (max depth 4) for environments without the function yet.
   let count = 0;
   let frontier = [rootOrgId];
   const seen = new Set<string>([rootOrgId]);

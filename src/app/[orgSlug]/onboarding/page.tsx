@@ -4,7 +4,7 @@ import { useParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { useT, ensureBrowserLocaleCookie } from "@/lib/i18n";
-import { SUBAREAS_LIMITS, type Plan } from "@/types";
+import { SUBAREAS_LIMITS, type Plan, type Organization } from "@/types";
 
 const BRAND_PRESETS = [
   { label:"Indigo",      hex:"#5C6AC4" },
@@ -46,8 +46,8 @@ export default function OnboardingPage() {
       if (!session) { window.location.href = "/auth/login"; return; }
       const { data } = await supabase
         .from("organizations").select("*")
-        .eq("slug", params.orgSlug as string).limit(1).then((r: any) => ({ data: r.data?.[0] ?? null, error: r.error }));
-      if (data) { setLocalOrg(data); setOrg(data); }
+        .eq("slug", params.orgSlug as string).limit(1).maybeSingle();
+      if (data) { setLocalOrg(data as Organization); setOrg(data as Organization); }
     }
     loadOrg();
   }, []);

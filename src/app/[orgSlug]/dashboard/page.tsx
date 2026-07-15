@@ -17,7 +17,6 @@ import { effectiveCoachPlan } from "@/lib/coach/effectiveCoachPlan";
 import { COACH_LIMITS, type Plan } from "@/types";
 import { useParams } from "next/navigation";
 import { formatPlanName } from "@/lib/billing";
-import { orgLoadDebug } from "@/lib/debugOrgLoad";
 import { SEMANTIC_CREDIT_WEIGHT } from "@/types";
 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
@@ -57,17 +56,6 @@ export default function DashboardPage() {
   const showPortfolioRow = !!org && activeBets.length > 0;
 
   const portfolioOpenDisabled = !semanticPlanOk || !portfolioEligible;
-
-  useEffect(() => {
-    const blocked = !orgSlugParam || !org?.slug || org.slug !== orgSlugParam;
-    orgLoadDebug("dashboard:gate", {
-      blocked,
-      orgSlugParam,
-      storeSlug: org?.slug,
-      storeOrgId: org?.id,
-      storeLoading: useStore.getState().loading,
-    });
-  }, [orgSlugParam, org?.slug, org?.id]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;

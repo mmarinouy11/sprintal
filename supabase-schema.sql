@@ -153,3 +153,21 @@ $$ language plpgsql security definer;
 create or replace trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure handle_new_user_org();
+
+-- ── Tech debt notes (ops) ────────────────────────────────────
+-- org_areas: table existed in some Supabase projects but is unused by the app.
+-- Verified: no references under src/. If empty, drop in SQL Editor:
+--   SELECT COUNT(*) FROM org_areas;
+--   DROP TABLE IF EXISTS org_areas;
+
+-- Efficient descendant count for create-sub plan limits (preferred by countSubOrgsUnderRoot):
+-- CREATE OR REPLACE FUNCTION count_sub_orgs(root_id uuid)
+-- RETURNS integer AS $$
+--   WITH RECURSIVE descendants AS (
+--     SELECT id FROM organizations WHERE parent_org_id = root_id
+--     UNION ALL
+--     SELECT o.id FROM organizations o
+--     JOIN descendants d ON o.parent_org_id = d.id
+--   )
+--   SELECT COUNT(*)::integer FROM descendants;
+-- $$ LANGUAGE sql STABLE;

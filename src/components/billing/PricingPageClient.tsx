@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Plan } from "@/types";
 import { useT } from "@/lib/i18n";
-import { getPaddle, getPaddleJsEnvironment } from "@/lib/paddle";
+import { getPaddle } from "@/lib/paddle";
 import { supabase } from "@/lib/supabase";
 
 type Period = "monthly" | "annual";
@@ -85,17 +85,6 @@ export default function PricingPageClient(props: PricingPageClientProps) {
    * The browser session can be valid even when that prop is false (navigation timing, cookie
    * sync, or a cached static payload). Checkout must use `getSession()` at interaction time.
    */
-  useEffect(() => {
-    if (process.env.NODE_ENV !== "development") return;
-    void supabase.auth.getSession().then(({ data }) => {
-      console.debug("[pricing] render auth snapshot", {
-        propIsAuthenticated: isAuthenticated,
-        clientHasSession: !!data.session,
-        userId: data.session?.user?.id ?? null,
-      });
-    });
-  }, [isAuthenticated]);
-
   const cards = useMemo(
     () =>
       PLAN_CARDS.map((card) => {
@@ -111,17 +100,8 @@ export default function PricingPageClient(props: PricingPageClientProps) {
   );
 
   async function openCheckout(plan: Exclude<Plan, "trial">, priceId: string) {
-    const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+    const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
-
-    if (process.env.NODE_ENV === "development") {
-      console.debug("[pricing] checkout click auth", {
-        propIsAuthenticated: isAuthenticated,
-        clientHasSession: !!session,
-        sessionError: sessionError?.message ?? null,
-        userId: session?.user?.id ?? null,
-      });
-    }
 
     if (!session) {
       router.push(`/auth/signup?plan=${encodeURIComponent(plan)}&period=${encodeURIComponent(period)}`);
@@ -183,19 +163,6 @@ export default function PricingPageClient(props: PricingPageClientProps) {
       if (email) {
         payload.customer = { email };
       }
-
-      // eslint-disable-next-line no-console -- intentional diagnostics (see NEXT_PUBLIC_PADDLE_DEBUG)
-      console.info("[pricing] Paddle.Checkout.open", {
-        environment: getPaddleJsEnvironment(),
-        plan,
-        period,
-        priceIdPrefix: `${priceId.slice(0, 16)}…`,
-        hasOrgId: !!checkoutOrgId,
-        orgSlug: checkoutOrgSlug,
-        successUrl,
-        hasCustomerEmail: !!email,
-        NEXT_PUBLIC_PADDLE_DEBUG: process.env.NEXT_PUBLIC_PADDLE_DEBUG ?? "(unset)",
-      });
 
       paddle.Checkout.open(payload);
     } finally {

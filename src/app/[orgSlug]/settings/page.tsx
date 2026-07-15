@@ -5,7 +5,7 @@ import { useT, useLocale, setLocale } from "@/lib/i18n";
 import { supabase } from "@/lib/supabase";
 import { writePendingPrimary } from "@/lib/orgPendingPrimary";
 import { COACH_LIMITS, SEMANTIC_CREDIT_WEIGHT, coachUnifiedCreditsUsed } from "@/types";
-import type { Plan, OrgRole, OrgMember, CoachUsage } from "@/types";
+import type { Plan, OrgRole, OrgMember, CoachUsage, Organization } from "@/types";
 
 // ── Tab navigation ───────────────────────────────────────────
 type Tab = "org" | "members" | "coach" | "language";
@@ -135,7 +135,7 @@ export default function SettingsPage() {
 }
 
 // ── Org Tab ──────────────────────────────────────────────────
-function OrgTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
+function OrgTab({ org, isAdmin }: { org: Organization; isAdmin: boolean }) {
   const t = useT();
   const { updateOrg } = useStore();
   const [name, setName] = useState(org.name);
@@ -233,7 +233,7 @@ function memberRowPrimaryLabel(m: OrgMember): string {
 }
 
 // ── Members Tab ──────────────────────────────────────────────
-function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
+function MembersTab({ org, isAdmin }: { org: Organization; isAdmin: boolean }) {
   const t = useT();
   const { childOrgs } = useStore();
   const [flatMembers, setFlatMembers] = useState<OrgMember[]>([]);
@@ -436,7 +436,7 @@ function MembersTab({ org, isAdmin }: { org: any; isAdmin: boolean }) {
 }
 
 // ── Coach Tab ────────────────────────────────────────────────
-function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isAdmin: boolean }) {
+function CoachTab({ org, childOrgs, isAdmin }: { org: Organization; childOrgs: Organization[]; isAdmin: boolean }) {
   const t = useT();
   const { updateOrg } = useStore();
   const [localOrgs, setLocalOrgs] = useState<any[]>([]);
@@ -453,7 +453,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
 
   useEffect(() => {
     // Load orgs with fresh coach settings AND plan from DB
-    const allIds = [org.id, ...childOrgs.map((a: any) => a.id)];
+    const allIds = [org.id, ...childOrgs.map((a) => a.id)];
     supabase.from("organizations")
       .select("id, name, plan, coach_syntactic_enabled, coach_semantic_enabled, parent_org_id")
       .in("id", allIds)
@@ -464,7 +464,7 @@ function CoachTab({ org, childOrgs, isAdmin }: { org: any; childOrgs: any[]; isA
     supabase.from("coach_usage").select("*").eq("org_id", org.id).eq("month", month)
       .maybeSingle().then(({ data }) => setUsage(data));
     if (childOrgs.length > 0) {
-      const ids = childOrgs.map((a: any) => a.id);
+      const ids = childOrgs.map((a) => a.id);
       supabase.from("coach_usage").select("*").in("org_id", ids).eq("month", month)
         .then(({ data }) => {
           if (data) {
