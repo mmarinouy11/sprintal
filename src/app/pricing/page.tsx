@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { createClient } from "@supabase/supabase-js";
 import PricingPageClient from "@/components/billing/PricingPageClient";
 import { createSupabaseServer } from "@/lib/supabase-server";
@@ -78,29 +79,31 @@ export default async function PricingPage({
   }
 
   return (
-    <PricingPageClient
-      orgId={orgId}
-      orgSlug={orgSlug}
-      currentPlan={currentPlan}
-      isAuthenticated={!!user}
-      priceIds={{
-        solo: {
-          monthly: process.env.PADDLE_PRICE_SOLO_MONTHLY || "",
-          annual: process.env.PADDLE_PRICE_SOLO_ANNUAL || "",
-        },
-        starter: {
-          monthly: process.env.PADDLE_PRICE_STARTER_MONTHLY || "",
-          annual: process.env.PADDLE_PRICE_STARTER_ANNUAL || "",
-        },
-        growth: {
-          monthly: process.env.PADDLE_PRICE_GROWTH_MONTHLY || "",
-          annual: process.env.PADDLE_PRICE_GROWTH_ANNUAL || "",
-        },
-        scale: {
-          monthly: process.env.PADDLE_PRICE_SCALE_MONTHLY || "",
-          annual: process.env.PADDLE_PRICE_SCALE_ANNUAL || "",
-        },
-      }}
-    />
+    <Suspense fallback={null}>
+      <PricingPageClient
+        orgId={orgId}
+        orgSlug={orgSlug}
+        currentPlan={currentPlan}
+        isAuthenticated={!!user}
+        priceIds={{
+          solo: {
+            monthly: process.env.PADDLE_PRICE_SOLO_MONTHLY || "",
+            annual: process.env.PADDLE_PRICE_SOLO_ANNUAL || "",
+          },
+          starter: {
+            monthly: process.env.PADDLE_PRICE_STARTER_MONTHLY || "",
+            annual: process.env.PADDLE_PRICE_STARTER_ANNUAL || "",
+          },
+          growth: {
+            monthly: process.env.PADDLE_PRICE_GROWTH_MONTHLY || "",
+            annual: process.env.PADDLE_PRICE_GROWTH_ANNUAL || "",
+          },
+          scale: {
+            monthly: process.env.PADDLE_PRICE_SCALE_MONTHLY || "",
+            annual: process.env.PADDLE_PRICE_SCALE_ANNUAL || "",
+          },
+        }}
+      />
+    </Suspense>
   );
 }

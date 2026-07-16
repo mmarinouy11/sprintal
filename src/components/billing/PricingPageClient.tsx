@@ -1,12 +1,18 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Plan } from "@/types";
 import { useT } from "@/lib/i18n";
 import { getPaddle } from "@/lib/paddle";
 import { supabase } from "@/lib/supabase";
+import {
+  clearPendingPlan,
+  isBillingPeriod,
+  isPaidPlan,
+  savePendingPlan,
+} from "@/lib/pendingPlan";
 
 type Period = "monthly" | "annual";
 
@@ -77,8 +83,10 @@ export default function PricingPageClient(props: PricingPageClientProps) {
   const { orgId, orgSlug, currentPlan, isAuthenticated, priceIds } = props;
   const t = useT("billing");
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [period, setPeriod] = useState<Period>("monthly");
   const [loadingPlan, setLoadingPlan] = useState<Exclude<Plan, "trial"> | null>(null);
+  const autoOpenedRef = useRef(false);
 
   /**
    * `isAuthenticated` comes from the server RSC (`getUser()` + cookies at request time).
@@ -99,12 +107,21 @@ export default function PricingPageClient(props: PricingPageClientProps) {
     [period, priceIds]
   );
 
-  async function openCheckout(plan: Exclude<Plan, "trial">, priceId: string) {
+  async function openCheckout(
+    plan: Exclude<Plan, "trial">,
+    priceId: string,
+    periodOverride?: Period
+  ) {
+    const effectivePeriod = periodOverride ?? period;
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
 
     if (!session) {
-      router.push(`/auth/signup?plan=${encodeURIComponent(plan)}&period=${encodeURIComponent(period)}`);
+      // Persist intent so it survives signup → onboarding, then send to signup with params.
+      savePendingPlan(plan, effectivePeriod);
+      router.push(
+        `/auth/signup?plan=${encodeURIComponent(plan)}&period=${encodeURIComponent(effectivePeriod)}`
+      );
       return;
     }
 
@@ -169,6 +186,38 @@ export default function PricingPageClient(props: PricingPageClientProps) {
       setLoadingPlan(null);
     }
   }
+
+  /**
+   * Auto-open checkout after onboarding: onboarding redirects here with
+   * `?plan=…&period=…` once a paid plan was pending. Session already exists at
+   * this point, so open Paddle directly — the user shouldn't have to click again.
+   * Strip the params first so cancelling the overlay (or a refresh/back) doesn't
+   * re-trigger the checkout and trap the user; they can stay on Trial and upgrade later.
+   */
+  useEffect(() => {
+    if (autoOpenedRef.current) return;
+    const planParam = searchParams.get("plan");
+    if (!isPaidPlan(planParam)) return;
+    autoOpenedRef.current = true;
+
+    const periodParam = searchParams.get("period");
+    const resolvedPeriod: Period = isBillingPeriod(periodParam) ? periodParam : "monthly";
+    setPeriod(resolvedPeriod);
+    const priceId =
+      resolvedPeriod === "monthly" ? priceIds[planParam].monthly : priceIds[planParam].annual;
+
+    clearPendingPlan();
+
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("plan");
+      url.searchParams.delete("period");
+      window.history.replaceState({}, "", url.toString());
+    }
+
+    void openCheckout(planParam, priceId, resolvedPeriod);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, priceIds]);
 
   function renderCell(value: string) {
     if (value === CHECK) return <span style={{ color: "#22C55E", fontWeight: 700 }}>{CHECK}</span>;

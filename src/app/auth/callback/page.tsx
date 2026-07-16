@@ -16,6 +16,7 @@ import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { useT } from "@/lib/i18n";
 import { fetchSessionHomeClient } from "@/lib/fetchSessionHomeClient";
+import { savePendingPlan } from "@/lib/pendingPlan";
 
 function hardGo(path: string) {
   window.location.replace(path);
@@ -71,14 +72,10 @@ function AuthOAuthCallbackInner() {
         return;
       }
 
-      if (plan) {
-        if (!cancelled) {
-          hardGo(
-            `/pricing?plan=${encodeURIComponent(plan)}&period=${encodeURIComponent(period || "monthly")}`
-          );
-        }
-        return;
-      }
+      // Persist the requested plan so it survives signup/onboarding. Don't jump
+      // straight to /pricing here: new users must onboard first, and only users
+      // who already finished onboarding should go to checkout (handled below).
+      savePendingPlan(plan, period);
 
       const orgIdFromUrl = params.get("orgId");
       let homePick = await fetchSessionHomeClient(session.access_token, {
@@ -111,6 +108,16 @@ function AuthOAuthCallbackInner() {
 
       if (!homePick.onboarding_complete) {
         if (!cancelled) hardGo(`/onboarding/${homePick.slug}`);
+        return;
+      }
+
+      // Onboarding already complete: honor a requested plan by opening checkout on /pricing.
+      if (plan) {
+        if (!cancelled) {
+          hardGo(
+            `/pricing?plan=${encodeURIComponent(plan)}&period=${encodeURIComponent(period || "monthly")}`
+          );
+        }
         return;
       }
 

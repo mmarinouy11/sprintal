@@ -38,6 +38,11 @@ create table if not exists sprints (
   created_at timestamptz default now()
 );
 
+-- At most one Active sprint per org (run in SQL Editor if index missing)
+create unique index if not exists sprints_one_active_per_org
+  on sprints (org_id)
+  where status = 'Active';
+
 -- Bets
 create table if not exists bets (
   id uuid primary key default gen_random_uuid(),

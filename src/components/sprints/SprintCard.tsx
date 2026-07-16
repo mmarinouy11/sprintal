@@ -1,7 +1,9 @@
 "use client";
+import { useState } from "react";
 import { useT, useLocale } from "@/lib/i18n";
 import { useStore } from "@/lib/store";
 import { sprintProgress, daysRemaining } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
 
 function localeTag(locale: "en" | "es" | "pt"): string {
   if (locale === "es") return "es";
@@ -10,10 +12,15 @@ function localeTag(locale: "en" | "es" | "pt"): string {
 }
 
 export default function SprintCard({ fullHeight = false }: { fullHeight?: boolean }) {
-  const { sprints } = useStore();
+  const { sprints, updateSprint, currentRole } = useStore();
   const t = useT("dashboard");
+  const tg = useT();
   const locale = useLocale();
   const active = sprints.find(s => s.status === "Active");
+  const planned = sprints.find(s => s.status === "Planned");
+  const canActivate = currentRole === "owner" || currentRole === "admin";
+  const [activating, setActivating] = useState(false);
+  const [activateError, setActivateError] = useState("");
 
   const wrap: React.CSSProperties = {
     background: "var(--surface)",
@@ -27,6 +34,72 @@ export default function SprintCard({ fullHeight = false }: { fullHeight?: boolea
     height: fullHeight ? "100%" : "auto",
     boxSizing: "border-box",
   };
+
+  async function activateSprint(sprintId: string) {
+    setActivateError("");
+    setActivating(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
+      setActivateError(tg("sprints.alreadyActive"));
+      setActivating(false);
+      return;
+    }
+    const res = await fetch("/api/sprint/activate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ sprintId }),
+    });
+    const body = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      setActivateError(
+        body.error === "already_active" ? tg("sprints.alreadyActive") : (body.error || tg("sprints.alreadyActive"))
+      );
+      setActivating(false);
+      return;
+    }
+    if (body.sprint) updateSprint(body.sprint);
+    setActivating(false);
+  }
+
+  if (!active && planned) {
+    return (
+      <div data-testid="sprint-card" style={wrap}>
+        <div style={{ display:"flex", alignItems:"flex-start", justifyContent:"space-between", gap:12 }}>
+          <div>
+            <div style={{ fontFamily:"var(--font-display)", fontWeight:600, fontSize:"1.125rem", color:"var(--text)", letterSpacing:"-0.015em" }}>
+              {planned.name}
+            </div>
+            <div style={{ fontFamily:"var(--font-mono)", fontSize:"0.8125rem", color:"var(--t3)", marginTop:3 }}>
+              {planned.start_date} → {planned.end_date}
+            </div>
+          </div>
+          <span className="badge badge-planned" style={{ flexShrink:0, marginTop:2 }}>{tg("status.planned")}</span>
+        </div>
+        {planned.focus && (
+          <div style={{ fontFamily:"var(--font-body)", fontSize:"0.9375rem", color:"var(--t2)", lineHeight:1.55 }}>
+            {planned.focus}
+          </div>
+        )}
+        {activateError && (
+          <div style={{ fontFamily:"var(--font-body)", fontSize:"0.8125rem", color:"var(--killed)" }}>{activateError}</div>
+        )}
+        {canActivate && (
+          <button
+            type="button"
+            className="btn-primary"
+            disabled={activating}
+            onClick={() => activateSprint(planned.id)}
+            style={{ alignSelf: "flex-start" }}
+          >
+            {activating ? tg("sprints.activating") : tg("sprints.activateSprint")}
+          </button>
+        )}
+      </div>
+    );
+  }
 
   if (!active) return (
     <div data-testid="sprint-card" style={wrap}>

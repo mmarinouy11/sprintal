@@ -6,6 +6,7 @@ import { supabase } from "@/lib/supabase";
 import Link from "next/link";
 import GoogleOAuthButton from "@/components/auth/GoogleOAuthButton";
 import { getBrowserAppOrigin } from "@/lib/app-origin";
+import { savePendingPlan } from "@/lib/pendingPlan";
 
 function SignupPageInner() {
   const router = useRouter();
@@ -25,6 +26,10 @@ function SignupPageInner() {
 
   useEffect(() => {
     ensureBrowserLocaleCookie();
+    // Persist the chosen plan as soon as signup loads so it survives the whole
+    // flow (signup → onboarding → dashboard), including OAuth round-trips.
+    // No-op when there's no paid plan in the URL.
+    savePendingPlan(planQ, periodQ);
   }, []);
 
   /** After OAuth redirect, cookies/session may not be visible to the browser client immediately. */
@@ -100,13 +105,9 @@ function SignupPageInner() {
       const requestedPeriod = searchParams.get("period");
       await supabase.auth.getSession();
       router.refresh();
-      if (requestedPlan) {
-        const qs = new URLSearchParams();
-        qs.set("plan", requestedPlan);
-        if (requestedPeriod) qs.set("period", requestedPeriod);
-        router.push(`/pricing?${qs.toString()}`);
-        return;
-      }
+      // Always persist (no-op if no paid plan) and always go to onboarding —
+      // never /pricing before onboarding. Checkout auto-opens once onboarding finishes.
+      savePendingPlan(requestedPlan, requestedPeriod);
       router.push(`/onboarding/${data.slug}`);
     } catch {
       setError("Error de conexión. Intentá de nuevo.");
@@ -164,13 +165,9 @@ function SignupPageInner() {
       if (authData.session) {
         const requestedPlan = searchParams.get("plan");
         const requestedPeriod = searchParams.get("period");
-        if (requestedPlan) {
-          const qs = new URLSearchParams();
-          qs.set("plan", requestedPlan);
-          if (requestedPeriod) qs.set("period", requestedPeriod);
-          router.push(`/pricing?${qs.toString()}`);
-          return;
-        }
+        // Always persist (no-op if no paid plan) and always go to onboarding —
+        // never /pricing before onboarding. Checkout auto-opens once onboarding finishes.
+        savePendingPlan(requestedPlan, requestedPeriod);
         router.push(`/onboarding/${data.slug}`);
       } else {
         router.push(`/auth/verify?email=${encodeURIComponent(form.email)}`);

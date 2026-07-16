@@ -5,6 +5,7 @@ import { supabase } from "@/lib/supabase";
 import { useStore } from "@/lib/store";
 import { useT, ensureBrowserLocaleCookie } from "@/lib/i18n";
 import { SUBAREAS_LIMITS, type Plan, type Organization } from "@/types";
+import { readPendingPlan } from "@/lib/pendingPlan";
 
 const BRAND_PRESETS = [
   { label:"Indigo",      hex:"#5C6AC4" },
@@ -210,6 +211,19 @@ export default function OnboardingPage() {
     }
 
     setSaving(false);
+
+    // If a paid plan was chosen before signup, finish checkout now instead of
+    // dropping the user on Trial. /pricing auto-opens Paddle and clears the pending plan.
+    const pending = readPendingPlan();
+    if (pending) {
+      const qs = new URLSearchParams();
+      qs.set("plan", pending.plan);
+      qs.set("period", pending.period);
+      qs.set("orgSlug", params.orgSlug as string);
+      window.location.href = `/pricing?${qs.toString()}`;
+      return;
+    }
+
     // Navigate to dashboard — onboarding is outside the layout so no loop risk
     window.location.href = `/${params.orgSlug}/dashboard`;
   }

@@ -3,6 +3,7 @@ import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { fetchSessionHomeClient } from "@/lib/fetchSessionHomeClient";
+import { savePendingPlan } from "@/lib/pendingPlan";
 
 async function resolveHomeWithRetry(accessToken: string, orgId: string | null) {
   let last = await fetchSessionHomeClient(accessToken, { orgId });
@@ -43,13 +44,10 @@ function AuthCallbackCompleteInner() {
 
       const requestedPlan = searchParams.get("plan");
       const requestedPeriod = searchParams.get("period");
-      if (requestedPlan) {
-        const qs = new URLSearchParams();
-        qs.set("plan", requestedPlan);
-        if (requestedPeriod) qs.set("period", requestedPeriod);
-        router.replace(`/pricing?${qs.toString()}`);
-        return;
-      }
+      // Persist the requested plan so it survives onboarding. Don't jump straight
+      // to /pricing here: new users must onboard first, and only users who already
+      // finished onboarding should go to checkout (handled below).
+      savePendingPlan(requestedPlan, requestedPeriod);
 
       const orgIdFromUrl = searchParams.get("orgId");
       const homePick = await resolveHomeWithRetry(session.access_token, orgIdFromUrl);
@@ -72,6 +70,12 @@ function AuthCallbackCompleteInner() {
       setTimeout(() => {
         if (!org.onboarding_complete) {
           router.replace(`/onboarding/${org.slug}`);
+        } else if (requestedPlan) {
+          // Onboarding already complete: honor the requested plan via checkout.
+          const qs = new URLSearchParams();
+          qs.set("plan", requestedPlan);
+          if (requestedPeriod) qs.set("period", requestedPeriod);
+          router.replace(`/pricing?${qs.toString()}`);
         } else {
           router.replace(`/${org.slug}/dashboard`);
         }

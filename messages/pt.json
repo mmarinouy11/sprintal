@@ -247,7 +247,9 @@
     "surprises": "Surpresas",
     "noSprintsDesc": "Um sprint define o foco estratégico de um ciclo. Crie seu primeiro sprint para começar a acompanhar bets e progresso.",
     "activate": "Ativar",
-    "alreadyActive": "Esta área já tem um sprint ativo.",
+    "activateSprint": "Ativar sprint",
+    "alreadyActive": "Já existe um sprint ativo nesta área. Feche-o ou altere o estado antes de ativar um novo.",
+    "createAsPlanned": "Criar como Planejado",
     "activating": "Ativando..."
   },
   "form": {

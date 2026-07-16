@@ -112,12 +112,13 @@ export default function NewSprintPage() {
     }
   }
 
-  async function save(e: React.FormEvent) {
+  async function save(e: React.FormEvent, forcePlanned = false) {
     e.preventDefault();
     if (!org) return;
     setCreateError("");
     setSaving(true);
-    if (form.status === "Active") {
+    const status = forcePlanned ? "Planned" : form.status;
+    if (status === "Active") {
       const { count } = await supabase
         .from("sprints")
         .select("id", { count: "exact", head: true })
@@ -129,9 +130,18 @@ export default function NewSprintPage() {
         return;
       }
     }
-    const { data } = await supabase.from("sprints")
-      .insert({ ...form, org_id: org.id }).select().limit(1).maybeSingle();
-    if (data) { addSprint(data); router.push(`/${params.orgSlug}/sprints`); }
+    const { data, error } = await supabase.from("sprints")
+      .insert({ ...form, status, org_id: org.id }).select().limit(1).maybeSingle();
+    if (error?.code === "23505") {
+      setCreateError(tg("sprints.alreadyActive"));
+      setSaving(false);
+      return;
+    }
+    if (data) {
+      if (forcePlanned) setForm(f => ({ ...f, status: "Planned" }));
+      addSprint(data);
+      router.push(`/${params.orgSlug}/sprints`);
+    }
     setSaving(false);
   }
 
@@ -282,7 +292,20 @@ export default function NewSprintPage() {
         </Field>
 
         {createError && (
-          <div className="mb-4 text-sm" style={{ color: "var(--killed)" }}>{createError}</div>
+          <div className="mb-4" style={{ color: "var(--killed)" }}>
+            <div className="text-sm mb-2">{createError}</div>
+            {createError === tg("sprints.alreadyActive") && form.status === "Active" && (
+              <button
+                type="button"
+                className="btn-ghost"
+                style={{ padding: "6px 12px", fontSize: "0.8125rem" }}
+                disabled={saving}
+                onClick={(e) => save(e, true)}
+              >
+                {tg("sprints.createAsPlanned")}
+              </button>
+            )}
+          </div>
         )}
 
         <ModalFooter>

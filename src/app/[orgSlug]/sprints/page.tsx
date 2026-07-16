@@ -9,42 +9,45 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 export default function SprintsPage() {
-  const { sprints, bets, org, updateSprint } = useStore();
+  const { sprints, bets, org, updateSprint, currentRole } = useStore();
   const params = useParams();
   const t = useT();
   const [activatingId, setActivatingId] = useState<string | null>(null);
   const [activateError, setActivateError] = useState("");
 
-  const hasActiveSprint = sprints.some(s => s.status === "Active");
+  const canActivate = currentRole === "owner" || currentRole === "admin";
 
   async function activateSprint(sprintId: string) {
     if (!org) return;
     setActivateError("");
     setActivatingId(sprintId);
-    const { count } = await supabase
-      .from("sprints")
-      .select("id", { count: "exact", head: true })
-      .eq("org_id", org.id)
-      .eq("status", "Active");
-    if ((count ?? 0) > 0) {
+
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       setActivateError(t("sprints.alreadyActive"));
       setActivatingId(null);
       return;
     }
-    const { data, error } = await supabase
-      .from("sprints")
-      .update({ status: "Active" })
-      .eq("id", sprintId)
-      .eq("org_id", org.id)
-      .select()
-      .limit(1)
-      .maybeSingle();
-    if (error || !data) {
-      setActivateError(t("sprints.alreadyActive"));
+
+    const res = await fetch("/api/sprint/activate", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: JSON.stringify({ sprintId }),
+    });
+    const body = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      setActivateError(
+        body.error === "already_active" ? t("sprints.alreadyActive") : (body.error || t("sprints.alreadyActive"))
+      );
       setActivatingId(null);
       return;
     }
-    updateSprint(data);
+
+    if (body.sprint) updateSprint(body.sprint);
     setActivatingId(null);
   }
 
@@ -78,7 +81,7 @@ export default function SprintsPage() {
           </div>
           <p style={{ fontFamily: "var(--font-body)", fontSize: "0.875rem",
             color: "var(--t3)", maxWidth: 360, lineHeight: 1.6, marginBottom: 24 }}>
-            A sprint defines your strategic focus for a cycle. Create your first sprint to start tracking bets and progress.
+            {t("sprints.noSprintsDesc")}
           </p>
           <Link href={`/${params.orgSlug}/new/sprint`} className="btn-primary">
             + {t("actions.newSprint")}
@@ -101,7 +104,7 @@ export default function SprintsPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={s.status} />
-                    {s.status === "Planned" && !hasActiveSprint && (
+                    {s.status === "Planned" && canActivate && (
                       <button
                         type="button"
                         onClick={() => activateSprint(s.id)}
@@ -109,7 +112,7 @@ export default function SprintsPage() {
                         className="btn-ghost"
                         style={{ padding: "4px 10px", fontSize: "0.75rem" }}
                       >
-                        {activatingId === s.id ? t("sprints.activating") : t("sprints.activate")}
+                        {activatingId === s.id ? t("sprints.activating") : t("sprints.activateSprint")}
                       </button>
                     )}
                   </div>
