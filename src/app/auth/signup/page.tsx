@@ -7,6 +7,8 @@ import Link from "next/link";
 import GoogleOAuthButton from "@/components/auth/GoogleOAuthButton";
 import { getBrowserAppOrigin } from "@/lib/app-origin";
 import { savePendingPlan } from "@/lib/pendingPlan";
+import { fetchSessionHomeClient } from "@/lib/fetchSessionHomeClient";
+import { pathAfterSessionHome } from "@/lib/routeAfterSessionHome";
 
 function SignupPageInner() {
   const router = useRouter();
@@ -31,6 +33,21 @@ function SignupPageInner() {
     // No-op when there's no paid plan in the URL.
     savePendingPlan(planQ, periodQ);
   }, []);
+
+  // If OAuth landed here after a false 403 but the user already has memberships,
+  // never show "create org" — route via session-home (+ pendingPlan → pricing).
+  useEffect(() => {
+    if (!oauthMode) return;
+    let cancelled = false;
+    (async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.access_token || cancelled) return;
+      const home = await fetchSessionHomeClient(session.access_token);
+      if (cancelled || !home.ok) return;
+      router.replace(pathAfterSessionHome(home, planQ, periodQ));
+    })();
+    return () => { cancelled = true; };
+  }, [oauthMode, router, planQ, periodQ]);
 
   /** After OAuth redirect, cookies/session may not be visible to the browser client immediately. */
   useEffect(() => {
@@ -105,6 +122,17 @@ function SignupPageInner() {
       const requestedPeriod = searchParams.get("period");
       await supabase.auth.getSession();
       router.refresh();
+      // Existing memberships: never create a second org — route home (honors pendingPlan).
+      if (data.alreadyMember) {
+        router.push(
+          pathAfterSessionHome(
+            { slug: data.slug, onboarding_complete: !!data.onboarding_complete },
+            requestedPlan,
+            requestedPeriod
+          )
+        );
+        return;
+      }
       // Always persist (no-op if no paid plan) and always go to onboarding —
       // never /pricing before onboarding. Checkout auto-opens once onboarding finishes.
       savePendingPlan(requestedPlan, requestedPeriod);

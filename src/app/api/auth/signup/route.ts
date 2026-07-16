@@ -3,6 +3,7 @@ import { NextRequest } from "next/server";
 import { rateLimit, getClientIp } from "@/lib/rate-limit";
 import { sanitizeText, validateEmail } from "@/lib/sanitize";
 import { apiError, apiOk } from "@/lib/api-response";
+import { selectHomeOrgFromCandidates } from "@/lib/pickHomeOrg";
 
 function slugify(name: string): string {
   return name.toLowerCase().trim()
@@ -45,13 +46,48 @@ export async function POST(req: NextRequest) {
       return apiError("Usuario no encontrado.", 404);
     }
 
-    // Check if org already exists for this user (avoid duplicates)
-    const { data: existingMember } = await supabaseAdmin
-      .from("org_members").select("org_id").eq("user_id", userId).maybeSingle();
-    if (existingMember) {
-      const { data: existingOrg } = await supabaseAdmin
-        .from("organizations").select("slug").eq("id", existingMember.org_id).limit(1).then(r => ({ data: r.data?.[0] ?? null, error: r.error }));
-      if (existingOrg) return apiOk({ success: true, slug: existingOrg.slug });
+    // IMPORTANT: do NOT use maybeSingle() — multiple memberships make it error and
+    // look like "no membership", which would create a duplicate org.
+    const { data: existingMembers } = await supabaseAdmin
+      .from("org_members")
+      .select("org_id")
+      .eq("user_id", userId)
+      .limit(200);
+
+    if (existingMembers?.length) {
+      const ids = existingMembers.map((m: { org_id: string }) => m.org_id);
+      const { data: orgRows } = await supabaseAdmin
+        .from("organizations")
+        .select("id, slug, onboarding_complete, cascade_level, parent_org_id")
+        .in("id", ids);
+      const candidates = (orgRows ?? [])
+        .filter((o: { slug: string | null }) => !!o.slug)
+        .map((o: {
+          id: string;
+          slug: string;
+          onboarding_complete: boolean | null;
+          cascade_level: number | null;
+          parent_org_id: string | null;
+        }) => ({
+          orgId: o.id,
+          slug: o.slug,
+          onboarding_complete: !!o.onboarding_complete,
+          cascade_level: o.cascade_level ?? 0,
+          parent_org_id: o.parent_org_id ?? null,
+        }));
+      const home = selectHomeOrgFromCandidates(
+        candidates,
+        userData.user.user_metadata?.invited_to_org
+      );
+      if (home) {
+        return apiOk({
+          success: true,
+          alreadyMember: true,
+          slug: home.slug,
+          onboarding_complete: home.onboarding_complete,
+        });
+      }
+      return apiError("Account already has an organization.", 409);
     }
 
     // Unique slug

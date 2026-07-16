@@ -127,6 +127,9 @@
     "completingOAuth": "Concluindo o login…",
     "oauthSessionLoading": "Conectando sua conta do Google…",
     "oauthNewUserHint": "Sua conta do Google está pronta. Toque em «Continuar com Google» abaixo para entrar.",
+    "invalidSession": "Sessão inválida. Faça login novamente.",
+    "oauthVerifyFailed": "Não foi possível verificar sua conta. Tente novamente.",
+    "oauthRetry": "Tentar de novo",
     "invalidCredentials": "Email ou senha incorretos.",
     "genericError": "Ocorreu um erro. Por favor tente novamente.",
     "emailNotConfirmed": "Confirme seu email antes de entrar. Verifique sua caixa de entrada."

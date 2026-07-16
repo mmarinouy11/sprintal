@@ -15,18 +15,18 @@ export type HomeOrgCandidate = {
   slug: string;
   onboarding_complete: boolean;
   cascade_level: number;
-  /** Used to break ties: prefer child org over parent when `cascade_level` matches. */
+  /** Used to break ties: prefer parent org over child when `cascade_level` matches. */
   parent_org_id: string | null;
 };
 
 /**
- * Picks the dashboard org for a logged-in user (deepest cascade, then slug),
+ * Picks the dashboard org for a logged-in user (L1 / root first, then slug),
  * preferring invite target when it matches a membership org id:
  * `user_metadata.invited_to_org`, then `?orgId=` from the invite/callback URL.
  *
  * If two orgs share the same `cascade_level` (data bug or legacy rows), we
- * deprioritize an org that is the `parent_org_id` of another candidate — so
- * e.g. "marketing" wins over "hr-ioss" instead of losing on slug sort.
+ * prefer an org that is the `parent_org_id` of another candidate (root over
+ * sibling/child when levels collide).
  */
 export function selectHomeOrgFromCandidates(
   candidates: HomeOrgCandidate[],
@@ -46,7 +46,9 @@ export function selectHomeOrgFromCandidates(
     if (a.onboarding_complete !== b.onboarding_complete) {
       return a.onboarding_complete ? -1 : 1;
     }
-    const d = Number(b.cascade_level ?? 0) - Number(a.cascade_level ?? 0);
+    // Prefer highest-level org (L1 / root = lowest cascade_level).
+    // Matches /api/auth/login. Sub-area-only members still land on their sub-area.
+    const d = Number(a.cascade_level ?? 0) - Number(b.cascade_level ?? 0);
     if (!Number.isFinite(d) || d !== 0) return Number.isFinite(d) ? d : 0;
     const aIsParent = candidates.some(
       (c) => c.orgId !== a.orgId && c.parent_org_id != null && c.parent_org_id === a.orgId
@@ -54,7 +56,7 @@ export function selectHomeOrgFromCandidates(
     const bIsParent = candidates.some(
       (c) => c.orgId !== b.orgId && c.parent_org_id != null && c.parent_org_id === b.orgId
     );
-    if (aIsParent !== bIsParent) return aIsParent ? 1 : -1;
+    if (aIsParent !== bIsParent) return aIsParent ? -1 : 1;
     return (a.slug || "").localeCompare(b.slug || "");
   });
   return sorted[0] ?? null;

@@ -127,6 +127,9 @@
     "completingOAuth": "Completing sign-in…",
     "oauthSessionLoading": "Connecting your Google account…",
     "oauthNewUserHint": "Your Google account is ready. Tap “Continue with Google” below to finish signing in.",
+    "invalidSession": "Invalid session. Please sign in again.",
+    "oauthVerifyFailed": "We couldn't verify your account. Please try again.",
+    "oauthRetry": "Try again",
     "invalidCredentials": "Invalid email or password.",
     "genericError": "An error occurred. Please try again.",
     "emailNotConfirmed": "Please confirm your email before logging in. Check your inbox for the confirmation link."
