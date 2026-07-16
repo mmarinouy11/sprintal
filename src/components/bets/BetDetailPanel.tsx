@@ -96,7 +96,9 @@ function F({ label, hint, children }: { label: string; hint?: string; children: 
 const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: Bet; onSave: (b: Bet) => void; onCancel: () => void }) {
   const t = useT("betDetail");
   const tf = useT("form");
-  const { childOrgs, org } = useStore();
+  // Granular selectors: avoid re-rendering EditForm on unrelated store writes (helps focus).
+  const childOrgs = useStore((s) => s.childOrgs);
+  const org = useStore((s) => s.org);
   const areas = childOrgs.map(a => a.name);
   const [form, setForm] = useState({
     name:          bet.name || "",
@@ -115,7 +117,15 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
   const [alignment, setAlignment] = useState<string[]>(bet.alignment || []);
   const [ownerAlignmentConflict, setOwnerAlignmentConflict] = useState("");
   const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState("");
   const coach = useSyntacticCoach();
+
+  // Always read the latest form on Save — safe under React.memo + coach re-renders.
+  const formRef = useRef(form);
+  const alignmentRef = useRef(alignment);
+  formRef.current = form;
+  alignmentRef.current = alignment;
+
   const set = (k: string) => (e: React.ChangeEvent<HTMLInputElement|HTMLTextAreaElement|HTMLSelectElement>) =>
     setForm(f => ({ ...f, [k]: e.target.value }));
 
@@ -138,11 +148,36 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
 
   async function save() {
     setSaving(true);
-    const indicators = form.indicators.split(",").map(s=>s.trim()).filter(Boolean).slice(0,3);
-    const updates = { ...form, indicators, alignment };
-    const { data } = await supabase.from("bets").update(updates).eq("id", bet.id).select().limit(1).maybeSingle();
-    if (data) onSave({ ...bet, ...updates });
-    setSaving(false);
+    setSaveError("");
+    const current = formRef.current;
+    const currentAlignment = alignmentRef.current;
+    const indicators = current.indicators.split(",").map(s => s.trim()).filter(Boolean).slice(0, 3);
+    const updates = { ...current, indicators, alignment: currentAlignment };
+    try {
+      const { data, error, count } = await supabase
+        .from("bets")
+        .update(updates, { count: "exact" })
+        .eq("id", bet.id)
+        .select()
+        .limit(1)
+        .maybeSingle();
+
+      if (error) {
+        setSaveError(t("saveError"));
+        return;
+      }
+      if (!count) {
+        // 0 rows affected — UPDATE blocked (RLS/permissions) or stale bet id
+        setSaveError(t("saveErrorNoPermission"));
+        return;
+      }
+      // count > 0: UPDATE succeeded. Prefer SELECT row; local merge only if SELECT was empty.
+      onSave(data ? { ...bet, ...data } : { ...bet, ...updates });
+    } catch {
+      setSaveError(t("saveError"));
+    } finally {
+      setSaving(false);
+    }
   }
 
   const inputCls = "w-full px-3 py-2 rounded text-sm outline-none transition-all";
@@ -239,11 +274,14 @@ const EditForm = React.memo(function EditForm({ bet, onSave, onCancel }: { bet: 
         )}
       </div>
       <div className="flex gap-2 pt-3" style={{ borderTop:"1px solid var(--border)" }}>
-        <button onClick={onCancel} className="btn-ghost flex-1" disabled={saving}>Cancel</button>
-        <button onClick={save} className="btn-primary flex-1" disabled={saving}>
+        <button type="button" onClick={onCancel} className="btn-ghost flex-1" disabled={saving}>Cancel</button>
+        <button type="button" onClick={save} className="btn-primary flex-1" disabled={saving}>
           {saving ? t("saving") : t("saveChanges")}
         </button>
       </div>
+      {saveError && (
+        <p className="t-mono text-xs mt-2" style={{ color: "var(--killed)" }}>{saveError}</p>
+      )}
     </div>
   );
 });
@@ -257,6 +295,12 @@ function BetDetailPanel({ bet: initialBet, evidence, signalChecks, sprintName, o
   const t = useT("betDetail");
   const tg = useT();
   const [editing, setEditing] = useState(false);
+
+  // Sync when opening a different bet by id (don't reset mid-edit on same id).
+  useEffect(() => {
+    setBet(initialBet);
+    setEditing(false);
+  }, [initialBet.id]);
 
   // Cascade relationships
   const parentAlignments = betAlignments.filter(a => a.child_bet_id === bet.id);

@@ -457,6 +457,8 @@
     "completeBtn": "Complete →",
     "saving": "Saving...",
     "saveChanges": "Save Changes →",
+    "saveError": "Could not save changes.",
+    "saveErrorNoPermission": "Could not save — you may not have permission to edit this bet.",
     "notDefined": "Not defined",
     "context": "Context",
     "sprint": "Sprint",

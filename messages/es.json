@@ -457,6 +457,8 @@
     "completeBtn": "Completar →",
     "saving": "Guardando...",
     "saveChanges": "Guardar Cambios →",
+    "saveError": "No se pudieron guardar los cambios.",
+    "saveErrorNoPermission": "No se pudo guardar — puede que no tengas permiso para editar esta bet.",
     "notDefined": "No definido",
     "context": "Contexto",
     "sprint": "Sprint",
