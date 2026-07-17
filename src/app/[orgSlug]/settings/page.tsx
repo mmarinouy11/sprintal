@@ -242,6 +242,7 @@ function MembersTab({ org, isAdmin }: { org: Organization; isAdmin: boolean }) {
   const [inviteRole, setInviteRole] = useState<OrgRole>("editor");
   const [inviting, setInviting] = useState(false);
   const [inviteMsg, setInviteMsg] = useState("");
+  const [inviteMsgIsError, setInviteMsgIsError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const inviteOrgs = useMemo(
@@ -295,21 +296,40 @@ function MembersTab({ org, isAdmin }: { org: Organization; isAdmin: boolean }) {
     if (!inviteEmail) return;
     setInviting(true);
     setInviteMsg("");
+    setInviteMsgIsError(false);
     const { data: { session } } = await supabase.auth.getSession();
     const res = await fetch("/api/settings/invite", {
       method: "POST",
       headers: { "Content-Type": "application/json", "Authorization": `Bearer ${session?.access_token}` },
       body: JSON.stringify({ orgId: inviteTargetOrgId, email: inviteEmail, role: inviteRole }),
     });
-    const data = await res.json();
+    const data = await res.json().catch(() => ({} as { success?: boolean; alreadyHadAccount?: boolean; code?: string }));
     if (data.success) {
-      setInviteMsg(t("settings.inviteSent"));
+      setInviteMsg(
+        data.alreadyHadAccount
+          ? t("settings.inviteAddedExisting")
+          : t("settings.inviteSent")
+      );
+      setInviteMsgIsError(false);
       setInviteEmail("");
       const allIds = [org.id, ...childOrgs.map((c: { id: string }) => c.id)];
       const { data: refreshed } = await supabase.from("org_members").select("*").in("org_id", allIds);
       if (refreshed) setFlatMembers(refreshed);
     } else {
-      setInviteMsg(data.error || t("settings.inviteError"));
+      const code = typeof data.code === "string" ? data.code : "";
+      const byCode: Record<string, string> = {
+        ALREADY_MEMBER: t("settings.inviteAlreadyMember"),
+        INVALID_INPUT: t("settings.inviteInvalidInput"),
+        RATE_LIMITED: t("settings.inviteRateLimited"),
+        FORBIDDEN: t("settings.inviteForbidden"),
+        MISCONFIGURED: t("settings.inviteMisconfigured"),
+        MEMBER_WRITE_FAILED: t("settings.inviteError"),
+        INVITE_FAILED: t("settings.inviteError"),
+        UNAUTHORIZED: t("settings.inviteError"),
+        SERVER_ERROR: t("settings.inviteError"),
+      };
+      setInviteMsg(byCode[code] || t("settings.inviteError"));
+      setInviteMsgIsError(true);
     }
     setInviting(false);
   }
@@ -361,7 +381,17 @@ function MembersTab({ org, isAdmin }: { org: Organization; isAdmin: boolean }) {
               </button>
             </div>
           </div>
-          {inviteMsg && <p style={{ fontSize: "0.875rem", marginTop: 8, color: inviteMsg.includes("error") || inviteMsg.includes("Error") ? "var(--killed)" : "var(--scaled)" }}>{inviteMsg}</p>}
+          {inviteMsg && (
+            <p
+              style={{
+                fontSize: "0.875rem",
+                marginTop: 8,
+                color: inviteMsgIsError ? "var(--killed)" : "var(--scaled)",
+              }}
+            >
+              {inviteMsg}
+            </p>
+          )}
         </div>
       )}
 
